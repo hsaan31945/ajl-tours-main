@@ -109,7 +109,7 @@ const ExploreTours = () => {
     
     try {
       // Use the unified Top Deals / Country Tours interface for all tours globally
-      navigate(`/switzerland/${tour.id}/checkout-sw`);
+      navigate(`/switzerland/${tour.id}/checkout-sw`, { state: { tour } });
     } catch (error) {
       console.error('Navigation error:', error);
     }

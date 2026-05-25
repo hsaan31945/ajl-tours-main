@@ -40,7 +40,7 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
   };
 
   const handleCardClick = () => {
-    navigate(`/switzerland/${tourId}/checkout-sw`);
+    navigate(`/switzerland/${tourId}/checkout-sw`, { state: { tour } });
   };
 
   const displayImage =

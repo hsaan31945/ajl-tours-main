@@ -310,7 +310,7 @@ const Checkout = () => {
     if (!id) {
       // If no id but we have state, use it
       if (location.state?.tour) {
-        setTour(location.state.tour);
+        setTour(normalizeTourData(location.state.tour));
         setLoading(false);
       }
       return;
@@ -460,7 +460,11 @@ const Checkout = () => {
           errorMessage = `Error loading tour: ${error.message}`;
         }
         
-        const fallbackTour = tourIdString ? getStaticSwitzerlandTour(tourIdString) : null;
+        const fallbackTour = location.state?.tour
+          ? normalizeTourData(location.state.tour)
+          : tourIdString
+            ? getStaticSwitzerlandTour(tourIdString)
+            : null;
         if (fallbackTour) {
           setTour(fallbackTour);
           setHighlights(Array.isArray(fallbackTour.highlights) ? fallbackTour.highlights : []);

@@ -15,9 +15,7 @@ export const getBackendUrl = () => {
     (import.meta.env.VITE_API_URL || import.meta.env.REACT_APP_API_URL || '').trim();
 
   if (import.meta.env.PROD) {
-    return configured && isHttpUrl(configured) && !isLocalDevUrl(configured)
-      ? configured.replace(/\/$/, '')
-      : PRODUCTION_API_URL;
+    return PRODUCTION_API_URL;
   }
 
   if (configured && isHttpUrl(configured) && !isLocalDevUrl(configured)) {

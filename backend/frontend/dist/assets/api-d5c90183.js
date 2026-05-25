@@ -1,1 +1,0 @@
-const r="https://ajl-tours-backend-phi.vercel.app",c=t=>/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i.test(t||""),o=t=>/^https?:\/\//i.test(t||""),n=()=>{const t=({}.VITE_API_URL||{}.REACT_APP_API_URL||"").trim();return t&&o(t)&&!c(t)?t.replace(/\/$/,""):r},a=t=>{const s=n(),e=t.startsWith("/")?t:`/${t}`;return s?`${s}${e}`:e};export{a,n as g};
