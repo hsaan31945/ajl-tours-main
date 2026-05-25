@@ -10,10 +10,9 @@ const ImageCarousel = ({ images, alt, className = "", adminOn = false, onSaveIma
   const [index, setIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [currentX, setCurrentX] = useState(0);
+  const [dragOffset, setDragOffset] = useState(0);
   const timerRef = useRef(null);
+  const dragRef = useRef({ active: false, startX: 0, startY: 0, lastX: 0, locked: null });
   
   // Image Editing State
   const [isEditingImages, setIsEditingImages] = useState(false);
@@ -78,9 +77,50 @@ const ImageCarousel = ({ images, alt, className = "", adminOn = false, onSaveIma
   const prev = () => goTo(index - 1);
   const next = () => goTo(index + 1);
 
-  const onTouchStart = (e) => { setIsDragging(true); setStartX(e.touches[0].clientX); setCurrentX(e.touches[0].clientX); };
-  const onTouchMove = (e) => { if (!isDragging) return; setCurrentX(e.touches[0].clientX); };
-  const onTouchEnd = () => { if (!isDragging) return; const diff = startX - currentX; if (Math.abs(diff) > 50) diff > 0 ? next() : prev(); setIsDragging(false); };
+  const onPointerDown = (e) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    dragRef.current = {
+      active: true,
+      startX: e.clientX,
+      startY: e.clientY,
+      lastX: e.clientX,
+      locked: null,
+    };
+    clearInterval(timerRef.current);
+  };
+
+  const onPointerMove = (e) => {
+    const drag = dragRef.current;
+    if (!drag.active) return;
+
+    const dx = e.clientX - drag.startX;
+    const dy = e.clientY - drag.startY;
+
+    if (!drag.locked && Math.max(Math.abs(dx), Math.abs(dy)) > 8) {
+      drag.locked = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+    }
+
+    if (drag.locked !== 'x') return;
+
+    drag.lastX = e.clientX;
+    setDragOffset(Math.max(-90, Math.min(90, dx)));
+  };
+
+  const endPointerDrag = () => {
+    const drag = dragRef.current;
+    if (!drag.active) return;
+
+    const diff = drag.startX - drag.lastX;
+    dragRef.current.active = false;
+    setDragOffset(0);
+
+    if (drag.locked === 'x' && Math.abs(diff) > 45) {
+      diff > 0 ? next() : prev();
+      return;
+    }
+
+    resetTimer();
+  };
 
   const openLightbox = (i) => { setLightboxIndex(i); setLightboxOpen(true); };
   const closeLightbox = () => setLightboxOpen(false);
@@ -178,8 +218,19 @@ const ImageCarousel = ({ images, alt, className = "", adminOn = false, onSaveIma
           ═══════════════════════════════════════════════════ */}
       <div
         className={`block md:hidden ${className}`}
-        style={{ position: "relative", overflow: "hidden", background: "#f3f4f6" }}
-        onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
+        style={{
+          position: "relative",
+          overflow: "hidden",
+          background: "#f3f4f6",
+          touchAction: "pan-y",
+          WebkitUserSelect: "none",
+          userSelect: "none",
+        }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endPointerDrag}
+        onPointerCancel={endPointerDrag}
+        onPointerLeave={endPointerDrag}
       >
         {adminOn && (
           <button
@@ -194,12 +245,24 @@ const ImageCarousel = ({ images, alt, className = "", adminOn = false, onSaveIma
           </button>
         )}
         {/* Slide strip */}
-        <div style={{ display: "flex", height: "100%", transition: isDragging ? "none" : "transform 0.45s cubic-bezier(0.25,0.46,0.45,0.94)", transform: `translateX(-${index * 100}%)` }}>
+        <div
+          style={{
+            display: "flex",
+            height: "100%",
+            transition: dragRef.current.active ? "none" : "transform 0.32s ease-out",
+            transform: `translate3d(calc(-${index * 100}% + ${dragOffset}px), 0, 0)`,
+            willChange: "transform",
+          }}
+        >
           {items.map((src, i) => (
-            <div key={i} style={{ minWidth: "100%", height: "100%", flexShrink: 0 }}>
+            <div key={i} style={{ minWidth: "100%", height: "100%", flexShrink: 0, transform: "translateZ(0)" }}>
               <img src={src} alt={`${alt} ${i + 1}`}
-                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                draggable={false} loading="lazy" onError={onErr}
+                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", pointerEvents: "none" }}
+                draggable={false}
+                loading={i === 0 ? "eager" : "lazy"}
+                decoding="async"
+                fetchPriority={i === 0 ? "high" : "auto"}
+                onError={onErr}
               />
             </div>
           ))}
