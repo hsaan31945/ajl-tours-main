@@ -65,6 +65,13 @@ const ImageCarousel = ({ images, alt, className = "", adminOn = false, onSaveIma
   const total = items.length;
 
   useEffect(() => {
+    items.forEach((src) => {
+      const image = new Image();
+      image.src = src;
+    });
+  }, [items]);
+
+  useEffect(() => {
     indexRef.current = index;
   }, [index]);
 
@@ -267,7 +274,7 @@ const ImageCarousel = ({ images, alt, className = "", adminOn = false, onSaveIma
             </svg>
           </button>
         )}
-        {/* Slide strip */}
+        {/* Active mobile image. Keep a single painted image to avoid off-screen slide blanks on iOS/Chrome. */}
         <div
           className="ajl-mobile-carousel-track"
           onTouchStart={handleMobileTouchStart}
@@ -275,41 +282,34 @@ const ImageCarousel = ({ images, alt, className = "", adminOn = false, onSaveIma
           onTouchCancel={handleMobileTouchEnd}
           onTouchEnd={handleMobileTouchEnd}
           style={{
-            display: "flex",
+            display: "block",
             height: "100%",
             width: "100%",
-            overflowY: "hidden",
-            transform: `translate3d(${dragOffset - index * 100}%, 0, 0)`,
-            transition: dragOffset === 0 ? "transform 320ms ease" : "none",
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
+            overflow: "hidden",
             overscrollBehaviorX: "contain",
             touchAction: "pan-y",
-            willChange: "transform",
           }}
         >
-          {items.map((src, i) => (
-            <div
-              key={i}
-              style={{
-                width: "100%",
-                minWidth: "100%",
-                height: "100%",
-                flex: "0 0 100%",
-                flexShrink: 0,
-                transform: "translateZ(0)",
-              }}
-            >
-              <img src={src} alt={`${alt} ${i + 1}`}
-                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", pointerEvents: "none" }}
-                draggable={false}
-                loading="eager"
-                decoding="sync"
-                fetchPriority="high"
-                onError={onErr}
-              />
-            </div>
-          ))}
+          <img
+            key={`${index}-${items[index]}`}
+            src={items[index]}
+            alt={`${alt} ${index + 1}`}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              display: "block",
+              pointerEvents: "none",
+              transform: `translate3d(${dragOffset}%, 0, 0)`,
+              transition: dragOffset === 0 ? "transform 220ms ease, opacity 180ms ease" : "none",
+              willChange: "transform",
+            }}
+            draggable={false}
+            loading="eager"
+            decoding="sync"
+            fetchPriority="high"
+            onError={onErr}
+          />
         </div>
         <style>{`.ajl-mobile-carousel-track::-webkit-scrollbar{display:none}`}</style>
 
