@@ -4,8 +4,8 @@ import { useAdmin } from "../context/AdminContext";
 import axios from "axios";
 
 const AdminLogin = () => {
-  const [showLogin, setShowLogin] = useState(false);
-  const [loginMode, setLoginMode] = useState('jwt'); // 'jwt' or 'passcode'
+  const [showLogin, setShowLogin] = useState(true);
+  const [loginMode, setLoginMode] = useState('passcode'); // 'jwt' or 'passcode'
   const [password, setPassword] = useState("");
   const [passcode, setPasscode] = useState("");
   const [error, setError] = useState("");
@@ -46,22 +46,20 @@ const AdminLogin = () => {
     }
   };
 
-  const handlePasscodeSubmit = (e) => {
+  const handlePasscodeSubmit = async (e) => {
     e.preventDefault();
-    console.log('Passcode submit triggered', passcode);
+    setError("");
+    setLoading(true);
     
-    const result = enableWithPasscode(passcode);
-    console.log('enableWithPasscode result:', result);
-    
+    const result = await enableWithPasscode(passcode);
     if (result) {
-      console.log('Passcode valid, navigating to dashboard');
       setError("");
       setShowLogin(false);
       navigate("/admin/dashboard");
     } else {
-      console.log('Invalid passcode');
       setError("Invalid passcode");
     }
+    setLoading(false);
   };
 
   const handleCancel = () => {
@@ -150,9 +148,10 @@ const AdminLogin = () => {
                 <div className="flex space-x-3">
                   <button 
                     type="submit" 
+                    disabled={loading}
                     className="flex-1 text-lg py-3 px-6 bg-transparent border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:border-white hover:text-white font-bold rounded-lg shadow-md transition-all duration-300"
                   >
-                    Access Dashboard
+                    {loading ? 'Checking...' : 'Access Dashboard'}
                   </button>
                   <button 
                     type="button" 

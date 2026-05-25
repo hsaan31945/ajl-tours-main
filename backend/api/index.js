@@ -235,6 +235,19 @@ module.exports = async (req, res) => {
       }
 
       res.status(200).json(user);
+    } else if (normalizedPath === '/admin/verify' && method === 'POST') {
+      const passcode =
+        req.body?.passcode ||
+        req.headers['x-admin-passcode'] ||
+        req.headers['X-Admin-Passcode'] ||
+        '';
+      const expected = process.env.ADMIN_PASSCODE || 'admin123';
+
+      if (String(passcode).trim() !== String(expected).trim()) {
+        return res.status(401).json({ success: false, error: 'Invalid passcode' });
+      }
+
+      res.status(200).json({ success: true });
     } else if (normalizedPath.startsWith('/auth')) {
       if (normalizedPath.includes('/admin/login') && method === 'POST') {
         await asyncHandler(authController.adminLogin.bind(authController))(req, res);

@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import axios from "axios";
+import { apiUrl } from "../utils/api";
 
 export const AdminContext = createContext();
 
@@ -63,16 +64,18 @@ export function AdminProvider({ children }) {
 	 * Legacy passcode login (deprecated but kept for backward compatibility)
 	 * @deprecated Use login() with email/password instead
 	 */
-	const enableWithPasscode = (code) => {
-		// For backward compatibility, still allow passcode
-		// But this should be migrated to proper login
-		const PASSCODE = import.meta.env.VITE_ADMIN_PASSCODE || 'admin123';
-		
-		if (code === PASSCODE) {
+	const enableWithPasscode = async (code) => {
+		try {
+			const response = await axios.post(apiUrl('/api/admin/verify'), { passcode: code });
+
+			if (response.data?.success) {
 			setIsAdmin(true);
 			localStorage.setItem(ADMIN_KEY, 'true');
-			// Note: No token set, will use passcode header fallback
+				localStorage.setItem('adminPasscode', code);
 			return true;
+		}
+		} catch (error) {
+			return false;
 		}
 		return false;
 	};
@@ -86,6 +89,7 @@ export function AdminProvider({ children }) {
 		localStorage.removeItem(TOKEN_KEY);
 		localStorage.removeItem(ADMIN_KEY);
 		localStorage.removeItem('isAdmin');
+		localStorage.removeItem('adminPasscode');
 	};
 
 	/**
@@ -96,7 +100,7 @@ export function AdminProvider({ children }) {
 			return { 'Authorization': `Bearer ${token}` };
 		}
 		// Fallback to passcode for backward compatibility
-		const PASSCODE = import.meta.env.VITE_ADMIN_PASSCODE || 'admin123';
+		const PASSCODE = localStorage.getItem('adminPasscode') || import.meta.env.VITE_ADMIN_PASSCODE || 'admin123';
 		return { 'X-Admin-Passcode': PASSCODE };
 	};
 
@@ -108,7 +112,7 @@ export function AdminProvider({ children }) {
 		if (token) {
 			return null; // Prefer JWT
 		}
-		const PASSCODE = import.meta.env.VITE_ADMIN_PASSCODE || 'admin123';
+		const PASSCODE = localStorage.getItem('adminPasscode') || import.meta.env.VITE_ADMIN_PASSCODE || 'admin123';
 		return PASSCODE;
 	};
 
