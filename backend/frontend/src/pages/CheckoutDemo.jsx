@@ -1,3 +1,0 @@
-import React from "react";
-// ... existing code ...
-// (The rest of the code will be copied from Checkout.jsx for initial setup)
