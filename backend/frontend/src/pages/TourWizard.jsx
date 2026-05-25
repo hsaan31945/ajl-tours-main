@@ -5,6 +5,58 @@ import { adminImageFormatMessage, isAllowedAdminImageFile } from "../utils/image
 import axios from "axios";
 import { apiUrl } from "../utils/api";
 
+const MAX_IMAGE_BYTES = 900 * 1024;
+const MAX_TOTAL_IMAGE_BYTES = 3 * 1024 * 1024;
+const MAX_IMAGE_DIMENSION = 1600;
+
+const dataUrlBytes = (dataUrl) => {
+  const base64 = String(dataUrl || '').split(',')[1] || '';
+  return Math.ceil((base64.length * 3) / 4);
+};
+
+const compressImageToWebp = (file) => new Promise((resolve, reject) => {
+  const image = new Image();
+  const objectUrl = URL.createObjectURL(file);
+
+  image.onload = () => {
+    URL.revokeObjectURL(objectUrl);
+    const scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(image.width, image.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(image.width * scale));
+    canvas.height = Math.max(1, Math.round(image.height * scale));
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    const tryQuality = (quality) => {
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error(`Could not process ${file.name}`));
+          return;
+        }
+
+        if (blob.size <= MAX_IMAGE_BYTES || quality <= 0.55) {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(new Error(`Could not read ${file.name}`));
+          reader.readAsDataURL(blob);
+          return;
+        }
+
+        tryQuality(quality - 0.12);
+      }, 'image/webp', quality);
+    };
+
+    tryQuality(0.82);
+  };
+
+  image.onerror = () => {
+    URL.revokeObjectURL(objectUrl);
+    reject(new Error(`Could not load ${file.name}`));
+  };
+
+  image.src = objectUrl;
+});
+
 const TourWizard = () => {
   const navigate = useNavigate();
   const { tourId } = useParams(); // Get tour ID from URL params
@@ -149,7 +201,7 @@ const TourWizard = () => {
     }
   }, [tourId, passcodeHeader]);
 
-  // Image upload handler. Admin uploads are restricted to WebP/AVIF.
+  // Image upload handler. Admin uploads are restricted to WebP/AVIF and compressed before saving.
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
@@ -160,26 +212,30 @@ const TourWizard = () => {
       e.target.value = "";
       return;
     }
-    
-    const readImage = (file) => {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          resolve(event.target.result);
-        };
-        reader.readAsDataURL(file);
-      });
-    };
+    Promise.all(files.map((file) => compressImageToWebp(file)))
+      .then((base64Images) => {
+        setTourData(prev => {
+          const nextImages = [...prev.images, ...base64Images];
+          const totalBytes = nextImages.reduce((sum, image) => sum + dataUrlBytes(image), 0);
 
-    const promises = files.map(file => readImage(file));
+          if (totalBytes > MAX_TOTAL_IMAGE_BYTES) {
+            alert("Images are still too large after compression. Upload fewer images, or smaller WebP/AVIF files.");
+            return prev;
+          }
 
-    Promise.all(promises).then(base64Images => {
-      setTourData(prev => ({
+          return {
         ...prev,
-        images: [...prev.images, ...base64Images],
+            images: nextImages,
         imageFiles: [...prev.imageFiles, ...files]
-      }));
-    });
+          };
+        });
+      })
+      .catch((error) => {
+        alert(error.message || "Could not process image upload.");
+      })
+      .finally(() => {
+        e.target.value = "";
+      });
   };
 
   const removeImage = (index) => {
@@ -383,7 +439,13 @@ const TourWizard = () => {
     }
 
     try {
-      // Images are already in base64 format from handleImageUpload
+      const totalImageBytes = tourData.images.reduce((sum, image) => sum + dataUrlBytes(image), 0);
+      if (totalImageBytes > MAX_TOTAL_IMAGE_BYTES) {
+        alert("Uploaded images are too large to save. Remove some images or upload smaller WebP/AVIF files.");
+        return;
+      }
+
+      // Images are already compressed base64 data URLs from handleImageUpload
       const imageUrls = tourData.images;
 
       // Better fallback logic for dates to ensure endDate >= startDate

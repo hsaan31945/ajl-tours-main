@@ -377,11 +377,13 @@ class TourService {
    */
   async createTour(tourData) {
     try {
-      // Validate division exists
-      const Division = require('../../models/Division');
-      const division = await Division.findById(tourData.division);
+      let division = null;
+      if (tourData.division && mongoose.Types.ObjectId.isValid(String(tourData.division))) {
+        division = await Division.findById(tourData.division);
+      }
+
       if (!division) {
-        throw new Error('Division not found. Please create a division first.');
+        division = await this.getSwitzerlandDivision();
       }
 
       // Ensure required fields
@@ -403,7 +405,7 @@ class TourService {
 
       // Prepare tour payload with proper defaults
       const tourPayload = {
-        division: tourData.division,
+        division: division._id,
         name: String(tourData.name).trim(),
         description: tourData.description ? String(tourData.description).trim() : '',
         overview: tourData.overview ? String(tourData.overview).trim() : '',
