@@ -3,6 +3,8 @@ const PRODUCTION_API_URL = 'https://ajl-tours-backend-phi.vercel.app';
 const isLocalDevUrl = (url) =>
   /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i.test(url || '');
 
+const isHttpUrl = (url) => /^https?:\/\//i.test(url || '');
+
 /**
  * Backend base URL for API calls.
  * - Production builds always use the live Vercel backend (never localhost from .env).
@@ -13,15 +15,15 @@ export const getBackendUrl = () => {
     import.meta.env.VITE_API_URL || import.meta.env.REACT_APP_API_URL;
 
   if (import.meta.env.PROD) {
-    return configured && !isLocalDevUrl(configured)
+    return configured && isHttpUrl(configured) && !isLocalDevUrl(configured)
       ? configured.replace(/\/$/, '')
       : PRODUCTION_API_URL;
   }
 
-  if (configured && !isLocalDevUrl(configured)) {
+  if (configured && isHttpUrl(configured) && !isLocalDevUrl(configured)) {
     return configured.replace(/\/$/, '');
   }
-  if (configured && isLocalDevUrl(configured)) {
+  if (configured && isHttpUrl(configured) && isLocalDevUrl(configured)) {
     return configured.replace(/\/$/, '');
   }
   return '';
