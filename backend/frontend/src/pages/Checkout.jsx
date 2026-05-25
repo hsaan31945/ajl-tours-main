@@ -10,6 +10,7 @@ import AdminModeIndicator from "../components/AdminModeIndicator";
 import { normalizeTourData } from '../utils/tourDataMapper';
 import { normalizeTourId, isValidObjectId, getTourId } from '../utils/tourId';
 import { getBackendUrl } from '../utils/api';
+import { stripHtmlToText } from '../utils/textFormatting';
 import tourImg02 from "../assets/t2.jpg";
 import tourImg03 from "../assets/t3.jpg";
 import tourImg04 from "../assets/t4.jpg";
@@ -800,7 +801,7 @@ const Checkout = () => {
                 tag="h3"
               />
               <EditableField
-                value={tour.overview || tour.description || tourDescriptions['default'].overview || ''}
+                value={stripHtmlToText(tour.overview || tour.description || tourDescriptions['default'].overview || '')}
                 forceEditMode={effectiveEditMode}
                 onSave={async (value) => {
                   const tourId = getTourId(tour);
@@ -815,7 +816,7 @@ const Checkout = () => {
                         'Content-Type': 'application/json',
                         'X-Admin-Passcode': passcodeHeader || ''
                       },
-                      body: JSON.stringify({ ...tour, overview: value, description: value })
+                      body: JSON.stringify({ ...tour, overview: stripHtmlToText(value), description: stripHtmlToText(value) })
                     });
                     if (res.ok) {
                       const response = await res.json();
