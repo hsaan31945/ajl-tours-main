@@ -25,6 +25,7 @@ const Navbar = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const searchContainerRef = useRef(null);
+  const toursRequestRef = useRef(null);
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
 
@@ -50,19 +51,23 @@ const Navbar = () => {
     };
   }, [destinationsOpen]);
 
-  // Fetch tours from API for search
-  useEffect(() => {
-    const fetchTours = async () => {
-      try {
-        const tours = await fetchToursList({ view: 'search', limit: 100 }, { skipCache: true });
-        setAllTours(tours);
-      } catch (error) {
-        console.error('Error fetching tours for search:', error);
-        setAllTours([]);
-      }
-    };
-    fetchTours();
-  }, []);
+  const loadToursForNavigation = async () => {
+    if (allTours.length > 0) return allTours;
+    if (toursRequestRef.current) return toursRequestRef.current;
+
+    const request = fetchToursList({ view: 'search', limit: 100 }, { skipCache: true });
+    toursRequestRef.current = request;
+    try {
+      const tours = await request;
+      setAllTours(tours);
+      return tours;
+    } catch (error) {
+      console.error('Error fetching tours for search:', error);
+      setAllTours([]);
+      toursRequestRef.current = null;
+      return [];
+    }
+  };
 
   // Show search bar: always visible except when on homepage hero section
   useEffect(() => {
@@ -91,15 +96,26 @@ const Navbar = () => {
       return;
     }
 
-    const filtered = allTours.filter(tour => {
-      const tourName = (tour.name || '').toLowerCase();
-      const tourDescription = (tour.description || '').toLowerCase();
-      const searchTerm = query.toLowerCase();
-      return tourName.includes(searchTerm) || tourDescription.includes(searchTerm);
-    }).slice(0, 5); // Limit to 5 results
+    const applyFilter = (tours) => {
+      const filtered = tours.filter(tour => {
+        const tourName = (tour.name || '').toLowerCase();
+        const tourDescription = (tour.description || '').toLowerCase();
+        const searchTerm = query.toLowerCase();
+        return tourName.includes(searchTerm) || tourDescription.includes(searchTerm);
+      }).slice(0, 5); // Limit to 5 results
 
-    setSearchResults(filtered);
-    setShowSearchDropdown(filtered.length > 0);
+      setSearchResults(filtered);
+      setShowSearchDropdown(filtered.length > 0);
+    };
+
+    if (allTours.length > 0) {
+      applyFilter(allTours);
+      return;
+    }
+
+    loadToursForNavigation().then((tours) => {
+      if (query.trim() !== "") applyFilter(tours);
+    });
   };
 
   // Handle search result click - navigate to specific tour
@@ -119,17 +135,18 @@ const Navbar = () => {
   };
 
   // Handle search form submit
-  const handleNavSearch = (e) => {
+  const handleNavSearch = async (e) => {
     e.preventDefault();
     const query = navQuery.trim();
     if (!query) return;
+    const tours = allTours.length > 0 ? allTours : await loadToursForNavigation();
     
     // If there are search results, navigate to the first one
     if (searchResults.length > 0) {
       handleSearchResultClick(searchResults[0]);
     } else {
       // Otherwise, try to find exact match
-      const match = allTours.find(tour => 
+      const match = tours.find(tour => 
         (tour.name || '').toLowerCase() === query.toLowerCase()
       );
       if (match) {
@@ -194,6 +211,7 @@ const Navbar = () => {
                 value={navQuery}
                 onChange={(e) => handleNavSearchChange(e.target.value)}
                 onFocus={() => {
+                  loadToursForNavigation();
                   if (searchResults.length > 0) {
                     setShowSearchDropdown(true);
                   }
@@ -269,7 +287,10 @@ const Navbar = () => {
             <button
               type="button"
               title="Destinations"
-              onClick={() => setDestinationsOpen((prev) => !prev)}
+              onClick={() => {
+                setDestinationsOpen((prev) => !prev);
+                loadToursForNavigation();
+              }}
               className={`pb-1 border-b-2 border-transparent text-gray-700 hover:text-orange-500 hover:border-orange-400 transition-colors flex flex-col items-center justify-center ${
                 isDestinationsActive ? "text-orange-600 border-orange-500" : ""
               }`}

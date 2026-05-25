@@ -1,8 +1,6 @@
 import facebook_icon from "./facebook_icon.svg";
 import instagram_icon from "./instagram_icon.svg";
 import twitter_icon from "./twitter_icon.svg";
-import earth from "./earth.png";
-import headerimg from "./headerimg.png";
 
 import { Compass, MapPin, Users } from "lucide-react";
 import user from "./profile_icon.png";
@@ -11,8 +9,6 @@ export const assets = {
   facebook_icon,
   instagram_icon,
   twitter_icon,
-  earth,
-  headerimg,
   user,
 };
 

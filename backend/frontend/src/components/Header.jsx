@@ -1,13 +1,10 @@
-import React, { useMemo, useState } from "react";
-import { assets } from "../assets/assets";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
+import heroImage from "../assets/images/optimized/hero6-900.webp";
 
 // Hero header inspired by GetYourGuide
 const Header = ({ malaysiaPopupOpen }) => {
   const [query, setQuery] = useState("");
-
-  // Prefer a scenic hero image; fall back to existing asset
-  const heroImage = useMemo(() => assets.headerHero || assets.headerimg, []);
 
   const handleSearch = (e) => {
     e.preventDefault();

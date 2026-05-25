@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useState, useEffect } from "react";
+import React, { Suspense, lazy, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminControlPanel from "../components/AdminControlPanel";
 import { useAdmin } from "../context/AdminContext";
@@ -15,13 +15,42 @@ import hero7Small from "../assets/images/optimized/hero7-900.webp";
 const ExploreTours = lazy(() => import("../components/ExploreTours"));
 const TopDealsSection = lazy(() => import("../components/TopDealsSection"));
 
+const DeferredSection = ({ children, rootMargin = "700px" }) => {
+  const ref = useRef(null);
+  const [shouldRender, setShouldRender] = useState(false);
+
+  useEffect(() => {
+    if (shouldRender) return;
+
+    const node = ref.current;
+    if (!node) return;
+
+    if (!("IntersectionObserver" in window)) {
+      const timeout = window.setTimeout(() => setShouldRender(true), 1000);
+      return () => window.clearTimeout(timeout);
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShouldRender(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [rootMargin, shouldRender]);
+
+  return <div ref={ref}>{shouldRender ? children : null}</div>;
+};
+
 const Home2 = () => {
   const navigate = useNavigate();
   const { passcodeHeader, isAdmin } = useAdmin();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [typewriterText, setTypewriterText] = useState("Switzerland");
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -97,9 +126,6 @@ const Home2 = () => {
       description: 'Experience the breathtaking Alps, pristine lakes, charming villages, and world-class cities of Switzerland with personalized attention and flexible itineraries designed just for you. Tailored tours available - tell us what you have in mind and we\'ll make it happen.'
     }
   };
-  
-  // Typewriter destinations (only country names)
-  const destinations = ["Switzerland"];
   
   // Hero carousel images
   const heroImages = [
@@ -186,39 +212,6 @@ const Home2 = () => {
 
   const [openFaq, setOpenFaq] = useState(null);
 
-  // Typewriter effect
-  React.useEffect(() => {
-    const currentDestination = destinations[currentIndex];
-    
-    if (!isDeleting) {
-      // Typing
-      if (typewriterText.length < currentDestination.length) {
-        const timeout = setTimeout(() => {
-          setTypewriterText(currentDestination.slice(0, typewriterText.length + 1));
-        }, 150);
-        return () => clearTimeout(timeout);
-      } else {
-        // Start deleting after a pause
-        const timeout = setTimeout(() => {
-          setIsDeleting(true);
-        }, 2000);
-        return () => clearTimeout(timeout);
-      }
-    } else {
-      // Deleting
-      if (typewriterText.length > 0) {
-        const timeout = setTimeout(() => {
-          setTypewriterText(typewriterText.slice(0, -1));
-        }, 100);
-        return () => clearTimeout(timeout);
-      } else {
-        // Move to next destination
-        setIsDeleting(false);
-        setCurrentIndex((prevIndex) => (prevIndex + 1) % destinations.length);
-      }
-    }
-  }, [typewriterText, isDeleting, currentIndex, destinations]);
-
   return (
     <div className="min-h-screen">
       {/* Admin Control Panel */}
@@ -230,11 +223,15 @@ const Home2 = () => {
         {/* Mobile Background: Static with Overlay */}
         <div className="md:hidden absolute inset-0 z-0">
           <img
-            src={hero6}
+            src={hero6Small}
+            srcSet={`${hero6Small} 900w, ${hero6} 1600w`}
+            sizes="100vw"
             alt=""
-            width="1600"
-            height="1067"
+            width="900"
+            height="600"
             fetchPriority="high"
+            loading="eager"
+            decoding="async"
             className="absolute inset-0 h-full w-full object-cover object-top"
           />
           <div className="absolute inset-0 bg-black/30"></div>
@@ -264,6 +261,7 @@ const Home2 = () => {
                   height="1067"
                   fetchPriority={index === 0 ? "high" : "auto"}
                   loading={index === 0 ? "eager" : "lazy"}
+                  decoding="async"
                   className="h-full w-full object-cover"
                 />
               </div>
@@ -368,6 +366,7 @@ const Home2 = () => {
                   width="900"
                   height="600"
                   loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover transform hover:scale-110 transition-transform duration-1000"
                 />
               </div>
@@ -390,14 +389,18 @@ const Home2 = () => {
 
 
       {/* Explore Tours Section */}
-      <Suspense fallback={null}>
-        <ExploreTours />
-      </Suspense>
+      <DeferredSection>
+        <Suspense fallback={null}>
+          <ExploreTours />
+        </Suspense>
+      </DeferredSection>
 
       {/* Top Deals Section */}
-      <Suspense fallback={null}>
-        <TopDealsSection />
-      </Suspense>
+      <DeferredSection>
+        <Suspense fallback={null}>
+          <TopDealsSection />
+        </Suspense>
+      </DeferredSection>
 
       {/* Services Section */}
       <section className="py-24 px-6 sm:px-12 bg-gray-50">

@@ -60,6 +60,8 @@ const Blogs = () => {
                  <img
                    src={blog.image}
                    alt={blog.title}
+                   loading={index === 0 ? "eager" : "lazy"}
+                   decoding="async"
                    className="w-full h-full object-cover transform hover:scale-110 transition-transform duration-700"
                  />
                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
