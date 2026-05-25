@@ -11,9 +11,11 @@ const ImageCarousel = ({ images, alt, className = "", adminOn = false, onSaveIma
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const timerRef = useRef(null);
-  const mobileTrackRef = useRef(null);
   const indexRef = useRef(0);
-  const scrollRafRef = useRef(null);
+  const touchStartXRef = useRef(null);
+  const touchStartYRef = useRef(null);
+  const dragOffsetRef = useRef(0);
+  const [dragOffset, setDragOffset] = useState(0);
   
   // Image Editing State
   const [isEditingImages, setIsEditingImages] = useState(false);
@@ -66,12 +68,6 @@ const ImageCarousel = ({ images, alt, className = "", adminOn = false, onSaveIma
     indexRef.current = index;
   }, [index]);
 
-  useEffect(() => {
-    return () => {
-      if (scrollRafRef.current) cancelAnimationFrame(scrollRafRef.current);
-    };
-  }, []);
-
   // Auto-advance for mobile slider
   useEffect(() => {
     if (total <= 1) return;
@@ -89,36 +85,70 @@ const ImageCarousel = ({ images, alt, className = "", adminOn = false, onSaveIma
     const nextIndex = (i + total) % total;
     indexRef.current = nextIndex;
     setIndex(nextIndex);
-
-    const track = mobileTrackRef.current;
-    if (track) {
-      track.scrollTo({
-        left: track.clientWidth * nextIndex,
-        behavior,
-      });
-    }
   };
 
   const goTo = (i) => { scrollToIndex(i); resetTimer(); };
   const prev = () => goTo(index - 1);
   const next = () => goTo(index + 1);
 
-  const handleMobileScroll = () => {
-    const track = mobileTrackRef.current;
-    if (!track) return;
-
-    if (scrollRafRef.current) cancelAnimationFrame(scrollRafRef.current);
-    scrollRafRef.current = requestAnimationFrame(() => {
-      const nextIndex = Math.round(track.scrollLeft / Math.max(track.clientWidth, 1));
-      if (nextIndex !== indexRef.current && nextIndex >= 0 && nextIndex < total) {
-        indexRef.current = nextIndex;
-        setIndex(nextIndex);
-      }
-    });
-  };
-
   const pauseMobileAutoAdvance = () => {
     clearInterval(timerRef.current);
+  };
+
+  const handleMobileTouchStart = (e) => {
+    if (total <= 1) return;
+    pauseMobileAutoAdvance();
+    const touch = e.touches[0];
+    touchStartXRef.current = touch.clientX;
+    touchStartYRef.current = touch.clientY;
+    dragOffsetRef.current = 0;
+    setDragOffset(0);
+  };
+
+  const handleMobileTouchMove = (e) => {
+    if (touchStartXRef.current == null || touchStartYRef.current == null) return;
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - touchStartXRef.current;
+    const deltaY = touch.clientY - touchStartYRef.current;
+
+    // Let vertical page scrolling win when the gesture is mostly vertical.
+    if (Math.abs(deltaY) > Math.abs(deltaX) * 1.2) {
+      dragOffsetRef.current = 0;
+      setDragOffset(0);
+      return;
+    }
+
+    const width = e.currentTarget.clientWidth || 1;
+    const offset = Math.max(-28, Math.min(28, (deltaX / width) * 100));
+    dragOffsetRef.current = offset;
+    setDragOffset(offset);
+  };
+
+  const handleMobileTouchEnd = (e) => {
+    if (touchStartXRef.current == null) {
+      resetTimer();
+      return;
+    }
+
+    const width = e.currentTarget.clientWidth || 1;
+    const threshold = Math.min(70, Math.max(36, width * 0.16));
+    const deltaX = (dragOffsetRef.current / 100) * width;
+
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
+    dragOffsetRef.current = 0;
+    setDragOffset(0);
+
+    if (Math.abs(deltaX) >= threshold) {
+      // Exactly one image per swipe. No native scroll-snap skipping.
+      if (deltaX < 0) {
+        scrollToIndex(indexRef.current + 1);
+      } else {
+        scrollToIndex(indexRef.current - 1);
+      }
+    }
+
+    resetTimer();
   };
 
   const openLightbox = (i) => { setLightboxIndex(i); setLightboxOpen(true); };
@@ -239,23 +269,23 @@ const ImageCarousel = ({ images, alt, className = "", adminOn = false, onSaveIma
         )}
         {/* Slide strip */}
         <div
-          ref={mobileTrackRef}
           className="ajl-mobile-carousel-track"
-          onScroll={handleMobileScroll}
-          onTouchStart={pauseMobileAutoAdvance}
-          onTouchEnd={resetTimer}
+          onTouchStart={handleMobileTouchStart}
+          onTouchMove={handleMobileTouchMove}
+          onTouchCancel={handleMobileTouchEnd}
+          onTouchEnd={handleMobileTouchEnd}
           style={{
             display: "flex",
             height: "100%",
-            overflowX: "auto",
+            width: "100%",
             overflowY: "hidden",
-            scrollSnapType: "x mandatory",
-            scrollBehavior: "smooth",
-            WebkitOverflowScrolling: "touch",
+            transform: `translateX(calc(-${index * 100}% + ${dragOffset}%))`,
+            transition: dragOffset === 0 ? "transform 320ms ease" : "none",
             scrollbarWidth: "none",
             msOverflowStyle: "none",
             overscrollBehaviorX: "contain",
-            touchAction: "pan-x pan-y",
+            touchAction: "pan-y",
+            willChange: "transform",
           }}
         >
           {items.map((src, i) => (
@@ -265,8 +295,6 @@ const ImageCarousel = ({ images, alt, className = "", adminOn = false, onSaveIma
                 minWidth: "100%",
                 height: "100%",
                 flexShrink: 0,
-                scrollSnapAlign: "center",
-                scrollSnapStop: "always",
                 transform: "translateZ(0)",
               }}
             >
