@@ -1,3 +1,5 @@
+import { apiUrl } from "../utils/api";
+
 const cache = new Map();
 const CACHE_MS = 60 * 1000;
 
@@ -25,7 +27,13 @@ export async function fetchToursList(params = {}, options = {}) {
     : null;
 
   try {
-    const res = await fetch(`/api/tours?${key}`, { signal });
+    const res = await fetch(apiUrl(`/api/tours?${key}`), {
+      signal,
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache',
+      },
+    });
     if (!res.ok) throw new Error(`Failed to load tours (${res.status})`);
     const data = await res.json();
     const list = Array.isArray(data) ? data : [];

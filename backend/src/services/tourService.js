@@ -114,7 +114,9 @@ class TourService {
       rating: tour.metadata?.rating ?? tour.rating ?? 0,
       reviews: tour.metadata?.reviews ?? tour.reviews ?? 0,
       maxTotalTickets: tour.maxTotalTickets,
+      metadata: tour.metadata || {},
       createdAt: tour.createdAt,
+      updatedAt: tour.updatedAt,
     };
   }
 
@@ -203,7 +205,9 @@ class TourService {
           rating: 1,
           reviews: 1,
           maxTotalTickets: 1,
+          metadata: 1,
           createdAt: 1,
+          updatedAt: 1,
           images: {
             $cond: [
               {
@@ -229,8 +233,39 @@ class TourService {
         ? tours.map((t) => this.formatSearchTour(t))
         : tours.map((t) => this.formatListTour(t));
 
-    listCache.set(cacheKey, { data: formatted, expiresAt: Date.now() + LIST_CACHE_TTL_MS });
-    return formatted;
+    const deduped = this.dedupeTours(formatted);
+    listCache.set(cacheKey, { data: deduped, expiresAt: Date.now() + LIST_CACHE_TTL_MS });
+    return deduped;
+  }
+
+  dedupeTours(tours = []) {
+    const byKey = new Map();
+
+    for (const tour of tours) {
+      const staticId = tour.metadata?.staticId ? String(tour.metadata.staticId) : '';
+      const nameKey = tour.name ? String(tour.name).trim().toLowerCase() : '';
+      const keys = [staticId, nameKey, tour.id].filter(Boolean);
+      const existing = keys.map((key) => byKey.get(key)).find(Boolean);
+
+      if (!existing) {
+        keys.forEach((key) => byKey.set(key, tour));
+        continue;
+      }
+
+      const existingHasStaticId = Boolean(existing.metadata?.staticId);
+      const tourHasStaticId = Boolean(staticId);
+      const existingTime = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
+      const tourTime = new Date(tour.updatedAt || tour.createdAt || 0).getTime();
+
+      if (
+        (tourHasStaticId && !existingHasStaticId) ||
+        (tourHasStaticId === existingHasStaticId && tourTime >= existingTime)
+      ) {
+        keys.forEach((key) => byKey.set(key, tour));
+      }
+    }
+
+    return [...new Map([...byKey.values()].map((tour) => [tour.id, tour])).values()];
   }
 
   /**

@@ -48,10 +48,17 @@ const TopDealsSection = () => {
 
         const toursWithSales = allTours.map(tour => {
           const tourId = getTourId(tour)?.toString();
-          const staticTour = switzerlandTours.find(st => st.id === tourId || st.id === tour.id);
+          const staticId = tour.metadata?.staticId ? String(tour.metadata.staticId) : '';
+          const staticTour = switzerlandTours.find(st =>
+            st.id === tourId ||
+            st.id === tour.id ||
+            st.id === staticId ||
+            st.name?.toLowerCase() === tour.name?.toLowerCase()
+          );
           
           return {
             id: tourId || tour.id,
+            staticId,
             name: tour.name,
             desc: tour.description,
             description: tour.description,
@@ -85,7 +92,11 @@ const TopDealsSection = () => {
         // If we have less than 3 tours from DB, fill with static data (but prioritize DB tours)
         if (topTours.length < 3) {
           const staticToursToAdd = switzerlandTours
-            .filter(st => !topTours.some(t => t.id === st.id))
+            .filter(st => !topTours.some(t =>
+              t.id === st.id ||
+              t.staticId === st.id ||
+              t.name?.toLowerCase() === st.name?.toLowerCase()
+            ))
             .slice(0, 3 - topTours.length)
             .map(st => ({
               ...st,
@@ -224,6 +235,5 @@ const TopDealsSection = () => {
 };
 
 export default TopDealsSection;
-
 
 
