@@ -279,7 +279,7 @@ const ImageCarousel = ({ images, alt, className = "", adminOn = false, onSaveIma
             height: "100%",
             width: "100%",
             overflowY: "hidden",
-            transform: `translateX(calc(-${index * 100}% + ${dragOffset}%))`,
+            transform: `translate3d(${dragOffset - index * 100}%, 0, 0)`,
             transition: dragOffset === 0 ? "transform 320ms ease" : "none",
             scrollbarWidth: "none",
             msOverflowStyle: "none",
@@ -292,8 +292,10 @@ const ImageCarousel = ({ images, alt, className = "", adminOn = false, onSaveIma
             <div
               key={i}
               style={{
+                width: "100%",
                 minWidth: "100%",
                 height: "100%",
+                flex: "0 0 100%",
                 flexShrink: 0,
                 transform: "translateZ(0)",
               }}
@@ -301,9 +303,9 @@ const ImageCarousel = ({ images, alt, className = "", adminOn = false, onSaveIma
               <img src={src} alt={`${alt} ${i + 1}`}
                 style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", pointerEvents: "none" }}
                 draggable={false}
-                loading={i === 0 ? "eager" : "lazy"}
-                decoding="async"
-                fetchPriority={i === 0 ? "high" : "auto"}
+                loading="eager"
+                decoding="sync"
+                fetchPriority="high"
                 onError={onErr}
               />
             </div>

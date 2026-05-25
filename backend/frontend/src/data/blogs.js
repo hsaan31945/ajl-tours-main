@@ -1,3 +1,5 @@
+import titlisBlogImage from "../assets/images/Titlis_Engelberg/Titlis1.avif";
+
 export const blogs = [
   {
     id: 1,
@@ -77,7 +79,7 @@ export const blogs = [
     id: 4,
     title: "Alpine Majesty: A Deep Dive into Titlis and Central Switzerland",
     subtitle: "Comprehensive exploration of Switzerland's most iconic mountain destination",
-    image: "https://images.unsplash.com/photo-1523050854058-8df90110c9e1?auto=format&fit=crop&w=800&q=80",
+    image: titlisBlogImage,
     date: "December 10, 2024",
     readTime: "12 min read",
     location: "Titlis & Central Switzerland",
