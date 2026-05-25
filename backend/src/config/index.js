@@ -36,9 +36,12 @@ const config = {
   // CORS
   cors: {
     origins: [
+      process.env.CORS_ORIGIN,
+      process.env.FRONTEND_URL,
+      'https://ajl-tours-frontend-eta.vercel.app',
       'https://ajl-tours-frontend.vercel.app',
       'http://localhost:5173'
-    ],
+    ].filter(Boolean),
     credentials: true
   },
   
@@ -50,7 +53,6 @@ const config = {
 };
 
 module.exports = config;
-
 
 
 
