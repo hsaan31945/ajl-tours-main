@@ -33,7 +33,7 @@ const ExploreTours = () => {
           description: t.description,
           destination: t.divisionName || 'switzerland',
           address: t.startLocation || t.location || '',
-        })).filter(t => t && t.name && Number.isFinite(t.price) && t.images.length > 0);
+        })).filter(t => t && t.name && Number.isFinite(t.price));
         // Shuffle and return random tours - no localStorage overrides
         const shuffled = normalized.sort(() => 0.5 - Math.random());
         return shuffled.slice(0, 6);

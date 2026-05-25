@@ -74,9 +74,9 @@ const TopDealsSection = () => {
           return (b.rating || 0) - (a.rating || 0);
         });
 
-        // Filter to only tours with images and take top 3-5
+        // MongoDB is the source of truth. Show tours even if an image has not been uploaded yet.
         const topTours = sortedTours
-          .filter(t => t && t.name && Array.isArray(t.images) && t.images.length > 0)
+          .filter(t => t && t.name)
           .slice(0, 5);
 
         setTopSwissTours(topTours);
