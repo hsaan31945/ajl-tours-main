@@ -9,7 +9,7 @@ import TourEditWizard from "../components/TourEditWizard";
 import AdminModeIndicator from "../components/AdminModeIndicator";
 import { normalizeTourData } from '../utils/tourDataMapper';
 import { normalizeTourId, isValidObjectId, getTourId } from '../utils/tourId';
-import { getBackendUrl } from '../utils/api';
+import { apiUrl, getBackendUrl } from '../utils/api';
 import { stripHtmlToText } from '../utils/textFormatting';
 import tourImg02 from "../assets/t2.jpg";
 import tourImg03 from "../assets/t3.jpg";
@@ -773,10 +773,7 @@ const Checkout = () => {
                   const tourId = getTourId(tour);
                   if (!tourId) return false;
                   try {
-                    const backendUrl = process.env.NODE_ENV === 'production' 
-                      ? 'https://ajl-tours-backend.vercel.app'
-                      : '';
-                    const res = await fetch(`${backendUrl}/api/tours/${tourId}`, {
+                    const res = await fetch(apiUrl(`/api/tours/${tourId}`), {
                       method: 'PUT',
                       headers: {
                         'Content-Type': 'application/json',
@@ -807,10 +804,7 @@ const Checkout = () => {
                   const tourId = getTourId(tour);
                   if (!tourId) return false;
                   try {
-                    const backendUrl = process.env.NODE_ENV === 'production' 
-                      ? 'https://ajl-tours-backend.vercel.app'
-                      : '';
-                    const res = await fetch(`${backendUrl}/api/tours/${tourId}`, {
+                    const res = await fetch(apiUrl(`/api/tours/${tourId}`), {
                       method: 'PUT',
                       headers: {
                         'Content-Type': 'application/json',
