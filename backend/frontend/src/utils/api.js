@@ -12,7 +12,7 @@ const isHttpUrl = (url) => /^https?:\/\//i.test(url || '');
  */
 export const getBackendUrl = () => {
   const configured =
-    import.meta.env.VITE_API_URL || import.meta.env.REACT_APP_API_URL;
+    (import.meta.env.VITE_API_URL || import.meta.env.REACT_APP_API_URL || '').trim();
 
   if (import.meta.env.PROD) {
     return configured && isHttpUrl(configured) && !isLocalDevUrl(configured)

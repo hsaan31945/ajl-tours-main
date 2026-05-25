@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://ajl-tours-backend.vercel.app/api/$1"
+      "destination": "https://ajl-tours-backend-phi.vercel.app/api/$1"
     },
     {
       "source": "/(.*)",
@@ -32,7 +32,7 @@
   "env": {
     "REACT_APP_STRIPE_PUBLISHABLE_KEY": "pk_live_51SI58bETHCR5wUAm8WAPumpfpbeN0jsgiLHPR3xas7x4M8Iaw113HcKNmr59b3nUvem6M3GSx5w3BaihXun7OnLO001bVxhJV6",
     "VITE_STRIPE_PUBLISHABLE_KEY": "pk_live_51SI58bETHCR5wUAm8WAPumpfpbeN0jsgiLHPR3xas7x4M8Iaw113HcKNmr59b3nUvem6M3GSx5w3BaihXun7OnLO001bVxhJV6",
-    "VITE_API_URL": "https://ajl-tours-backend.vercel.app",
-    "REACT_APP_API_URL": "https://ajl-tours-backend.vercel.app"
+    "VITE_API_URL": "https://ajl-tours-backend-phi.vercel.app",
+    "REACT_APP_API_URL": "https://ajl-tours-backend-phi.vercel.app"
   }
 }
