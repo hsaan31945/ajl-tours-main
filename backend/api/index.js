@@ -4,7 +4,7 @@
  */
 
 // Wrap all imports in try-catch to identify which module is failing
-let connectDB, setCORSHeaders, errorHandler, tourController, bookingController, authController, Division, Tour, Booking;
+let connectDB, setCORSHeaders, errorHandler, tourController, bookingController, authController, Division, Tour, Booking, User;
 
 try {
   connectDB = require('../src/config/database').connectDB;
@@ -16,6 +16,7 @@ try {
   Division = require('../models/Division');
   Tour = require('../models/Tour');
   Booking = require('../models/Booking');
+  User = require('../models/User');
 } catch (importError) {
   // If imports fail, export a handler that reports the error
   module.exports = async (req, res) => {
@@ -203,6 +204,37 @@ module.exports = async (req, res) => {
       } else {
         res.status(404).json({ success: false, error: 'Route not found' });
       }
+    } else if (normalizedPath === '/users' && method === 'POST') {
+      const { name, email, password, phone } = req.body || {};
+      if (!name || !email || !password) {
+        return res.status(400).json({ success: false, error: 'Name, email and password are required' });
+      }
+
+      const existingUser = await User.findOne({ email: String(email).toLowerCase().trim() });
+      if (existingUser) {
+        return res.status(409).json({ success: false, error: 'An account with this email already exists' });
+      }
+
+      const user = new User({
+        name,
+        email,
+        password,
+        phone: phone || '',
+      });
+      await user.save();
+      res.status(201).json(user);
+    } else if (normalizedPath === '/users/login' && method === 'POST') {
+      const { email, password } = req.body || {};
+      if (!email || !password) {
+        return res.status(400).json({ success: false, error: 'Email and password are required' });
+      }
+
+      const user = await User.findOne({ email: String(email).toLowerCase().trim(), isActive: true });
+      if (!user || !(await user.comparePassword(password))) {
+        return res.status(401).json({ success: false, error: 'Invalid login credentials' });
+      }
+
+      res.status(200).json(user);
     } else if (normalizedPath.startsWith('/auth')) {
       if (normalizedPath.includes('/admin/login') && method === 'POST') {
         await asyncHandler(authController.adminLogin.bind(authController))(req, res);

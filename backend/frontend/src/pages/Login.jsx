@@ -4,6 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import Button from "../components/Button";
 import { AppContext } from "../context/AppContext";
 import { useAdmin } from "../context/AdminContext";
+import { Eye, EyeOff } from "lucide-react";
 
 const LoginPage = () => {
   const { addUser, loginUser } = useContext(AppContext);
@@ -11,6 +12,7 @@ const LoginPage = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [phone, setPhone] = useState("");
   const navigate = useNavigate();
@@ -127,15 +129,26 @@ const LoginPage = () => {
             <label htmlFor="password" className="block text-md font-medium">
               Password
             </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-              placeholder="Enter your password"
-            />
+            <div className="relative mt-2">
+              <input
+                type={showPassword ? "text" : "password"}
+                id="password"
+                name="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-2 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
+                placeholder="Enter your password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((current) => !current)}
+                className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-red-600"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                title={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
           <Button type="submit" className="button-31 w-full text-lg">
             {isLogin ? "Login" : "Register"}
