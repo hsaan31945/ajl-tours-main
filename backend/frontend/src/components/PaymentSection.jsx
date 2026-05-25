@@ -16,6 +16,8 @@ function PaymentSection({
   tour,
   date,
   time,
+  onPriceUpdated,
+  onSavePrice,
   onSaveMinTickets // callback to save minTickets to database
 }) {
   const navigate = useNavigate();
@@ -62,8 +64,9 @@ function PaymentSection({
               price={Number(price)}
               currencySymbol={currency || "CHF"}
               tourId={tour?.id}
-              storageKey={`payment-${tour?.id}-price`}
               isAdmin={isAdmin}
+              onSavePrice={onSavePrice}
+              onUpdated={onPriceUpdated}
             />
           </div>
         </div>

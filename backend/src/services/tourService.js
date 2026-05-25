@@ -10,6 +10,10 @@ const mongoose = require('mongoose');
 const LIST_CACHE_TTL_MS = 60 * 1000;
 const listCache = new Map();
 
+const clearTourListCache = () => {
+  listCache.clear();
+};
+
 class TourService {
   /** First usable tour image for card views. Skip base64 blobs to keep list payloads small. */
   pickListImage(images) {
@@ -458,6 +462,7 @@ class TourService {
         tourObj.id = tourObj._id.toString();
       }
 
+      clearTourListCache();
       return tourObj;
     }
     
@@ -471,6 +476,8 @@ class TourService {
     if (!tour) {
       throw new Error('Tour not found');
     }
+
+    clearTourListCache();
     
     const tourObj = tour.toObject({ virtuals: true });
     if (!tourObj.id && tourObj._id) {

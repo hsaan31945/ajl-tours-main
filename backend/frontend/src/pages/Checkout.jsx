@@ -341,21 +341,9 @@ const Checkout = () => {
         // Use standardized ID utility
         tourIdString = normalizeTourId(id);
         
-        // Static Switzerland tours use short IDs such as "12"; only MongoDB tours use ObjectIds.
-        if (!isValidObjectId(tourIdString)) {
-          const staticTour = getStaticSwitzerlandTour(tourIdString);
-          if (staticTour) {
-            setTour(staticTour);
-            setError(null);
-            setHighlights(Array.isArray(staticTour.highlights) ? staticTour.highlights : []);
-            setIncluded(Array.isArray(staticTour.included) ? staticTour.included : []);
-            setExcluded(Array.isArray(staticTour.excluded) ? staticTour.excluded : []);
-            setItinerary(Array.isArray(staticTour.itinerary) ? staticTour.itinerary : []);
-            return;
-          }
-
-          throw new Error(`Tour not found for ID: ${tourIdString}`);
-        }
+        const staticTourFallback = !isValidObjectId(tourIdString)
+          ? getStaticSwitzerlandTour(tourIdString)
+          : null;
         
         console.log('\n========================================');
         console.log('=== CHECKOUT PAGE - FETCHING TOUR ===');
@@ -377,7 +365,9 @@ const Checkout = () => {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache',
           },
+          cache: 'no-store',
           credentials: 'include',
           mode: 'cors' // Explicitly set CORS mode
         });
@@ -426,6 +416,16 @@ const Checkout = () => {
         } else {
           const errorData = await res.json().catch(() => ({}));
           console.error('Failed to fetch tour from database:', res.status, errorData);
+
+          if (res.status === 404 && staticTourFallback) {
+            setTour(staticTourFallback);
+            setError(null);
+            setHighlights(Array.isArray(staticTourFallback.highlights) ? staticTourFallback.highlights : []);
+            setIncluded(Array.isArray(staticTourFallback.included) ? staticTourFallback.included : []);
+            setExcluded(Array.isArray(staticTourFallback.excluded) ? staticTourFallback.excluded : []);
+            setItinerary(Array.isArray(staticTourFallback.itinerary) ? staticTourFallback.itinerary : []);
+            return;
+          }
           
           let errorMsg = errorData.error || `Tour not found (Status: ${res.status})`;
           
@@ -460,6 +460,17 @@ const Checkout = () => {
           errorMessage = `Error loading tour: ${error.message}`;
         }
         
+        const fallbackTour = tourIdString ? getStaticSwitzerlandTour(tourIdString) : null;
+        if (fallbackTour) {
+          setTour(fallbackTour);
+          setHighlights(Array.isArray(fallbackTour.highlights) ? fallbackTour.highlights : []);
+          setIncluded(Array.isArray(fallbackTour.included) ? fallbackTour.included : []);
+          setExcluded(Array.isArray(fallbackTour.excluded) ? fallbackTour.excluded : []);
+          setItinerary(Array.isArray(fallbackTour.itinerary) ? fallbackTour.itinerary : []);
+          setError(null);
+          return;
+        }
+
         setError(errorMessage);
         // Don't fallback to hardcoded data - we want to use database data only
       } finally {
@@ -747,7 +758,7 @@ const Checkout = () => {
             </div>
             <div className="text-right">
               <div className="text-sm text-blue-600">Total Price</div>
-              <div className="text-2xl font-bold text-blue-800">{tour?.currency || "CHF"}{tour?.price}</div>
+              <div className="text-2xl font-bold text-blue-800">{tour?.currency || "CHF"}{totalPrice}</div>
             </div>
           </div>
         </div>
@@ -1156,6 +1167,13 @@ const Checkout = () => {
             currency={tour?.currency || "CHF"}
             date={selectedDate}
             time={selectedTime}
+            onPriceUpdated={(newPrice) => {
+              setTour((currentTour) => ({
+                ...currentTour,
+                price: newPrice,
+              }));
+            }}
+            onSavePrice={(newPrice) => saveSingleField('price', newPrice)}
             onSaveMinTickets={async (minValue) => {
               const tourId = getTourId(tour);
               if (!tourId) return false;

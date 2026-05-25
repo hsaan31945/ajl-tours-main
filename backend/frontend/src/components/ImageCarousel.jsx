@@ -10,9 +10,10 @@ const ImageCarousel = ({ images, alt, className = "", adminOn = false, onSaveIma
   const [index, setIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
-  const [dragOffset, setDragOffset] = useState(0);
   const timerRef = useRef(null);
-  const dragRef = useRef({ active: false, startX: 0, startY: 0, lastX: 0, locked: null });
+  const mobileTrackRef = useRef(null);
+  const indexRef = useRef(0);
+  const scrollRafRef = useRef(null);
   
   // Image Editing State
   const [isEditingImages, setIsEditingImages] = useState(false);
@@ -61,65 +62,63 @@ const ImageCarousel = ({ images, alt, className = "", adminOn = false, onSaveIma
   const items = Array.isArray(images) ? images.filter(Boolean) : images ? [images] : [];
   const total = items.length;
 
+  useEffect(() => {
+    indexRef.current = index;
+  }, [index]);
+
+  useEffect(() => {
+    return () => {
+      if (scrollRafRef.current) cancelAnimationFrame(scrollRafRef.current);
+    };
+  }, []);
+
   // Auto-advance for mobile slider
   useEffect(() => {
     if (total <= 1) return;
-    timerRef.current = setInterval(() => setIndex((p) => (p + 1) % total), 5000);
+    timerRef.current = setInterval(() => scrollToIndex(indexRef.current + 1), 5000);
     return () => clearInterval(timerRef.current);
   }, [total]);
 
   const resetTimer = () => {
     clearInterval(timerRef.current);
-    if (total > 1) timerRef.current = setInterval(() => setIndex((p) => (p + 1) % total), 5000);
+    if (total > 1) timerRef.current = setInterval(() => scrollToIndex(indexRef.current + 1), 5000);
   };
 
-  const goTo = (i) => { setIndex((i + total) % total); resetTimer(); };
+  const scrollToIndex = (i, behavior = "smooth") => {
+    if (!total) return;
+    const nextIndex = (i + total) % total;
+    indexRef.current = nextIndex;
+    setIndex(nextIndex);
+
+    const track = mobileTrackRef.current;
+    if (track) {
+      track.scrollTo({
+        left: track.clientWidth * nextIndex,
+        behavior,
+      });
+    }
+  };
+
+  const goTo = (i) => { scrollToIndex(i); resetTimer(); };
   const prev = () => goTo(index - 1);
   const next = () => goTo(index + 1);
 
-  const onPointerDown = (e) => {
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
-    dragRef.current = {
-      active: true,
-      startX: e.clientX,
-      startY: e.clientY,
-      lastX: e.clientX,
-      locked: null,
-    };
+  const handleMobileScroll = () => {
+    const track = mobileTrackRef.current;
+    if (!track) return;
+
+    if (scrollRafRef.current) cancelAnimationFrame(scrollRafRef.current);
+    scrollRafRef.current = requestAnimationFrame(() => {
+      const nextIndex = Math.round(track.scrollLeft / Math.max(track.clientWidth, 1));
+      if (nextIndex !== indexRef.current && nextIndex >= 0 && nextIndex < total) {
+        indexRef.current = nextIndex;
+        setIndex(nextIndex);
+      }
+    });
+  };
+
+  const pauseMobileAutoAdvance = () => {
     clearInterval(timerRef.current);
-  };
-
-  const onPointerMove = (e) => {
-    const drag = dragRef.current;
-    if (!drag.active) return;
-
-    const dx = e.clientX - drag.startX;
-    const dy = e.clientY - drag.startY;
-
-    if (!drag.locked && Math.max(Math.abs(dx), Math.abs(dy)) > 8) {
-      drag.locked = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
-    }
-
-    if (drag.locked !== 'x') return;
-
-    drag.lastX = e.clientX;
-    setDragOffset(Math.max(-90, Math.min(90, dx)));
-  };
-
-  const endPointerDrag = () => {
-    const drag = dragRef.current;
-    if (!drag.active) return;
-
-    const diff = drag.startX - drag.lastX;
-    dragRef.current.active = false;
-    setDragOffset(0);
-
-    if (drag.locked === 'x' && Math.abs(diff) > 45) {
-      diff > 0 ? next() : prev();
-      return;
-    }
-
-    resetTimer();
   };
 
   const openLightbox = (i) => { setLightboxIndex(i); setLightboxOpen(true); };
@@ -222,15 +221,9 @@ const ImageCarousel = ({ images, alt, className = "", adminOn = false, onSaveIma
           position: "relative",
           overflow: "hidden",
           background: "#f3f4f6",
-          touchAction: "pan-y",
           WebkitUserSelect: "none",
           userSelect: "none",
         }}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={endPointerDrag}
-        onPointerCancel={endPointerDrag}
-        onPointerLeave={endPointerDrag}
       >
         {adminOn && (
           <button
@@ -246,16 +239,37 @@ const ImageCarousel = ({ images, alt, className = "", adminOn = false, onSaveIma
         )}
         {/* Slide strip */}
         <div
+          ref={mobileTrackRef}
+          className="ajl-mobile-carousel-track"
+          onScroll={handleMobileScroll}
+          onTouchStart={pauseMobileAutoAdvance}
+          onTouchEnd={resetTimer}
           style={{
             display: "flex",
             height: "100%",
-            transition: dragRef.current.active ? "none" : "transform 0.32s ease-out",
-            transform: `translate3d(calc(-${index * 100}% + ${dragOffset}px), 0, 0)`,
-            willChange: "transform",
+            overflowX: "auto",
+            overflowY: "hidden",
+            scrollSnapType: "x mandatory",
+            scrollBehavior: "smooth",
+            WebkitOverflowScrolling: "touch",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+            overscrollBehaviorX: "contain",
+            touchAction: "pan-x pan-y",
           }}
         >
           {items.map((src, i) => (
-            <div key={i} style={{ minWidth: "100%", height: "100%", flexShrink: 0, transform: "translateZ(0)" }}>
+            <div
+              key={i}
+              style={{
+                minWidth: "100%",
+                height: "100%",
+                flexShrink: 0,
+                scrollSnapAlign: "center",
+                scrollSnapStop: "always",
+                transform: "translateZ(0)",
+              }}
+            >
               <img src={src} alt={`${alt} ${i + 1}`}
                 style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", pointerEvents: "none" }}
                 draggable={false}
@@ -267,6 +281,7 @@ const ImageCarousel = ({ images, alt, className = "", adminOn = false, onSaveIma
             </div>
           ))}
         </div>
+        <style>{`.ajl-mobile-carousel-track::-webkit-scrollbar{display:none}`}</style>
 
         {/* Prev arrow */}
         {total > 1 && (

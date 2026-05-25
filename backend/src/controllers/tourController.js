@@ -38,6 +38,7 @@ class TourController {
     try {
       const { id } = req.params;
       const tour = await tourService.getTourById(id);
+      res.setHeader('Cache-Control', 'no-store');
       res.json(tour);
     } catch (error) {
       if (error.message === 'Tour not found') {
@@ -101,6 +102,7 @@ class TourController {
     try {
       const { id } = req.params;
       const tour = await tourService.updateTour(id, req.body);
+      res.setHeader('Cache-Control', 'no-store');
       res.json({
         success: true,
         message: 'Tour updated successfully',
@@ -132,5 +134,4 @@ class TourController {
 }
 
 module.exports = new TourController();
-
 

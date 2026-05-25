@@ -1,55 +1,32 @@
 import React, { useState, useEffect } from "react";
 import { Pencil } from "lucide-react";
-import axios from "axios";
 import { useAdmin } from "../context/AdminContext";
+import { apiUrl } from "../utils/api";
 
 // Reusable price component with admin inline edit support
 // Props:
 // - price: number (cents or major units depending on caller)
 // - currencySymbol: string, e.g. "$" or "CHF"
 // - tourId: optional backend tour id for API update
-// - storageKey: optional key to persist local override when no backend id
+// - onSavePrice: optional callback(newPrice) for callers that need to save extra tour context
 // - onUpdated: optional callback(newPrice)
 export default function PriceWithEdit({
   price,
   currencySymbol = "CHF",
   tourId,
-  storageKey,
+  onSavePrice,
   onUpdated,
   isAdmin = false,
 }) {
-  const { passcodeHeader } = useAdmin ? useAdmin() : { passcodeHeader: null };
+  const { passcodeHeader } = useAdmin();
   const [isEditing, setIsEditing] = useState(false);
   const [localPrice, setLocalPrice] = useState(price);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // Load any locally overridden price
   useEffect(() => {
-    if (storageKey) {
-      try {
-        const map = JSON.parse(localStorage.getItem("price_overrides") || "{}");
-        if (map[storageKey] != null) {
-          setLocalPrice(Number(map[storageKey]));
-        } else {
-          setLocalPrice(price);
-        }
-      } catch (_) {
-        setLocalPrice(price);
-      }
-    } else {
-      setLocalPrice(price);
-    }
-  }, [price, storageKey]);
-
-  const persistLocal = (newPrice) => {
-    if (!storageKey) return;
-    try {
-      const map = JSON.parse(localStorage.getItem("price_overrides") || "{}");
-      map[storageKey] = newPrice;
-      localStorage.setItem("price_overrides", JSON.stringify(map));
-    } catch (_) {}
-  };
+    setLocalPrice(price);
+  }, [price]);
 
   const handleSave = async () => {
     const parsed = Number(localPrice);
@@ -60,21 +37,34 @@ export default function PriceWithEdit({
     setSaving(true);
     setError("");
     try {
-      if (tourId) {
-        // Try backend update
-        await axios.put(`/api/tours/${tourId}`, { price: parsed }, {
-          headers: passcodeHeader ? { 'X-Admin-Passcode': passcodeHeader } : undefined
+      if (onSavePrice) {
+        const saved = await onSavePrice(parsed);
+        if (!saved) throw new Error("Failed to save");
+      } else if (tourId) {
+        const response = await fetch(apiUrl(`/api/tours/${tourId}`), {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-cache",
+            ...(passcodeHeader ? { "X-Admin-Passcode": passcodeHeader } : {}),
+          },
+          cache: "no-store",
+          body: JSON.stringify({ price: parsed }),
         });
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.message || data.error || "Failed to save");
+        }
       } else {
-        // Fallback to local persistence
-        persistLocal(parsed);
+        setError("Tour ID missing");
+        return;
       }
-      // Always store local override too for immediate UX and SSR/cache parity
-      persistLocal(parsed);
+
       setIsEditing(false);
       if (onUpdated) onUpdated(parsed);
     } catch (e) {
-      setError(e.response?.data?.message || e.message || "Failed to save");
+      setError(e.message || "Failed to save");
     } finally {
       setSaving(false);
     }
@@ -133,5 +123,3 @@ export default function PriceWithEdit({
     </div>
   );
 }
-
-
