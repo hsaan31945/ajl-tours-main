@@ -30,6 +30,55 @@ class TourService {
     return null;
   }
 
+  async getSwitzerlandDivision() {
+    let division = await Division.findOne({ name: 'Switzerland' });
+    if (!division) {
+      division = await Division.create({
+        name: 'Switzerland',
+        description: 'Tours in Switzerland',
+        isActive: true,
+      });
+    }
+    return division;
+  }
+
+  normalizeTourUpdatePayload(updateData = {}, fallbackId = null, withDefaults = false) {
+    const payload = { ...updateData };
+    delete payload._id;
+    delete payload.id;
+    delete payload.__v;
+    delete payload.createdAt;
+    delete payload.updatedAt;
+    delete payload.divisionName;
+
+    if (payload.title && !payload.name) payload.name = payload.title;
+    if (payload.desc && !payload.description) payload.description = payload.desc;
+    if (payload.price !== undefined) payload.price = Number(payload.price || 0);
+
+    if (withDefaults) {
+      payload.name = payload.name || 'Switzerland Tour';
+      payload.description = payload.description || payload.overview || '';
+      payload.price = Number(payload.price || 0);
+      payload.startDate = payload.startDate || new Date();
+      payload.endDate = payload.endDate || payload.startDate || new Date();
+      payload.startLocation = payload.startLocation || payload.address || 'Switzerland';
+      payload.endLocation = payload.endLocation || payload.address || payload.startLocation || 'Switzerland';
+    } else {
+      ['startDate', 'endDate', 'startLocation', 'endLocation', 'division'].forEach((field) => {
+        if (payload[field] === null || payload[field] === undefined || payload[field] === '') {
+          delete payload[field];
+        }
+      });
+    }
+
+    payload.metadata = {
+      ...(payload.metadata || {}),
+      ...(fallbackId ? { staticId: String(fallbackId) } : {}),
+    };
+
+    return payload;
+  }
+
   formatListTour(tour) {
     const id = tour.id || (tour._id ? tour._id.toString() : null);
     const divisionName =
@@ -242,7 +291,26 @@ class TourService {
     }
     
     if (!isValidObjectId(tourId)) {
-      throw new Error('Invalid tour ID format');
+      const tour = await Tour.findOne({ 'metadata.staticId': tourId })
+        .populate('division', 'name description')
+        .lean();
+
+      if (!tour) {
+        throw new Error('Tour not found');
+      }
+
+      if (!tour.id && tour._id) {
+        tour.id = tour._id.toString();
+      }
+
+      tour.highlights = Array.isArray(tour.highlights) ? tour.highlights : [];
+      tour.included = Array.isArray(tour.included) ? tour.included : [];
+      tour.excluded = Array.isArray(tour.excluded) ? tour.excluded : [];
+      tour.itinerary = Array.isArray(tour.itinerary) ? tour.itinerary : [];
+      tour.images = Array.isArray(tour.images) ? tour.images : [];
+      tour.pickupLocations = Array.isArray(tour.pickupLocations) ? tour.pickupLocations : [];
+
+      return tour;
     }
     
     const tour = await Tour.findById(tourId)
@@ -368,12 +436,35 @@ class TourService {
     const tourId = normalizeTourId(id);
     
     if (!isValidObjectId(tourId)) {
-      throw new Error('Invalid tour ID format');
+      const division = await this.getSwitzerlandDivision();
+      const payload = this.normalizeTourUpdatePayload(updateData, tourId, true);
+      payload.division = division._id;
+
+      const query = {
+        $or: [
+          { 'metadata.staticId': tourId },
+          { name: payload.name, division: division._id },
+        ],
+      };
+
+      const tour = await Tour.findOneAndUpdate(
+        query,
+        { $set: payload },
+        { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+      ).populate('division', 'name description');
+
+      const tourObj = tour.toObject({ virtuals: true });
+      if (!tourObj.id && tourObj._id) {
+        tourObj.id = tourObj._id.toString();
+      }
+
+      return tourObj;
     }
     
+    const payload = this.normalizeTourUpdatePayload(updateData);
     const tour = await Tour.findByIdAndUpdate(
       tourId,
-      updateData,
+      payload,
       { new: true, runValidators: true }
     ).populate('division', 'name description');
     
@@ -410,4 +501,3 @@ class TourService {
 }
 
 module.exports = new TourService();
-
