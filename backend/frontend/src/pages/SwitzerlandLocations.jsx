@@ -11,7 +11,6 @@ const SwitzerlandLocations = () => {
     const fetchTours = async () => {
       try {
         const tours = await fetchToursList({
-          division: 'switzerland',
           limit: 100,
         }, { skipCache: true });
         setDbTours(tours.filter((tour) => getTourId(tour)));

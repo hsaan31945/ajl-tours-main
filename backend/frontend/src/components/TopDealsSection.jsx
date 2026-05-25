@@ -40,7 +40,6 @@ const TopDealsSection = () => {
     const loadTopSellingTours = async () => {
       try {
         const allTours = await fetchToursList({
-          division: 'switzerland',
           limit: 12,
           sort: 'popular',
         }, { skipCache: true });

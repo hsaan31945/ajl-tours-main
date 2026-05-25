@@ -23,7 +23,7 @@ const ExploreTours = () => {
   // Load tours from database only - no localStorage overrides
   const getRandomTours = async () => {
     try {
-      const data = await fetchToursList({ division: 'switzerland', limit: 12 }, { skipCache: true });
+      const data = await fetchToursList({ limit: 12 }, { skipCache: true });
       if (data.length) {
         const normalized = data.map(t => ({
           id: t.id ?? t._id ?? t.id_str ?? t.name,
