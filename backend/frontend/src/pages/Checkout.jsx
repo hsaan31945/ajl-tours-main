@@ -1,0 +1,1325 @@
+import React, { useState, useEffect, useRef } from "react";
+import { useAdmin } from "../context/AdminContext";
+import { useLocation, useParams, useNavigate } from "react-router-dom";
+import { useContext } from "react";
+import { AppContext } from "../context/AppContext";
+import EditableText from "../components/EditableText";
+import EditableField from "../components/EditableField";
+import TourEditWizard from "../components/TourEditWizard";
+import AdminModeIndicator from "../components/AdminModeIndicator";
+import { normalizeTourData } from '../utils/tourDataMapper';
+import { normalizeTourId, isValidObjectId, getTourId } from '../utils/tourId';
+import { apiUrl, getBackendUrl } from '../utils/api';
+import { clearToursCache } from '../services/toursApi';
+import { stripHtmlToText } from '../utils/textFormatting';
+// Import all Zurich AVIF images
+import zurich1 from "../assets/images/Switzerland/Zurich1.avif";
+import zurich3 from "../assets/images/Switzerland/Zurich3.avif";
+import zurich4 from "../assets/images/Switzerland/Zurich4.avif";
+import zurich5 from "../assets/images/Switzerland/Zurich5.avif";
+import zurich6 from "../assets/images/Switzerland/Zurich6.avif";
+import zurich7 from "../assets/images/Switzerland/Zurich7.avif";
+import zurich8 from "../assets/images/Switzerland/Zurich8.avif";
+import zurich9 from "../assets/images/Switzerland/Zurich9.avif";
+import zurich10 from "../assets/images/Switzerland/Zurich10.avif";
+import zurich12 from "../assets/images/Switzerland/Zurich12.avif";
+// Import Crash Landing on You images
+import crashLanding1 from "../assets/images/Crash_Landing/Crash_Landing1.avif";
+import crashLanding2 from "../assets/images/Crash_Landing/Crash_Landing2.avif";
+import crashLanding3 from "../assets/images/Crash_Landing/Crash_Landing3.avif";
+import crashLanding4 from "../assets/images/Crash_Landing/Crash_Landing4.avif";
+import crashLanding5 from "../assets/images/Crash_Landing/Crash_Landing5.avif";
+import crashLanding6 from "../assets/images/Crash_Landing/Crash_Landing6.avif";
+import crashLanding7 from "../assets/images/Crash_Landing/Crash_Landing7.avif";
+import crashLanding8 from "../assets/images/Crash_Landing/Crash_Landing8.avif";
+import crashLanding9 from "../assets/images/Crash_Landing/Crash_Landing9.avif";
+import crashLanding10 from "../assets/images/Crash_Landing/Crash_Landing10.avif";
+import crashLanding11 from "../assets/images/Crash_Landing/Crash_Landing11.avif";
+import crashLanding12 from "../assets/images/Crash_Landing/Crash_Landing12.avif";
+// Import Lucerne images
+import lucerne1 from "../assets/images/Lucerne/Lucerne1.avif";
+import lucerne2 from "../assets/images/Lucerne/Lucerne2.avif";
+import lucerne3 from "../assets/images/Lucerne/Lucerne3.avif";
+import lucerne4 from "../assets/images/Lucerne/Lucerne4.avif";
+import lucerne5 from "../assets/images/Lucerne/Lucerne5.avif";
+import lucerne6 from "../assets/images/Lucerne/Lucerne6.avif";
+import lucerne7 from "../assets/images/Lucerne/Lucerne7.avif";
+// Import Appenzell Day Tour images
+import Appenzell1 from "../assets/images/Appenzell_Day_Tour/Appenzell1.avif";
+import Appenzell2 from "../assets/images/Appenzell_Day_Tour/Appenzell2.avif";
+import Appenzell3 from "../assets/images/Appenzell_Day_Tour/Appenzell3.avif";
+import Appenzell4 from "../assets/images/Appenzell_Day_Tour/Appenzell4.avif";
+import Appenzell5 from "../assets/images/Appenzell_Day_Tour/Appenzell5.avif";
+import Appenzell6 from "../assets/images/Appenzell_Day_Tour/Appenzell6.avif";
+// Import Rhine Falls images
+import rhine1 from "../assets/images/Zurich_to_Rhine_Falls/Rhine1.avif";
+import rhine2 from "../assets/images/Zurich_to_Rhine_Falls/Rhine2.avif";
+import rhine3 from "../assets/images/Zurich_to_Rhine_Falls/Rhine3.avif";
+import rhine4 from "../assets/images/Zurich_to_Rhine_Falls/Rhine4.avif";
+// Import Titlis Engelberg images
+import titlis1 from "../assets/images/Titlis_Engelberg/Titlis1.avif";
+import titlis2 from "../assets/images/Titlis_Engelberg/Titlis2.avif";
+import titlis3 from "../assets/images/Titlis_Engelberg/Titlis3.avif";
+import titlis4 from "../assets/images/Titlis_Engelberg/Titlis4.avif";
+import titlis5 from "../assets/images/Titlis_Engelberg/Titlis5.avif";
+// Import Basel and Colmar images
+import basel1 from "../assets/images/Basel_and_Colmar/Basel1.avif";
+import basel2 from "../assets/images/Basel_and_Colmar/Basel2.avif";
+import basel3 from "../assets/images/Basel_and_Colmar/Basel3.avif";
+import basel4 from "../assets/images/Basel_and_Colmar/Basel4.avif";
+// Import Interlaken and Grindelwald images
+import interlaken1 from "../assets/images/Interlaken_and_Grindelwald/Interlaken1.avif";
+import interlaken2 from "../assets/images/Interlaken_and_Grindelwald/Interlaken2.avif";
+import interlaken3 from "../assets/images/Interlaken_and_Grindelwald/Interlaken3.avif";
+import interlaken4 from "../assets/images/Interlaken_and_Grindelwald/Interlaken4.avif";
+import interlaken5 from "../assets/images/Interlaken_and_Grindelwald/Interlaken5.avif";
+import interlaken6 from "../assets/images/Interlaken_and_Grindelwald/Interlaken6.avif";
+import ImageCarousel from "../components/ImageCarousel";
+import { motion, AnimatePresence } from "framer-motion";
+import PaymentSection from "../components/PaymentSection";
+import { tourDescriptions } from "../data/tourDescriptions";
+
+const itineraryData = [
+  {
+    title: "2 pickup location options:",
+    locations: "Lucerne, Zürich",
+    icon: (
+      <svg className="inline-block mr-2 text-red-600" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 21c-4.418 0-8-5.373-8-10a8 8 0 1116 0c0 4.627-3.582 10-8 10z" /><circle cx="12" cy="11" r="3" stroke="currentColor" strokeWidth={2} fill="white" /></svg>
+    ),
+    duration: null,
+    isPickup: true,
+  },
+  {
+    title: "Isetwald",
+    icon: (
+      <svg className="inline-block mr-2 text-red-600" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 21c-4.418 0-8-5.373-8-10a8 8 0 1116 0c0 4.627-3.582 10-8 10z" /><circle cx="12" cy="11" r="3" stroke="currentColor" strokeWidth={2} fill="white" /></svg>
+    ),
+    duration: "Sightseeing (2.5 hours)",
+  },
+  {
+    title: "Lauterbrunnen",
+    icon: (
+      <svg className="inline-block mr-2 text-red-600" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 21c-4.418 0-8-5.373-8-10a8 8 0 1116 0c0 4.627-3.582 10-8 10z" /><circle cx="12" cy="11" r="3" stroke="currentColor" strokeWidth={2} fill="white" /></svg>
+    ),
+    duration: "Sightseeing (2 hours)",
+  },
+  {
+    title: "Grindelwald",
+    icon: (
+      <svg className="inline-block mr-2 text-red-600" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 21c-4.418 0-8-5.373-8-10a8 8 0 1116 0c0 4.627-3.582 10-8 10z" /><circle cx="12" cy="11" r="3" stroke="currentColor" strokeWidth={2} fill="white" /></svg>
+    ),
+    duration: "Sightseeing (1.5 hours)",
+  },
+];
+
+function ItineraryAccordion({ itinerary = [], adminOn = false, onSave, tour, passcodeHeader }) {
+  const [open, setOpen] = useState(itinerary.map(() => false));
+  const { isAdmin } = useAdmin();
+  const effectiveEditMode = adminOn || isAdmin;
+
+  const saveItineraryItem = async (index, field, value) => {
+    const updated = [...itinerary];
+    if (field === 'title') {
+      updated[index] = { ...updated[index], title: value };
+    } else if (field === 'description') {
+      updated[index] = { ...updated[index], description: value };
+    }
+    if (onSave) {
+      return await onSave(updated);
+    }
+    return false;
+  };
+
+  return (
+    <div className="flex flex-col gap-6">
+      {itinerary.map((item, idx) => (
+        <div key={idx} className="group">
+          <div
+            className="flex items-center justify-between bg-gray-100 rounded px-6 py-4 cursor-pointer select-none"
+            onClick={() => setOpen((prev) => prev.map((v, i) => (i === idx ? !v : v)))}
+          >
+            <span className="font-bold text-red-800 flex items-center flex-1">
+              <svg className="inline-block mr-2 text-red-600" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 21c-4.418 0-8-5.373-8-10a8 8 0 1116 0c0 4.627-3.582 10-8 10z" /><circle cx="12" cy="11" r="3" stroke="currentColor" strokeWidth={2} fill="white" /></svg>
+              <EditableField
+                value={item.title || item.location || ''}
+                forceEditMode={effectiveEditMode}
+                onSave={async (value) => await saveItineraryItem(idx, 'title', value)}
+                className="flex-1"
+                tag="span"
+                showEditIcon={false}
+              />
+            </span>
+            <div className="flex items-center gap-2">
+              {adminOn && (
+                <button
+                  type="button"
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const updated = itinerary.filter((_, i) => i !== idx);
+                    if (onSave) await onSave(updated);
+                  }}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700"
+                  title="Remove item"
+                >
+                  ✕
+                </button>
+              )}
+            <span className="text-gray-400">{open[idx] ? <>&#9650;</> : <>&#9660;</>}</span>
+            </div>
+          </div>
+          <AnimatePresence initial={false}>
+            {open[idx] && (
+              <motion.div
+                key="content"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                className="overflow-hidden"
+              >
+                <div className="px-6 py-2 text-gray-700">
+                  <EditableField
+                    value={item.description || ''}
+                    forceEditMode={effectiveEditMode}
+                    onSave={async (value) => await saveItineraryItem(idx, 'description', value)}
+                    className="block"
+                    tag="div"
+                    multiline={true}
+                  />
+                  {item.duration && <div className="italic mt-2">{item.duration}</div>}
+                  {item.location && <div className="text-sm text-gray-500">Location: {item.location}</div>}
+                  {item.activities && item.activities.length > 0 && (
+                    <div className="mt-2">
+                      <div className="font-semibold">Activities:</div>
+                      <ul className="list-disc pl-5">
+                        {item.activities.map((activity, activityIdx) => (
+                          <li key={activityIdx}>{activity}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      ))}
+      {itinerary.length === 0 && (
+        <div className="text-gray-500 italic py-4 text-center">No itinerary details available for this tour.</div>
+      )}
+      {adminOn && (
+        <button
+          type="button"
+          onClick={async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const newItem = { title: 'New Location', description: '', duration: '', location: '', activities: [] };
+            const updated = [...itinerary, newItem];
+            if (onSave) await onSave(updated);
+          }}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        >
+          + Add Itinerary Item
+        </button>
+      )}
+    </div>
+  );
+}
+
+const Checkout = () => {
+  const location = useLocation();
+  const { id } = useParams();
+  const { user } = useContext(AppContext);
+  const { isAdmin, passcodeHeader } = useAdmin();
+  const legacyIsAdmin = user?.isAdmin || false;
+  const adminOn = isAdmin || legacyIsAdmin;
+  const [tour, setTour] = useState(null);
+  const [loading, setLoading] = useState(!!id);
+  const [highlights, setHighlights] = useState([]);
+  const [included, setIncluded] = useState([]);
+  const [excluded, setExcluded] = useState([]);
+  const [itinerary, setItinerary] = useState([]);
+  const [error, setError] = useState(null);
+  
+  // State for booking history
+  const [bookingHistory, setBookingHistory] = useState([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+
+  // State for booking form and calendar
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  // Choose next available time slot (9:00 or 10:00)
+  let defaultTime = '09:00';
+  if (now.getHours() >= 10) defaultTime = '10:00';
+  if (now.getHours() >= 11) defaultTime = '09:00'; // fallback to 9:00 if past 10am
+
+  const [selectedDate, setSelectedDate] = useState(todayStr);
+  const [selectedTime, setSelectedTime] = useState(defaultTime);
+  const [tickets, setTickets] = useState(1);
+  
+  // State for Tour Edit Wizard - moved here to ensure consistent hook order
+  const [showEditWizard, setShowEditWizard] = useState(false);
+  
+  const navigate = useNavigate();
+
+  // Track previous id to detect changes
+  const prevIdRef = useRef(id);
+
+  // Fetch tour from API when id changes
+  useEffect(() => {
+    // Always fetch when id changes, even if we have state tour
+    if (!id) {
+      // If no id but we have state, use it
+      if (location.state?.tour) {
+        setTour(normalizeTourData(location.state.tour));
+        setLoading(false);
+      }
+      return;
+    }
+
+    // Check if id actually changed
+    if (prevIdRef.current === id && tour && (tour.id === id || tour._id === id)) {
+      return; // Same tour, no need to refetch
+    }
+
+    prevIdRef.current = id;
+
+    const fetchTour = async () => {
+      // Declare variables outside try block to avoid scope issues
+      let tourIdString = '';
+      let fetchUrl = '';
+      let backendUrl = '';
+      
+      try {
+        setLoading(true);
+        setTour(null); // Clear previous tour immediately
+        
+        // Validate ID first
+        if (!id) {
+          throw new Error('Tour ID is missing from URL');
+        }
+        
+        // Use standardized ID utility
+        tourIdString = normalizeTourId(id);
+        
+        console.log('\n========================================');
+        console.log('=== CHECKOUT PAGE - FETCHING TOUR ===');
+        console.log('========================================');
+        console.log('Tour ID from URL params:', id);
+        console.log('Tour ID as string:', tourIdString);
+        console.log('Tour ID length:', tourIdString.length);
+        console.log('Tour ID is valid format?', isValidObjectId(tourIdString));
+        console.log('Fetching from URL:', `/api/tours/${tourIdString}`);
+        console.log('========================================');
+        console.log('=== END FETCH LOG ===');
+        console.log('========================================\n');
+        
+        backendUrl = getBackendUrl();
+        fetchUrl = `${backendUrl}/api/tours/${tourIdString}`;
+        
+        console.log('Fetching tour from:', fetchUrl);
+        const res = await fetch(fetchUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache',
+          },
+          cache: 'no-store',
+          credentials: 'include',
+          mode: 'cors' // Explicitly set CORS mode
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          console.log('Raw tour data from API:', data);
+          const normalizedData = normalizeTourData(data);
+          
+          // Log for debugging data consistency
+          console.log('Checkout - Fetched Tour Data from Database:', {
+            id: normalizedData.id,
+            name: normalizedData.name,
+            price: normalizedData.price,
+            duration: normalizedData.duration,
+            highlightsCount: normalizedData.highlights?.length || 0,
+            highlights: normalizedData.highlights,
+            includedCount: normalizedData.included?.length || 0,
+            included: normalizedData.included,
+            excludedCount: normalizedData.excluded?.length || 0,
+            excluded: normalizedData.excluded,
+            itineraryCount: normalizedData.itinerary?.length || 0,
+            itinerary: normalizedData.itinerary
+          });
+          
+          // Always use database data - do NOT fallback to hardcoded data
+          setTour(normalizedData);
+          setError(null); // Clear any previous errors
+          // Initialize array states from normalized data - ensure they're always arrays
+          const highlightsArray = Array.isArray(normalizedData.highlights) ? normalizedData.highlights : [];
+          const includedArray = Array.isArray(normalizedData.included) ? normalizedData.included : [];
+          const excludedArray = Array.isArray(normalizedData.excluded) ? normalizedData.excluded : [];
+          const itineraryArray = Array.isArray(normalizedData.itinerary) ? normalizedData.itinerary : [];
+          
+          setHighlights(highlightsArray);
+          setIncluded(includedArray);
+          setExcluded(excludedArray);
+          setItinerary(itineraryArray);
+          
+          console.log('Initialized array states:', {
+            highlights: highlightsArray.length,
+            included: includedArray.length,
+            excluded: excludedArray.length,
+            itinerary: itineraryArray.length
+          });
+        } else {
+          const errorData = await res.json().catch(() => ({}));
+          console.error('Failed to fetch tour from database:', res.status, errorData);
+
+          let errorMsg = errorData.error || `Tour not found (Status: ${res.status})`;
+          
+          // Provide more helpful error messages
+          if (res.status === 404) {
+            errorMsg = `Tour not found in database. The tour with ID "${tourIdString}" does not exist.`;
+          } else if (res.status === 400) {
+            errorMsg = errorData.details || errorData.error || 'Invalid tour ID format';
+          } else if (res.status === 500) {
+            errorMsg = 'Server error while fetching tour. Please try again later.';
+          }
+          
+          setError(errorMsg);
+          // Don't fallback to hardcoded data - show error or empty state
+        }
+      } catch (error) {
+        console.error('Error fetching tour from database:', error);
+        console.error('Error details:', {
+          message: error.message,
+          name: error.name,
+          stack: error.stack,
+          tourId: tourIdString || id || 'unknown',
+          fetchUrl: fetchUrl || 'unknown',
+          backendUrl: backendUrl || 'unknown'
+        });
+        
+        // More detailed error message
+        let errorMessage = 'Failed to load tour';
+        if (error.message === 'Failed to fetch') {
+          errorMessage = 'Failed to fetch tour from server. This might be a CORS or network issue. Please check:\n1. Backend server is running\n2. CORS is configured correctly\n3. Network connection is stable';
+        } else {
+          errorMessage = `Error loading tour: ${error.message}`;
+        }
+        
+        const fallbackTour = location.state?.tour ? normalizeTourData(location.state.tour) : null;
+        if (fallbackTour) {
+          setTour(fallbackTour);
+          setHighlights(Array.isArray(fallbackTour.highlights) ? fallbackTour.highlights : []);
+          setIncluded(Array.isArray(fallbackTour.included) ? fallbackTour.included : []);
+          setExcluded(Array.isArray(fallbackTour.excluded) ? fallbackTour.excluded : []);
+          setItinerary(Array.isArray(fallbackTour.itinerary) ? fallbackTour.itinerary : []);
+          setError(null);
+          return;
+        }
+
+        setError(errorMessage);
+        // Don't fallback to hardcoded data - we want to use database data only
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchTour();
+  }, [id, location.pathname]); // Depend on id and pathname to catch route changes
+
+  // Load booking history
+  useEffect(() => {
+    const loadBookingHistory = async () => {
+      if (!user?.email) {
+        setIsLoadingHistory(false);
+        return;
+      }
+      try {
+        const res = await fetch(`${getBackendUrl()}/api/bookings?email=${encodeURIComponent(user.email)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setBookingHistory(Array.isArray(data) ? data : []);
+        }
+      } catch (err) {
+        console.error('Error loading booking history:', err);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+
+    loadBookingHistory();
+  }, [user?.email]);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+          <div className="text-xl font-semibold text-gray-700">Loading tour details...</div>
+          <div className="text-sm text-gray-500 mt-2">Please wait while we fetch the tour information</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if tour failed to load and no tour data
+  if (!loading && !tour && id) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="text-red-600 text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Failed to Load Tour</h2>
+          <p className="text-gray-600 mb-4">
+            We couldn't load the tour details. This might be due to:
+          </p>
+          <ul className="text-left text-gray-600 mb-6 space-y-2">
+            <li>• Network connection issue</li>
+            <li>• Tour not found in database</li>
+            <li>• Server configuration problem (CORS)</li>
+          </ul>
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+          <div className="space-y-2">
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-orange-700 transition-colors block w-full"
+            >
+              Retry Loading Tour
+            </button>
+            <button
+              onClick={() => window.history.back()}
+              className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors block w-full"
+            >
+              Go Back to Tours
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error if no tour and no ID
+  if (!tour && !id && !location.state?.tour) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">No Tour Selected</h2>
+          <p className="text-gray-600 mb-4">Please select a tour to view details</p>
+          <button
+            onClick={() => window.history.back()}
+            className="bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-orange-700 transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const tourName = tour?.title || tour?.name || "the Tour";
+  const pricePerTicket = tour?.price || 199;
+  const totalPrice = pricePerTicket * tickets;
+  // Only admins can edit - no toggle needed
+  const effectiveEditMode = adminOn;
+
+  const buildTourUpdatePayload = (fieldName, value) => {
+    const tourId = getTourId(tour);
+    const payload = { [fieldName]: value };
+
+    if (!isValidObjectId(tourId)) {
+      payload.name = tour?.name || tour?.title || tourName;
+      payload.description = tour?.description || tour?.overview || tour?.desc || '';
+      payload.overview = tour?.overview || tour?.description || tour?.desc || '';
+      payload.price = Number(tour?.price || 0);
+      payload.startLocation = tour?.startLocation || tour?.address || 'Switzerland';
+      payload.endLocation = tour?.endLocation || tour?.address || tour?.startLocation || 'Switzerland';
+      payload.images = Array.isArray(tour?.images) ? tour.images : [];
+      payload.duration = tour?.duration || 'N/A';
+      payload.tourType = tour?.tourType || tour?.type || 'Day Tour, Private Tour';
+      payload.reviewText = tour?.reviewText || 'No reviews yet';
+      payload.currency = tour?.currency || 'CHF';
+      payload.metadata = {
+        ...(tour?.metadata || {}),
+        staticId: String(tourId),
+      };
+    }
+
+    payload[fieldName] = value;
+    return payload;
+  };
+  
+  // Simple helper function to save array fields - follows same pattern as description, price, etc.
+  const saveArrayField = async (fieldName, arrayData) => {
+    const tourId = getTourId(tour);
+    if (!tourId) return false;
+    try {
+      const res = await fetch(`${getBackendUrl()}/api/tours/${tourId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Admin-Passcode': passcodeHeader || ''
+        },
+        body: JSON.stringify(buildTourUpdatePayload(fieldName, arrayData))
+      });
+      if (res.ok) {
+        const response = await res.json();
+        // Backend returns { success, tour } - extract the tour object
+        const tourData = response.tour || response;
+        const normalizedData = normalizeTourData(tourData);
+        clearToursCache();
+        setTour(normalizedData);
+        // Update local state
+        if (fieldName === 'highlights') setHighlights(normalizedData.highlights || []);
+        else if (fieldName === 'included') setIncluded(normalizedData.included || []);
+        else if (fieldName === 'excluded') setExcluded(normalizedData.excluded || []);
+        else if (fieldName === 'itinerary') setItinerary(normalizedData.itinerary || []);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error(`Error saving ${fieldName}:`, error);
+      return false;
+    }
+  };
+
+  // Helper function to save single fields (for Duration, Tour Type, Reviews, etc.)
+  const saveSingleField = async (fieldName, value) => {
+    const tourId = getTourId(tour);
+    if (!tourId) return false;
+    try {
+      const res = await fetch(`${getBackendUrl()}/api/tours/${tourId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Admin-Passcode': passcodeHeader || ''
+        },
+        body: JSON.stringify(buildTourUpdatePayload(fieldName, value))
+      });
+      if (res.ok) {
+        const response = await res.json();
+        const tourData = response.tour || response;
+        const normalizedData = normalizeTourData(tourData);
+        clearToursCache();
+        setTour(normalizedData);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error(`Error saving ${fieldName}:`, error);
+      return false;
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center min-h-screen bg-white text-black w-full">
+      <AdminModeIndicator />
+      <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 md:mb-6 text-left w-full max-w-6xl mt-6 md:mt-10 px-4">
+        <EditableText
+          tag="span"
+          className="text-2xl sm:text-3xl md:text-4xl font-bold"
+          forceEditMode={effectiveEditMode}
+          onSave={async (value) => {
+            const tourId = getTourId(tour);
+            if (!tourId) return false;
+            try {
+              const res = await fetch(`${getBackendUrl()}/api/tours/${tourId}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-Admin-Passcode': passcodeHeader || ''
+                },
+                body: JSON.stringify(buildTourUpdatePayload('name', value.replace('Explore ', '')))
+              });
+              if (res.ok) {
+                const updatedTour = await res.json();
+                clearToursCache();
+                setTour(updatedTour);
+                return true;
+              }
+              return false;
+            } catch (error) {
+              console.error('Error saving tour name:', error);
+              return false;
+            }
+          }}
+        >
+          Explore {tourName}
+        </EditableText>
+      </h1>
+      {/* Image Carousel */}
+      <div className="w-full max-w-6xl px-4 mb-8">
+        {loading ? (
+          <div className="h-48 md:h-64 bg-gray-200 rounded-lg flex items-center justify-center">
+            <span className="text-gray-400">Loading images...</span>
+          </div>
+        ) : (
+          <ImageCarousel 
+            images={tour?.images && Array.isArray(tour.images) && tour.images.length > 0 ? tour.images : ['/placeholder-tour.jpg']} 
+            alt={tourName} 
+            className="h-64 sm:h-80 md:h-[400px] lg:h-[500px] object-cover rounded-lg" 
+            adminOn={effectiveEditMode}
+            onSaveImages={async (newImages) => {
+              const success = await saveArrayField('images', newImages);
+              if (success) {
+                // The tour state is already updated in saveArrayField, which will trigger a re-render
+                console.log("Images saved successfully!");
+              }
+              return success;
+            }}
+          />
+        )}
+      </div>
+      {/* Info Row */}
+      {/* Info Row - Responsive Grid */}
+      <div className="w-full max-w-6xl grid grid-cols-2 md:grid-cols-4 gap-6 items-start bg-gray-50 rounded-xl shadow p-6 mb-10">
+        <div className="flex flex-col items-start">
+          <span className="text-xs text-gray-500">Price</span>
+          <EditableField
+            value={`From ${tour?.currency || "CHF"}${tour?.price}`}
+            tag="span"
+            className="text-lg font-bold text-red-600"
+            forceEditMode={effectiveEditMode}
+            onSave={(value) => {
+              const priceValue = parseFloat(value.match(/\d+\.?\d*/)?.[0] || tour?.price);
+              return saveSingleField('price', priceValue);
+            }}
+          />
+        </div>
+        <div className="flex flex-col items-start">
+          <span className="text-xs text-gray-500">Duration</span>
+          <EditableField
+            value={tour?.duration || "12 hours"}
+            tag="span"
+            className="text-lg font-bold"
+            forceEditMode={effectiveEditMode}
+            onSave={(value) => saveSingleField('duration', value)}
+          />
+        </div>
+        <div className="flex flex-col items-start">
+          <span className="text-xs text-gray-500">Tour Type</span>
+          <EditableField
+            value={tour?.type || "Day Tour, Private Tour"}
+            tag="span"
+            className="text-lg font-bold"
+            forceEditMode={effectiveEditMode}
+            onSave={(value) => saveSingleField('tourType', value)}
+          />
+        </div>
+        <div className="flex flex-col items-start">
+          <span className="text-xs text-gray-500">Reviews</span>
+          <EditableField
+            value={tour?.reviewText || "No reviews yet"}
+            tag="span"
+            className="text-lg font-bold"
+            forceEditMode={effectiveEditMode}
+            onSave={(value) => saveSingleField('reviewText', value)}
+          />
+        </div>
+      </div>
+      {/* Booking History moved to separate page */}
+
+      {/* Current Booking Section */}
+      <div className="w-full max-w-6xl px-4 mb-8">
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+          <h2 className="text-2xl font-bold mb-4 text-blue-800">Current Booking</h2>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold text-lg text-blue-800">{tourName}</h3>
+              <p className="text-blue-600">Select your date and time below to continue</p>
+            </div>
+            <div className="text-right">
+              <div className="text-sm text-blue-600">Total Price</div>
+              <div className="text-2xl font-bold text-blue-800">{tour?.currency || "CHF"}{totalPrice}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Two-column layout */}
+      <div className="w-full max-w-6xl flex flex-col md:flex-row gap-8 mb-16 px-4">
+        {/* Left: Overview/Details */}
+        <div className="flex-1 bg-white rounded-xl p-8 shadow">
+          <EditableField
+            value="Overview"
+            forceEditMode={effectiveEditMode}
+            onSave={async () => true}
+            className="text-2xl font-bold mb-4 block"
+            tag="h2"
+          />
+          {tour && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <EditableField
+                value={tour.title || tour.name || ''}
+                forceEditMode={effectiveEditMode}
+                onSave={async (value) => {
+                  const tourId = getTourId(tour);
+                  if (!tourId) return false;
+                  try {
+                    const res = await fetch(apiUrl(`/api/tours/${tourId}`), {
+                      method: 'PUT',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'X-Admin-Passcode': passcodeHeader || ''
+                      },
+                      body: JSON.stringify(buildTourUpdatePayload('name', value))
+                    });
+                    if (res.ok) {
+                      const response = await res.json();
+                      const tourData = response.tour || response;
+                      const normalizedData = normalizeTourData(tourData);
+                      clearToursCache();
+                      setTour(normalizedData);
+                      return true;
+                    }
+                    return false;
+                  } catch (error) {
+                    console.error('Error saving tour name:', error);
+                    return false;
+                  }
+                }}
+                className="text-xl font-semibold mb-2 block"
+                tag="h3"
+              />
+              <EditableField
+                value={stripHtmlToText(tour.overview || tour.description || tourDescriptions['default'].overview || '')}
+                forceEditMode={effectiveEditMode}
+                onSave={async (value) => {
+                  const tourId = getTourId(tour);
+                  if (!tourId) return false;
+                  try {
+                    const res = await fetch(apiUrl(`/api/tours/${tourId}`), {
+                      method: 'PUT',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'X-Admin-Passcode': passcodeHeader || ''
+                      },
+                      body: JSON.stringify({
+                        ...buildTourUpdatePayload('overview', stripHtmlToText(value)),
+                        description: stripHtmlToText(value),
+                      })
+                    });
+                    if (res.ok) {
+                      const response = await res.json();
+                      const tourData = response.tour || response;
+                      const normalizedData = normalizeTourData(tourData);
+                      clearToursCache();
+                      setTour(normalizedData);
+                      return true;
+                    }
+                    return false;
+                  } catch (error) {
+                    console.error('Error saving overview:', error);
+                    return false;
+                  }
+                }}
+                className="text-justify block"
+                tag="div"
+                multiline={true}
+              />
+            </div>
+          )}
+          {/* Highlights Section - Rebuilt from Scratch */}
+          <h3 className="text-2xl font-bold mt-8 mb-4">Highlights</h3>
+          <ul className="pl-6 space-y-3 text-gray-700 list-none">
+            {highlights.map((highlight, index) => (
+              <li key={`highlight-${index}`} className="flex items-start group">
+                <span className="text-red-600 text-lg align-middle mr-2 mt-1">•</span>
+                <EditableField
+                  value={typeof highlight === 'string' ? highlight : String(highlight)}
+                  forceEditMode={effectiveEditMode}
+                  onSave={async (value) => {
+                    const updated = [...highlights];
+                    updated[index] = value;
+                    return await saveArrayField('highlights', updated);
+                  }}
+                  className="text-justify flex-1"
+                  tag="span"
+                  multiline={true}
+                />
+                {adminOn && (
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
+                    {index > 0 && (
+                      <button
+                        type="button"
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const updated = [...highlights];
+                          [updated[index - 1], updated[index]] = [updated[index], updated[index - 1]];
+                          await saveArrayField('highlights', updated);
+                        }}
+                        className="text-blue-500 hover:text-blue-700"
+                        title="Move up"
+                      >
+                        ↑
+                      </button>
+                    )}
+                    {index < highlights.length - 1 && (
+                      <button
+                        type="button"
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const updated = [...highlights];
+                          [updated[index], updated[index + 1]] = [updated[index + 1], updated[index]];
+                          await saveArrayField('highlights', updated);
+                        }}
+                        className="text-blue-500 hover:text-blue-700"
+                        title="Move down"
+                      >
+                        ↓
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const updated = highlights.filter((_, i) => i !== index);
+                        await saveArrayField('highlights', updated);
+                      }}
+                      className="text-red-500 hover:text-red-700"
+                      title="Remove"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+              </li>
+            ))}
+            {highlights.length === 0 && (
+              <li className="text-gray-500 italic">No highlights available for this tour.</li>
+            )}
+          </ul>
+          {adminOn && (
+            <button
+              type="button"
+              onClick={async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const updated = [...highlights, 'New highlight'];
+                await saveArrayField('highlights', updated);
+              }}
+              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+            >
+              + Add Highlight
+            </button>
+          )}
+          {/* Included/Excluded Section - Rebuilt from Scratch */}
+          <hr className="my-8 border-gray-200" />
+          <h2 className="text-2xl font-bold mb-4">Included & Excluded</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Included Section */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3 text-green-700">Included</h3>
+            <ul className="space-y-4">
+                {included.map((item, index) => (
+                  <li key={`included-${index}`} className="flex items-center gap-3 group">
+                    <span className="text-green-600 flex-shrink-0">
+                      <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 10 18 4 12" />
+                      </svg>
+                  </span>
+                    <EditableField
+                      value={typeof item === 'string' ? item : String(item)}
+                      forceEditMode={effectiveEditMode}
+                      onSave={async (value) => {
+                        const updated = [...included];
+                        updated[index] = value;
+                        return await saveArrayField('included', updated);
+                      }}
+                      className="text-green-700 flex-1"
+                      tag="span"
+                    />
+                    {adminOn && (
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {index > 0 && (
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              const updated = [...included];
+                              [updated[index - 1], updated[index]] = [updated[index], updated[index - 1]];
+                              await saveArrayField('included', updated);
+                            }}
+                            className="text-blue-500 hover:text-blue-700"
+                            title="Move up"
+                          >
+                            ↑
+                          </button>
+                        )}
+                        {index < included.length - 1 && (
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              const updated = [...included];
+                              [updated[index], updated[index + 1]] = [updated[index + 1], updated[index]];
+                              await saveArrayField('included', updated);
+                            }}
+                            className="text-blue-500 hover:text-blue-700"
+                            title="Move down"
+                          >
+                            ↓
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const updated = included.filter((_, i) => i !== index);
+                            await saveArrayField('included', updated);
+                          }}
+                          className="text-red-500 hover:text-red-700"
+                          title="Remove"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+                </li>
+              ))}
+                {included.length === 0 && (
+                <li className="text-gray-500 italic">No included items specified for this tour.</li>
+              )}
+            </ul>
+              {adminOn && (
+                <button
+                  type="button"
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const updated = [...included, "New included item"];
+                    await saveArrayField('included', updated);
+                  }}
+                  className="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors"
+                >
+                  + Add Included Item
+                </button>
+              )}
+            </div>
+            {/* Excluded Section - Using Atomic API */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3 text-red-700">Excluded</h3>
+            <ul className="space-y-4">
+                {excluded.map((item, index) => (
+                  <li key={`excluded-${index}`} className="flex items-center gap-3 group">
+                    <span className="text-red-500 flex-shrink-0">
+                      <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                  </span>
+                    <EditableField
+                      value={typeof item === 'string' ? item : String(item)}
+                      forceEditMode={effectiveEditMode}
+                      onSave={async (value) => {
+                        const updated = [...excluded];
+                        updated[index] = value;
+                        return await saveArrayField('excluded', updated);
+                      }}
+                      className="text-red-600 flex-1"
+                      tag="span"
+                    />
+                    {adminOn && (
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {index > 0 && (
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              const updated = [...excluded];
+                              [updated[index - 1], updated[index]] = [updated[index], updated[index - 1]];
+                              await saveArrayField('excluded', updated);
+                            }}
+                            className="text-blue-500 hover:text-blue-700"
+                            title="Move up"
+                          >
+                            ↑
+                          </button>
+                        )}
+                        {index < excluded.length - 1 && (
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              const updated = [...excluded];
+                              [updated[index], updated[index + 1]] = [updated[index + 1], updated[index]];
+                              await saveArrayField('excluded', updated);
+                            }}
+                            className="text-blue-500 hover:text-blue-700"
+                            title="Move down"
+                          >
+                            ↓
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const updated = excluded.filter((_, i) => i !== index);
+                            await saveArrayField('excluded', updated);
+                          }}
+                          className="text-red-500 hover:text-red-700"
+                          title="Remove"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+                </li>
+              ))}
+                {excluded.length === 0 && (
+                <li className="text-gray-500 italic">No excluded items specified for this tour.</li>
+              )}
+            </ul>
+              {adminOn && (
+                <button
+                  type="button"
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const updated = [...excluded, 'New excluded item'];
+                    await saveArrayField('excluded', updated);
+                  }}
+                  className="mt-4 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
+                >
+                  + Add Excluded Item
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Itinerary Section - Using Atomic API */}
+          <hr className="my-8 border-gray-200" />
+          <h2 className="text-3xl font-bold mb-6 text-red-600">Itinerary</h2>
+          <ItineraryAccordion 
+            itinerary={itinerary} 
+            adminOn={adminOn}
+            onSave={async (updatedItinerary) => {
+              return await saveArrayField('itinerary', updatedItinerary);
+            }}
+            tour={tour}
+            passcodeHeader={passcodeHeader}
+          />
+
+          {/* Calendar & Prices Section */}
+          <hr className="my-8 border-gray-200" />
+          <h2 className="text-2xl font-bold mb-6">Calendar & Prices</h2>
+          {/* Only admins see the full calendar, others get a simple date picker */}
+          {useAdmin?.() && useAdmin().isAdmin ? (
+          <CalendarPrices
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            price={pricePerTicket}
+            currency={tour?.currency || "CHF"}
+          />
+          ) : (
+            <div className="flex items-center gap-4">
+              <label className="text-sm text-gray-600">Select date:</label>
+              <input
+                type="date"
+                value={selectedDate}
+                min={todayStr}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="border rounded px-3 py-2"
+              />
+              <span className="text-red-700 font-semibold">{tour?.currency || "CHF"}{pricePerTicket}</span>
+            </div>
+          )}
+        </div>
+        {/* Right: Book This Tour Box + Related Tours */}
+        <div className="w-full md:w-[350px] flex flex-col gap-8 md:sticky md:top-24 h-fit">
+          <PaymentSection
+            tour={tour}
+            tourName={tourName}
+            location={tour?.address || tour?.location || ""}
+            description={tour?.desc || tour?.description || ""}
+            price={pricePerTicket}
+            tickets={tickets}
+            setTickets={setTickets}
+            totalPrice={totalPrice}
+            currency={tour?.currency || "CHF"}
+            date={selectedDate}
+            time={selectedTime}
+            onPriceUpdated={(newPrice) => {
+              setTour((currentTour) => ({
+                ...currentTour,
+                price: newPrice,
+              }));
+            }}
+            onSavePrice={(newPrice) => saveSingleField('price', newPrice)}
+            onSaveMinTickets={async (minValue) => {
+              const tourId = getTourId(tour);
+              if (!tourId) return false;
+              try {
+                const res = await fetch(`${getBackendUrl()}/api/tours/${tourId}`, {
+                  method: 'PUT',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'X-Admin-Passcode': passcodeHeader || ''
+                  },
+                  body: JSON.stringify(buildTourUpdatePayload('minTicketsPerBooking', Number(minValue)))
+                });
+                if (res.ok) {
+                  const response = await res.json();
+                  const tourData = response.tour || response;
+                  const normalizedData = normalizeTourData(tourData);
+                  clearToursCache();
+                  setTour(normalizedData);
+                  return true;
+                }
+                return false;
+              } catch (error) {
+                console.error('Error saving minTickets:', error);
+                return false;
+              }
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Update CalendarPrices to accept selectedDate and setSelectedDate as props
+function CalendarPrices({ selectedDate, setSelectedDate, price = 0, currency = "CHF" }) {
+  const [month, setMonth] = useState(6); // July (0-indexed)
+  const [year, setYear] = useState(2025);
+  const [selected, setSelected] = useState(() => {
+    if (selectedDate) {
+      const d = new Date(selectedDate);
+      if (d.getFullYear() === 2025 && d.getMonth() === 6) return d.getDate();
+    }
+    return null;
+  });
+  useEffect(() => {
+    if (selectedDate) {
+      const d = new Date(selectedDate);
+      if (d.getFullYear() === year && d.getMonth() === month) {
+        setSelected(d.getDate());
+      } else {
+        setSelected(null);
+      }
+    }
+  }, [selectedDate, month, year]);
+
+  const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const prices = `${currency}${price}`;
+
+  // Get first day of the month (0=Sun, 1=Mon...)
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const prevMonthLastDay = new Date(year, month, 0);
+  // Adjust for Monday as first day
+  let startDay = firstDay.getDay() - 1;
+  if (startDay < 0) startDay = 6;
+  const daysInMonth = lastDay.getDate();
+  const daysInPrevMonth = prevMonthLastDay.getDate();
+
+  // Build calendar grid
+  let calendar = [];
+  let dayNum = 1;
+  let nextMonthDay = 1;
+  for (let week = 0; week < 6; week++) {
+    let weekRow = [];
+    for (let d = 0; d < 7; d++) {
+      let cell = null;
+      if (week === 0 && d < startDay) {
+        // Previous month
+        cell = { day: daysInPrevMonth - startDay + d + 1, prev: true };
+      } else if (dayNum > daysInMonth) {
+        // Next month
+        cell = { day: nextMonthDay++, next: true };
+      } else {
+        // Current month
+        cell = { day: dayNum++, current: true };
+      }
+      weekRow.push(cell);
+    }
+    calendar.push(weekRow);
+    if (dayNum > daysInMonth && nextMonthDay > 7) break;
+  }
+
+  function prevMonth() {
+    if (month === 0) {
+      setMonth(11); setYear(year - 1);
+    } else {
+      setMonth(month - 1);
+    }
+    setSelected(null);
+  }
+  function nextMonthFn() {
+    if (month === 11) {
+      setMonth(0); setYear(year + 1);
+    } else {
+      setMonth(month + 1);
+    }
+    setSelected(null);
+  }
+
+  const today = new Date();
+
+  return (
+    <div className="w-full max-w-3xl">
+      <div className="grid grid-cols-7 mb-2">
+        {daysOfWeek.map((d) => (
+          <div key={d} className="text-center py-2 font-semibold bg-gray-100 rounded-t-lg border-r last:border-r-0">{d}</div>
+        ))}
+      </div>
+      <div className="flex">
+        <button onClick={prevMonth} className="bg-red-700 text-white px-4 py-2 rounded-l-lg font-bold">&#60;</button>
+        <div className="flex-1 bg-red-700 text-white text-center py-2 font-bold">{new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' })}</div>
+        <button onClick={nextMonthFn} className="bg-red-700 text-white px-4 py-2 rounded-r-lg font-bold">&#62;</button>
+      </div>
+      <div className="grid grid-cols-7 border border-gray-200 rounded-b-lg overflow-hidden">
+        {calendar.map((week, i) => (
+          <React.Fragment key={i}>
+            {week.map((cell, j) => {
+              const isSelected = cell.current && cell.day === selected;
+              // Disable previous dates
+              let isDisabled = false;
+              if (cell.current) {
+                const cellDate = new Date(year, month, cell.day);
+                isDisabled = cellDate < today.setHours(0,0,0,0);
+              }
+              return (
+                <div
+                  key={j}
+                  className={`h-16 flex flex-col items-center justify-center border-r border-b border-gray-200 last:border-r-0 ${cell.current ? (isDisabled ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white cursor-pointer hover:bg-gray-50') : 'bg-gray-50 text-gray-400'} ${isSelected ? 'bg-blue-900 text-white font-bold' : ''}`}
+                  onClick={() => {
+                    if (cell.current && !isDisabled) {
+                      setSelected(cell.day);
+                      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(cell.day).padStart(2, '0')}`;
+                      setSelectedDate(dateStr);
+                    }
+                  }}
+                  style={isDisabled ? { pointerEvents: 'none' } : {}}
+                >
+                  <span className="text-base">{cell.day}</span>
+                  {cell.current && <span className={`text-xs mt-1 font-bold ${isSelected ? 'text-white' : 'text-red-700'}`}>{prices}</span>}
+                  {!cell.current && <span className="text-xs mt-1">{cell.prev || cell.next ? '' : ''}</span>}
+                </div>
+              );
+            })}
+          </React.Fragment>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default Checkout; 
