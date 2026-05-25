@@ -1,0 +1,12 @@
+﻿{
+    "baseUrl":  "https://ajl-tours-backend.vercel.app",
+    "exportedAt":  "2026-05-18T23:58:56.1044389+05:00",
+    "files":  [
+                  "tours.json",
+                  "tours_detailed.json",
+                  "bookings.json",
+                  "booking_stats.json",
+                  "divisions.json"
+              ],
+    "tourCount":  11
+}

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Tools - Backup, Migrate, Clear</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        button {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-backup {
+            background: #10b981;
+            color: white;
+        }
+        .btn-backup:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+        .btn-migrate {
+            background: #3b82f6;
+            color: white;
+        }
+        .btn-migrate:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+        }
+        .btn-clear {
+            background: #ef4444;
+            color: white;
+        }
+        .btn-clear:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+        .result.show {
+            display: block;
+        }
+        .result.success {
+            background: #d1fae5;
+            border: 2px solid #10b981;
+            color: #065f46;
+        }
+        .result.error {
+            background: #fee2e2;
+            border: 2px solid #ef4444;
+            color: #991b1b;
+        }
+        .result.warning {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            color: #92400e;
+        }
+        .result h3 {
+            margin-bottom: 10px;
+        }
+        .result pre {
+            background: rgba(0,0,0,0.1);
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            max-height: 500px;
+            overflow-y: auto;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        .loading.show {
+            display: block;
+        }
+        .api-url {
+            background: #f3f4f6;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            margin-bottom: 10px;
+            word-break: break-all;
+        }
+        .warning-box {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            color: #92400e;
+        }
+        .warning-box strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗄️ Database Tools</h1>
+        <p class="subtitle">Backup, Migrate, or Clear your database</p>
+
+        <div class="warning-box">
+            <strong>⚠️ Important:</strong>
+            Always backup before clearing! Clear action permanently deletes ALL data.
+        </div>
+
+        <div class="button-group">
+            <div>
+                <div class="api-url">POST /api/update-tour-data?action=backup</div>
+                <button class="btn-backup" onclick="runAction('backup')">
+                    💾 Backup Database
+                </button>
+            </div>
+
+            <div>
+                <div class="api-url">POST /api/update-tour-data?action=migrate</div>
+                <button class="btn-migrate" onclick="runAction('migrate')">
+                    🔄 Migrate to Separate Collections
+                </button>
+            </div>
+
+            <div>
+                <div class="api-url">POST /api/update-tour-data?action=clear</div>
+                <button class="btn-clear" onclick="confirmAndClear()">
+                    🗑️ Clear Database (DANGEROUS)
+                </button>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">⏳ Processing... Please wait...</div>
+
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://ajl-tours-backend.vercel.app/api/update-tour-data';
+
+        function showResult(message, type, data = null) {
+            const resultDiv = document.getElementById('result');
+            const loadingDiv = document.getElementById('loading');
+            
+            loadingDiv.classList.remove('show');
+            resultDiv.className = `result show ${type}`;
+            
+            let content = `<h3>${message}</h3>`;
+            if (data) {
+                content += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            }
+            
+            resultDiv.innerHTML = content;
+            resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        async function runAction(action) {
+            const resultDiv = document.getElementById('result');
+            const loadingDiv = document.getElementById('loading');
+            
+            resultDiv.classList.remove('show');
+            loadingDiv.classList.add('show');
+
+            try {
+                const response = await fetch(`${API_BASE}?action=${action}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    if (action === 'backup') {
+                        showResult('✅ Backup Completed Successfully!', 'success', data);
+                        // Auto-download backup as JSON
+                        downloadJSON(data.backup, `backup_${new Date().toISOString().split('T')[0]}.json`);
+                    } else if (action === 'migrate') {
+                        showResult('✅ Migration Completed!', 'success', data);
+                    } else if (action === 'clear') {
+                        showResult('⚠️ Database Cleared!', 'warning', data);
+                    } else {
+                        showResult('✅ Operation Completed!', 'success', data);
+                    }
+                } else {
+                    showResult('❌ Error:', 'error', data);
+                }
+            } catch (error) {
+                showResult('❌ Request Failed:', 'error', { error: error.message });
+            }
+        }
+
+        function confirmAndClear() {
+            const confirmed = confirm(
+                '⚠️ WARNING: This will PERMANENTLY DELETE ALL DATA from your database!\n\n' +
+                'This action cannot be undone!\n\n' +
+                'Have you backed up your data first?\n\n' +
+                'Click OK to proceed, or Cancel to abort.'
+            );
+            
+            if (confirmed) {
+                const doubleConfirm = confirm(
+                    'FINAL CONFIRMATION:\n\n' +
+                    'You are about to DELETE ALL DATA.\n\n' +
+                    'This is your last chance to cancel!\n\n' +
+                    'Click OK to DELETE, or Cancel to abort.'
+                );
+                
+                if (doubleConfirm) {
+                    runAction('clear');
+                }
+            }
+        }
+
+        function downloadJSON(data, filename) {
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
+
