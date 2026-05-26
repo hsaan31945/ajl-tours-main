@@ -1,35 +1,26 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { fetchToursList } from "../services/toursApi";
+import { getTourId } from "../utils/tourId";
 
 const TestVisitCheckout = () => {
   const navigate = useNavigate();
+  const [tours, setTours] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const testTours = [
-    {
-      id: "01",
-      name: "From Zurich Full-day private tour Basel and Colmar",
-      price: 250,
-      currency: "CHF"
-    },
-    {
-      id: "02", 
-      name: "Swiss Alps Adventure Tour",
-      price: 180,
-      currency: "CHF"
-    },
-    {
-      id: "03",
-      name: "Lucerne to Interlaken Scenic Tour", 
-      price: 220,
-      currency: "CHF"
-    },
-    {
-      id: "04",
-      name: "Zurich City and Lake Tour",
-      price: 150,
-      currency: "CHF"
-    }
-  ];
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await fetchToursList({ division: "switzerland", limit: 100 }, { skipCache: true });
+        setTours(data.filter((tour) => tour?.isActive !== false));
+      } catch (error) {
+        console.error("Could not load tours:", error);
+        setTours([]);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-100 py-16">
@@ -40,13 +31,17 @@ const TestVisitCheckout = () => {
           <h2 className="text-2xl font-bold mb-6">Available Tours</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {testTours.map((tour) => (
-              <div key={tour.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+            {loading ? (
+              <p className="text-gray-600">Loading tours...</p>
+            ) : tours.length === 0 ? (
+              <p className="text-gray-600">No active tours are available.</p>
+            ) : tours.map((tour) => (
+              <div key={getTourId(tour)} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
                 <h3 className="text-lg font-semibold mb-2">{tour.name}</h3>
-                <p className="text-orange-600 font-bold text-xl mb-4">{tour.currency} {tour.price}</p>
+                <p className="text-orange-600 font-bold text-xl mb-4">{tour.currency || "CHF"} {tour.price}</p>
                 <button
-                  onClick={() => navigate(`/visit-checkout-2/${tour.id}`, { 
-                    state: { tour: { ...tour, images: [], duration: "10 hours", type: "Day Tour, Private Tour" } }
+                  onClick={() => navigate(`/switzerland/${getTourId(tour)}/checkout-sw`, {
+                    state: { tour }
                   })}
                   className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-xl transition"
                 >

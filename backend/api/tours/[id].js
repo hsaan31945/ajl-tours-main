@@ -6,6 +6,11 @@ const { connectDB } = require('../../src/config/database');
 const { setCORSHeaders } = require('../../src/middleware/cors');
 const tourController = require('../../src/controllers/tourController');
 const { errorHandler } = require('../../src/middleware/errorHandler');
+const { authenticateAdmin } = require('../../src/middleware/auth');
+
+const requireAdmin = (req, res) => new Promise((resolve, reject) => {
+  authenticateAdmin(req, res, (err) => (err ? reject(err) : resolve()));
+});
 
 module.exports = async (req, res) => {
   // Set CORS headers first
@@ -41,12 +46,14 @@ module.exports = async (req, res) => {
         }
       });
     } else if (req.method === 'PUT') {
+      await requireAdmin(req, res);
       await tourController.updateTour(req, res, (err) => {
         if (err) {
           errorHandler(err, req, res);
         }
       });
     } else if (req.method === 'DELETE') {
+      await requireAdmin(req, res);
       await tourController.deleteTour(req, res, (err) => {
         if (err) {
           errorHandler(err, req, res);

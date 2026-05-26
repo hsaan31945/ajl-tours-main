@@ -44,6 +44,9 @@ class BookingController {
       if (error.message === 'Tour not found') {
         return next(new AppError('Tour not found', 404));
       }
+      if (error.statusCode) {
+        return next(new AppError(error.message, error.statusCode));
+      }
       next(error);
     }
   }
@@ -82,7 +85,6 @@ class BookingController {
 }
 
 module.exports = new BookingController();
-
 
 
 

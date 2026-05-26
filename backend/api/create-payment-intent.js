@@ -1,5 +1,7 @@
 const config = require('../lib/config');
 const stripe = require('stripe')(config.stripe.secretKey);
+const { connectDB } = require('../src/config/database');
+const { getValidatedTourPricing } = require('../src/services/bookingPricingService');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', config.cors.origin);
@@ -16,32 +18,50 @@ module.exports = async (req, res) => {
   }
 
   try {
+    await connectDB();
+
     const chunks = [];
     for await (const chunk of req) chunks.push(chunk);
     const bodyStr = Buffer.concat(chunks).toString() || '{}';
     const body = JSON.parse(bodyStr);
 
-    const { amount, currency = 'usd', metadata = {} } = body;
-
-    if (!amount || Number(amount) <= 0) {
-      return res.status(400).json({ error: 'Invalid amount' });
-    }
-
-    // Amount in smallest currency unit
-    const amountInCents = Math.round(Number(amount) * 100);
+    const pricing = await getValidatedTourPricing(body);
 
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: amountInCents,
-      currency,
+      amount: pricing.amountInCents,
+      currency: pricing.currency,
       automatic_payment_methods: { enabled: true },
-      metadata
+      metadata: {
+        tourId: String(pricing.tour._id),
+        tourName: pricing.tour.name,
+        tickets: String(pricing.tickets),
+        minTickets: String(pricing.minTickets),
+        unitPrice: String(pricing.pricedUnit),
+        total: String(pricing.total),
+        currency: pricing.currency.toUpperCase(),
+        flexibility: pricing.flexibility,
+        selectedDate: body?.selectedDate ? String(body.selectedDate).slice(0, 10) : '',
+      }
     });
 
-    return res.status(200).json({ clientSecret: paymentIntent.client_secret });
+    return res.status(200).json({
+      success: true,
+      clientSecret: paymentIntent.client_secret,
+      amount: pricing.total,
+      currency: pricing.currency.toUpperCase(),
+      pricing: {
+        unitPrice: pricing.pricedUnit,
+        baseUnitPrice: pricing.unitPrice,
+        tickets: pricing.tickets,
+        minTickets: pricing.minTickets,
+        total: pricing.total,
+        flexibility: pricing.flexibility,
+      },
+    });
   } catch (err) {
     console.error('create-payment-intent error:', err);
-    return res.status(500).json({ error: 'Failed to create payment intent' });
+    return res.status(err.statusCode || 500).json({
+      error: err.statusCode ? err.message : 'Failed to create payment intent'
+    });
   }
 };
-
-

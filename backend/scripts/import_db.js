@@ -41,9 +41,9 @@ const TourSchema = new mongoose.Schema({
     activities: [String]
   }],
   datePrices: { type: Map, of: Number, default: {} },
-  duration: { type: String, default: "12 hours" },
-  tourType: { type: String, default: "Day Tour, Private Tour" },
-  reviewText: { type: String, default: "No reviews yet" },
+  duration: String,
+  tourType: String,
+  reviewText: String,
   highlights: [String],
   included: [String],
   excluded: [String],

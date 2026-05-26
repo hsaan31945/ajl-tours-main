@@ -120,14 +120,6 @@ const Home2 = () => {
     return await updateSection('tour_descriptions', updated);
   };
 
-  // Get tour content from database or use defaults
-  const tourDescriptions = homepageContent.tour_descriptions || {
-    switzerland: {
-      title: 'Switzerland Tour',
-      description: 'Experience the breathtaking Alps, pristine lakes, charming villages, and world-class cities of Switzerland with personalized attention and flexible itineraries designed just for you. Tailored tours available - tell us what you have in mind and we\'ll make it happen.'
-    }
-  };
-  
   // Hero carousel images
   const heroImages = [
     hero4,

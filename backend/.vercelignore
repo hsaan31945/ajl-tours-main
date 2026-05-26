@@ -3,3 +3,9 @@ node_modules
 .env.local
 .env.production
 .env.development
+data/
+backups/
+scripts/
+../db_export_*/
+*.sql
+*.bak

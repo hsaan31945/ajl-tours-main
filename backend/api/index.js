@@ -257,52 +257,10 @@ module.exports = async (req, res) => {
         res.status(404).json({ success: false, error: 'Route not found' });
       }
     } else if (normalizedPath === '/migrate-tours' && method === 'POST') {
-      const header = req.headers['x-admin-passcode'] || req.headers['X-Admin-Passcode'];
-      const expected = process.env.ADMIN_PASSCODE || 'admin123';
-      if (!header || header.trim() !== expected.trim()) {
-        return res.status(401).json({ message: 'Invalid or missing admin passcode' });
-      }
-      const { hardcodedTours } = require('../data/migrate-tours-data');
-      let switzerlandDivision = await Division.findOne({ name: 'Switzerland' });
-      if (!switzerlandDivision) {
-        switzerlandDivision = new Division({
-          name: 'Switzerland',
-          description: 'Tours in Switzerland',
-          isActive: true
-        });
-        await switzerlandDivision.save();
-      }
-      const results = [];
-      for (const tourData of hardcodedTours) {
-        try {
-          let existingTour = await Tour.findOne({ name: tourData.name });
-          const tourPayload = {
-            division: switzerlandDivision._id,
-            name: tourData.name,
-            description: tourData.description || '',
-            overview: tourData.description || '',
-            price: tourData.price,
-            startLocation: tourData.address || 'Zurich Main Station',
-            endLocation: tourData.address || 'Zurich Main Station',
-            startDate: new Date(),
-            endDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
-            images: tourData.images || [],
-            isActive: true
-          };
-          if (existingTour) {
-            Object.assign(existingTour, tourPayload);
-            await existingTour.save();
-            results.push({ action: 'updated', name: tourData.name });
-          } else {
-            const newTour = new Tour(tourPayload);
-            await newTour.save();
-            results.push({ action: 'created', name: tourData.name });
-          }
-        } catch (tourError) {
-          results.push({ action: 'error', name: tourData.name, error: tourError.message });
-        }
-      }
-      res.status(200).json({ success: true, message: `Migrated ${results.length} tours`, results });
+      res.status(410).json({
+        success: false,
+        message: 'Hardcoded tour migration is disabled. MongoDB tours are the only source of truth.'
+      });
     } else if (normalizedPath.startsWith('/content/homepage')) {
       const contentController = require('../controllers/contentController');
       if (normalizedPath === '/content/homepage' && method === 'GET') {
@@ -327,17 +285,38 @@ module.exports = async (req, res) => {
         });
       }
       const stripe = require('stripe')(stripeSecretKey);
-      const { amount, currency = 'usd', metadata = {} } = req.body;
-      if (!amount || Number(amount) <= 0) {
-        return res.status(400).json({ success: false, error: 'Invalid amount' });
-      }
+      const { getValidatedTourPricing } = require('../src/services/bookingPricingService');
+      const pricing = await getValidatedTourPricing(req.body || {});
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(Number(amount) * 100),
-        currency,
-        metadata,
+        amount: pricing.amountInCents,
+        currency: pricing.currency,
+        metadata: {
+          tourId: String(pricing.tour._id),
+          tourName: pricing.tour.name,
+          tickets: String(pricing.tickets),
+          minTickets: String(pricing.minTickets),
+          unitPrice: String(pricing.pricedUnit),
+          total: String(pricing.total),
+          currency: pricing.currency.toUpperCase(),
+          flexibility: pricing.flexibility,
+          selectedDate: req.body?.selectedDate ? String(req.body.selectedDate).slice(0, 10) : '',
+        },
         automatic_payment_methods: { enabled: true },
       });
-      res.json({ clientSecret: paymentIntent.client_secret });
+      res.json({
+        success: true,
+        clientSecret: paymentIntent.client_secret,
+        amount: pricing.total,
+        currency: pricing.currency.toUpperCase(),
+        pricing: {
+          unitPrice: pricing.pricedUnit,
+          baseUnitPrice: pricing.unitPrice,
+          tickets: pricing.tickets,
+          minTickets: pricing.minTickets,
+          total: pricing.total,
+          flexibility: pricing.flexibility,
+        },
+      });
     } else if (normalizedPath === '/confirm-payment' && method === 'POST') {
       const config = require('../config');
       let stripeSecretKey = (config.stripe?.secretKey || process.env.STRIPE_SECRET_KEY || '').trim();
@@ -352,13 +331,19 @@ module.exports = async (req, res) => {
       const { paymentIntentId, bookingData } = req.body;
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
       if (paymentIntent.status === 'succeeded') {
-        const booking = new Booking({
+        const bookingService = require('../src/services/bookingService');
+        const metadata = paymentIntent.metadata || {};
+        const booking = await bookingService.createBooking({
           ...bookingData,
-          tripDate: new Date(bookingData.tripDate),
+          tourId: metadata.tourId || bookingData.tourId,
+          tickets: metadata.tickets || bookingData.tickets || bookingData.travelers,
+          travelers: metadata.tickets || bookingData.tickets || bookingData.travelers,
+          flexibility: metadata.flexibility || bookingData.flexibility,
+          selectedDate: metadata.selectedDate || bookingData.selectedDate || bookingData.tripDate,
+          tripDate: metadata.selectedDate || bookingData.tripDate || bookingData.selectedDate || new Date(),
           paymentStatus: 'paid',
           stripePaymentId: paymentIntentId
         });
-        await booking.save();
         res.json({ success: true, booking });
       } else {
         res.status(400).json({ success: false, error: 'Payment not completed' });
@@ -378,9 +363,9 @@ module.exports = async (req, res) => {
     }
   } catch (error) {
     console.error('API Error:', error);
-    res.status(500).json({
+    res.status(error.statusCode || 500).json({
       success: false,
-      error: 'Internal server error',
+      error: error.statusCode ? error.message : 'Internal server error',
       message: error.message,
       path: req.url
     });

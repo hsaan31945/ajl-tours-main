@@ -1,7 +1,7 @@
 import React, { Suspense, lazy, useState, useEffect } from "react";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
-import { Route, Routes, useLocation, useParams } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Preloader from "./components/Preloader";
@@ -16,11 +16,9 @@ import Home2 from "./pages/Home2";
 const Tour = lazy(() => import("./pages/Tour"));
 const TourDetails = lazy(() => import("./pages/TourDetails"));
 const Login = lazy(() => import("./pages/Login"));
-const Home = lazy(() => import("./pages/Home"));
 const Booking = lazy(() => import("./pages/Booking"));
 const Invoice = lazy(() => import("./pages/Invoice"));
 const About = lazy(() => import("./pages/About"));
-const Locations = lazy(() => import("./pages/Locations"));
 const SwitzerlandLocations = lazy(() => import("./pages/SwitzerlandLocations"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
@@ -135,7 +133,7 @@ const App = () => {
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/booking" element={<Booking />} />
               <Route path="/invoice" element={<Invoice />} />
-              <Route path="/locations" element={<Locations />} />
+              <Route path="/locations" element={<Navigate to="/switzerland" replace />} />
               <Route path="/switzerland" element={<SwitzerlandLocations />} />
               
               <Route 
@@ -144,7 +142,7 @@ const App = () => {
               />
               <Route path="/checkout" element={<Checkout />} />
           <Route path="/history" element={<BookingHistory />} />
-              <Route path="/home1" element={<Home />} />
+              <Route path="/home1" element={<Navigate to="/" replace />} />
               <Route path="/flexibility" element={<Flexibility />} />
               <Route path="/userDetails" element={<Contact />} />
               <Route path="/payment" element={<Payment />} />

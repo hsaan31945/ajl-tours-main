@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Pencil, Save, X } from "lucide-react";
 import { useAdmin } from "../context/AdminContext";
 import axios from "axios";
 import { getTourId } from "../utils/tourId";
+import { apiUrl } from "../utils/api";
 
 const EditableTourCard = ({ tour, onUpdate, onTourClick }) => {
   const { isAdmin, passcodeHeader } = useAdmin();
@@ -11,6 +12,11 @@ const EditableTourCard = ({ tour, onUpdate, onTourClick }) => {
   const [editedTour, setEditedTour] = useState(tour);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    setEditedTour(tour);
+    setError("");
+  }, [tour]);
 
   const handleFieldEdit = (field, value) => {
     setEditedTour(prev => ({ ...prev, [field]: value }));
@@ -23,24 +29,14 @@ const EditableTourCard = ({ tour, onUpdate, onTourClick }) => {
       const tourId = getTourId(tour);
       if (tourId) {
         const headers = passcodeHeader ? { 'X-Admin-Passcode': passcodeHeader } : {};
-        await axios.put(`/api/tours/${tourId}`, editedTour, { headers });
+        const response = await axios.put(apiUrl(`/api/tours/${tourId}`), editedTour, { headers });
+        if (onUpdate) onUpdate(response.data?.tour || response.data);
       }
-      
-      // Save to localStorage as backup
-      const storageKey = `tour_${tour.id || tour.name}_override`;
-      localStorage.setItem(storageKey, JSON.stringify(editedTour));
-      
-      if (onUpdate) onUpdate(editedTour);
+
       setIsEditing(false);
       setEditingField(null);
     } catch (e) {
       setError(e.response?.data?.message || e.message || "Failed to save");
-      // Still update locally even if backend fails
-      const storageKey = `tour_${tour.id || tour.name}_override`;
-      localStorage.setItem(storageKey, JSON.stringify(editedTour));
-      if (onUpdate) onUpdate(editedTour);
-      setIsEditing(false);
-      setEditingField(null);
     } finally {
       setSaving(false);
     }
@@ -181,4 +177,3 @@ const EditableTourCard = ({ tour, onUpdate, onTourClick }) => {
 };
 
 export default EditableTourCard;
-

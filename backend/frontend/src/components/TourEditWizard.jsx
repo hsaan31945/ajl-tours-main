@@ -3,6 +3,27 @@ import { useAdmin } from '../context/AdminContext';
 import { normalizeTourData } from '../utils/tourDataMapper';
 import { apiUrl } from '../utils/api';
 
+const cleanTextArray = (items) => (
+  Array.isArray(items)
+    ? items.map((item) => String(item || '').trim()).filter(Boolean)
+    : []
+);
+
+const cleanItinerary = (items) => (
+  Array.isArray(items)
+    ? items
+        .map((item) => ({
+          title: String(item?.title || '').trim(),
+          description: String(item?.description || '').trim(),
+          duration: String(item?.duration || '').trim(),
+          location: String(item?.location || '').trim(),
+          type: String(item?.type || '').trim(),
+          activities: cleanTextArray(item?.activities),
+        }))
+        .filter((item) => item.title || item.description || item.duration || item.location || item.type || item.activities.length)
+    : []
+);
+
 const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
   const { passcodeHeader } = useAdmin();
   const [formData, setFormData] = useState({
@@ -71,10 +92,10 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
         tourType: normalizedTour.type || '',
         reviewText: normalizedTour.reviewText || '',
         isActive: normalizedTour.isActive !== false,
-        highlights: normalizedTour.highlights || [],
-        included: normalizedTour.included || [],
-        excluded: normalizedTour.excluded || [],
-        itinerary: normalizedTour.itinerary || [],
+        highlights: Array.isArray(normalizedTour.highlights) ? [...normalizedTour.highlights] : [],
+        included: Array.isArray(normalizedTour.included) ? [...normalizedTour.included] : [],
+        excluded: Array.isArray(normalizedTour.excluded) ? [...normalizedTour.excluded] : [],
+        itinerary: Array.isArray(normalizedTour.itinerary) ? normalizedTour.itinerary.map((item) => ({ ...item })) : [],
         datePrices: normalizedTour.datePrices || {}
       });
     }
@@ -90,31 +111,41 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
   const handleArrayChange = (field, index, value) => {
     setFormData(prev => ({
       ...prev,
-      [field]: prev[field].map((item, i) => i === index ? value : item)
+      [field]: (Array.isArray(prev[field]) ? prev[field] : []).map((item, i) => i === index ? value : item)
     }));
   };
 
   const addArrayItem = (field, defaultValue = '') => {
     setFormData(prev => ({
       ...prev,
-      [field]: [...prev[field], defaultValue]
+      [field]: [...(Array.isArray(prev[field]) ? prev[field] : []), defaultValue]
     }));
   };
 
   const removeArrayItem = (field, index) => {
     setFormData(prev => ({
       ...prev,
-      [field]: prev[field].filter((_, i) => i !== index)
+      [field]: (Array.isArray(prev[field]) ? prev[field] : []).filter((_, i) => i !== index)
     }));
   };
 
   const moveArrayItem = (field, fromIndex, toIndex) => {
     setFormData(prev => {
-      const newArray = [...prev[field]];
+      const newArray = [...(Array.isArray(prev[field]) ? prev[field] : [])];
+      if (toIndex < 0 || toIndex >= newArray.length) return prev;
       const [movedItem] = newArray.splice(fromIndex, 1);
       newArray.splice(toIndex, 0, movedItem);
       return { ...prev, [field]: newArray };
     });
+  };
+
+  const updateItineraryField = (index, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      itinerary: (Array.isArray(prev.itinerary) ? prev.itinerary : []).map((item, itemIndex) => (
+        itemIndex === index ? { ...item, [field]: value } : item
+      ))
+    }));
   };
 
   const handleSubmit = async () => {
@@ -142,7 +173,11 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
       // Prepare data for API - ensure price is a number
       const dataToSend = {
         ...formData,
-        price: formData.price ? Number(formData.price) : formData.price
+        price: formData.price ? Number(formData.price) : formData.price,
+        highlights: cleanTextArray(formData.highlights),
+        included: cleanTextArray(formData.included),
+        excluded: cleanTextArray(formData.excluded),
+        itinerary: cleanItinerary(formData.itinerary),
       };
       
       console.log('TourEditWizard - Sending data to API:', {
@@ -174,7 +209,6 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
       if (response.ok) {
         console.log('Tour saved successfully - API response:', responseData);
         await onSave(responseData); // Pass the actual saved tour from database
-        alert('Tour updated successfully!');
         if (onClose) onClose(); // Only call onClose if it exists (for modal usage)
       } else {
         console.error('Failed to save tour:', response.status, responseData);
@@ -482,11 +516,7 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
                   <input
                     type="text"
                     value={item.title || ''}
-                    onChange={(e) => {
-                      const newItinerary = [...formData.itinerary];
-                      newItinerary[index] = { ...newItinerary[index], title: e.target.value };
-                      handleInputChange('itinerary', newItinerary);
-                    }}
+                    onChange={(e) => updateItineraryField(index, 'title', e.target.value)}
                     className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Day/Stop Title"
                   />
@@ -516,11 +546,7 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
                 </div>
                 <textarea
                   value={item.description || ''}
-                  onChange={(e) => {
-                    const newItinerary = [...formData.itinerary];
-                    newItinerary[index] = { ...newItinerary[index], description: e.target.value };
-                    handleInputChange('itinerary', newItinerary);
-                  }}
+                  onChange={(e) => updateItineraryField(index, 'description', e.target.value)}
                   className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
                   placeholder="Day/Stop Description"
                 />
@@ -529,11 +555,7 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
                   <input
                     type="text"
                     value={item.location || ''}
-                    onChange={(e) => {
-                      const newItinerary = [...formData.itinerary];
-                      newItinerary[index] = { ...newItinerary[index], location: e.target.value };
-                      handleInputChange('itinerary', newItinerary);
-                    }}
+                    onChange={(e) => updateItineraryField(index, 'location', e.target.value)}
                     className="w-full px-2 py-1 border rounded text-sm mt-1"
                     placeholder="Location for this day/stop"
                   />

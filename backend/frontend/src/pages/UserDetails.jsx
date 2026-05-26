@@ -1,19 +1,59 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBooking } from "../context/BookingContext";
+import { apiUrl } from "../utils/api";
+import { getTourId } from "../utils/tourId";
+import { calculateBookingPricing } from "../utils/bookingPricing";
 
 const UserDetails = () => {
   const navigate = useNavigate();
-  const { booking, updateContact } = useBooking();
-  const { tour, tickets = 1, date, time, contact, flexibility } = booking || {};
+  const { booking, updateContact, updateTour } = useBooking();
+  const { tour: bookingTour, tickets = 1, date, time, contact, flexibility } = booking || {};
+  const [freshTour, setFreshTour] = useState(null);
+  const tour = freshTour || bookingTour;
+  const pricing = calculateBookingPricing({ tour, tickets, selectedDate: date, flexibility });
+  const minTickets = pricing.minTickets;
+  const currentTickets = pricing.tickets;
+  const ticketsMeetMinimum = pricing.validTickets;
   const [fullName, setFullName] = useState(contact?.fullName || "");
   const [email, setEmail] = useState(contact?.email || "");
   const [country, setCountry] = useState(contact?.country || "Pakistan (+92)");
   const [phone, setPhone] = useState(contact?.phone || "");
+  const bookingTourId = getTourId(bookingTour);
   
   // Validation state
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!bookingTourId) return;
+
+    let cancelled = false;
+    const refreshTour = async () => {
+      try {
+        const response = await fetch(apiUrl(`/api/tours/${bookingTourId}`), {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+          },
+        });
+        if (!response.ok) throw new Error(`Failed to refresh tour (${response.status})`);
+        const data = await response.json();
+        if (!cancelled) {
+          setFreshTour(data);
+          updateTour(data);
+        }
+      } catch (error) {
+        console.error('Failed to refresh MongoDB tour for user details:', error);
+      }
+    };
+
+    refreshTour();
+    return () => {
+      cancelled = true;
+    };
+  }, [bookingTourId, updateTour]);
 
   useEffect(() => {
     updateContact({ fullName, email, country, phone });
@@ -66,6 +106,12 @@ const UserDetails = () => {
     const isValid = validateForm();
     console.log("Form validation result:", isValid); // Debug log
     
+    if (!ticketsMeetMinimum) {
+      alert(`Minimum ${minTickets} tickets are required for this tour.`);
+      navigate("/flexibility");
+      return false;
+    }
+
     if (isValid) {
       setIsSubmitting(true);
       console.log("Form is valid, navigating to payment"); // Debug log
@@ -73,11 +119,11 @@ const UserDetails = () => {
       // Save tour data to localStorage for PaymentSuccess page
       const tourDataForPayment = {
         tourName: tour?.title || tour?.name || "Tour",
-        tourPrice: tour?.price || 0, // Base price per ticket
-        amount: tour?.price || 0, // Keep for backward compatibility
-        tickets: tickets || 1,
-        tourId: tour?.id || "unknown",
-        currency: tour?.currency || "$",
+        tourPrice: pricing.baseUnitPrice,
+        amount: pricing.total,
+        tickets: currentTickets,
+        tourId: getTourId(tour) || "unknown",
+        currency: pricing.currency,
         date: date || new Date().toLocaleDateString(),
         time: time || "09:00",
         flexibility: flexibility || "standard" // Include flexibility selection
@@ -127,7 +173,7 @@ const UserDetails = () => {
           <div key={step} className="flex items-center gap-2 cursor-pointer" onClick={() => {
             if (idx === 0) navigate("/flexibility");
             if (idx === 1 && flexibility) navigate("/userDetails");
-            if (idx === 2 && flexibility) navigate("/payment");
+            if (idx === 2 && flexibility && ticketsMeetMinimum) navigate("/payment");
           }}>
             <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-sm sm:text-base border-2 ${idx + 1 === currentStep ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-blue-700 border-blue-700'}`}>{idx + 1}</div>
             <span className={`font-semibold text-sm sm:text-base ${idx + 1 === currentStep ? 'text-blue-700' : 'text-gray-500'}`}>{step}</span>
@@ -227,14 +273,15 @@ const UserDetails = () => {
             )}
             <div>
               <div className="font-bold text-lg">{tour.title || tour.name}</div>
-              <div className="text-yellow-600 text-sm">★ 4.9 (3,396)</div>
-              <div className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded mt-1 inline-block">Top rated</div>
             </div>
           </div>
           <div className="border-b pb-2 mb-2">
             <div className="text-sm">Language: English</div>
             <div className="text-sm">{date || "Date not selected"}</div>
-            <div className="text-sm">{tickets} adult{tickets > 1 ? "s" : ""} (Age 13 - 99)</div>
+            <div className="text-sm">{currentTickets} adult{currentTickets > 1 ? "s" : ""} (Age 13 - 99)</div>
+            {!ticketsMeetMinimum && (
+              <div className="text-sm text-red-600 font-semibold">Minimum {minTickets} tickets required</div>
+            )}
             {/* Removed Change date or participants button */}
           </div>
           <div className="flex flex-col gap-1 text-sm">
@@ -246,12 +293,7 @@ const UserDetails = () => {
           </div>
           <div className="flex justify-between items-center mt-4 font-bold text-lg">
             <span>Total</span>
-            <span>{tour.currency || "$"}{(() => {
-              const pricePerTicket = tour?.price || 0;
-              const upgradePrice = Math.round(pricePerTicket * 1.225 * 100) / 100;
-              const basePrice = flexibility === "upgrade" ? upgradePrice : pricePerTicket;
-              return (basePrice * tickets).toFixed(2);
-            })()}</span>
+            <span>{pricing.currency}{pricing.total.toFixed(2)}</span>
           </div>
           <div className="text-xs text-gray-500 text-right">All taxes and fees included</div>
         </div>

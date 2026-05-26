@@ -3,6 +3,9 @@ import PriceWithEdit from "../components/PriceWithEdit";
 import { useAdmin } from "../context/AdminContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useBooking } from "../context/BookingContext";
+import { apiUrl } from "../utils/api";
+import { getTourId } from "../utils/tourId";
+import { calculateBookingPricing, parseTicketCount } from "../utils/bookingPricing";
 
 const Flexibility = () => {
   const navigate = useNavigate();
@@ -11,19 +14,49 @@ const Flexibility = () => {
   
   // Use tour data from location state if available, otherwise from booking context
   const tourData = location.state?.tour || location.state?.tourData || booking?.tour;
+  const [freshTour, setFreshTour] = useState(null);
   
   // Handle different tour data structures
-  let tour = tourData;
-  if (tourData && typeof tourData === 'object') {
-    // If tourData is already a tour object, use it directly
-    tour = tourData;
-  } else if (location.state && location.state.tour) {
+  let tour = freshTour || tourData;
+  if (!freshTour && location.state && location.state.tour) {
     // If tour is in location.state, use it
     tour = location.state.tour;
-  } else if (booking && booking.tour) {
+  } else if (!freshTour && booking && booking.tour) {
     // Fallback to booking context
     tour = booking.tour;
   }
+
+  const sourceTourId = getTourId(tourData || booking?.tour);
+
+  useEffect(() => {
+    if (!sourceTourId) return;
+
+    let cancelled = false;
+    const refreshTour = async () => {
+      try {
+        const response = await fetch(apiUrl(`/api/tours/${sourceTourId}`), {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+          },
+        });
+        if (!response.ok) throw new Error(`Failed to refresh tour (${response.status})`);
+        const data = await response.json();
+        if (!cancelled) {
+          setFreshTour(data);
+          updateTour(data);
+        }
+      } catch (error) {
+        console.error('Failed to refresh MongoDB tour for flexibility:', error);
+      }
+    };
+
+    refreshTour();
+    return () => {
+      cancelled = true;
+    };
+  }, [sourceTourId, updateTour]);
 
   // Save tour data to BookingContext if it exists and isn't already saved
   useEffect(() => {
@@ -42,9 +75,13 @@ const Flexibility = () => {
   const [localTickets, setLocalTickets] = useState(location.state?.participants || tickets);
   const [localFlex, setLocalFlex] = useState(flexibility || "standard");
   const { isAdmin } = useAdmin();
-  const pricePerTicket = tour?.price || 35;
-  const upgradePrice = Math.round(pricePerTicket * 1.225 * 100) / 100;
-  const totalPrice = (localFlex === "standard" ? pricePerTicket : upgradePrice) * localTickets;
+  const pricing = calculateBookingPricing({ tour, tickets: localTickets, selectedDate: date, flexibility: localFlex });
+  const minTickets = pricing.minTickets;
+  const localTicketCount = pricing.tickets;
+  const ticketsMeetMinimum = pricing.validTickets;
+  const pricePerTicket = pricing.baseUnitPrice;
+  const upgradePrice = calculateBookingPricing({ tour, tickets: 1, selectedDate: date, flexibility: "upgrade" }).unitPrice;
+  const totalPrice = pricing.total;
 
   // Ensure tickets reflect what was set on VisitCheckout2 via localStorage
   useEffect(() => {
@@ -53,11 +90,6 @@ const Flexibility = () => {
       const rawRecent = localStorage.getItem('recentTourData');
       const data = rawCurrent ? JSON.parse(rawCurrent) : (rawRecent ? JSON.parse(rawRecent) : null);
       if (data) {
-        const parsedTickets = Number(data.tickets ?? data.participants);
-        if (Number.isFinite(parsedTickets) && parsedTickets > 0) {
-          setLocalTickets(parsedTickets);
-          updateTickets(parsedTickets);
-        }
         if (data.selectedDate || data.date) {
           const dateVal = data.selectedDate || data.date;
           const timeVal = data.time || '09:00';
@@ -92,8 +124,10 @@ const Flexibility = () => {
     updateFlexibility(val);
   };
   const handleTicketsChange = (val) => {
-    setLocalTickets(val);
-    updateTickets(val);
+    const nextTickets = parseTicketCount(val);
+    if (!nextTickets) return;
+    setLocalTickets(nextTickets);
+    updateTickets(nextTickets);
   };
 
   return (
@@ -103,8 +137,8 @@ const Flexibility = () => {
         {steps.map((step, idx) => (
           <div key={step} className="flex items-center gap-2 cursor-pointer" onClick={() => {
             if (idx === 0) navigate("/flexibility");
-            if (idx === 1 && localFlex) navigate("/userDetails");
-            if (idx === 2 && localFlex) navigate("/payment");
+            if (idx === 1 && localFlex && ticketsMeetMinimum) navigate("/userDetails");
+            if (idx === 2 && localFlex && ticketsMeetMinimum) navigate("/payment");
           }}>
             <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-sm sm:text-base border-2 ${idx + 1 === currentStep ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-blue-700 border-blue-700'}`}>{idx + 1}</div>
             <span className={`font-semibold text-sm sm:text-base ${idx + 1 === currentStep ? 'text-blue-700' : 'text-gray-500'}`}>{step}</span>
@@ -132,10 +166,10 @@ const Flexibility = () => {
                 <span className="font-bold">Standard ticket only</span>
               </div>
               <ul className="text-green-700 ml-6 list-disc space-y-1 text-sm">
-                <li>Cancel up to 24 hours before start and get <b>{tour.currency || "$"}{pricePerTicket.toFixed(2)}</b> back</li>
+                <li>Cancel up to 24 hours before start and get <b>{pricing.currency}{pricePerTicket.toFixed(2)}</b> back</li>
                 <li>Cancel for any reason, no questions asked</li>
               </ul>
-              <div className="text-right font-bold text-lg mt-2">{tour.currency || "$"}{pricePerTicket.toFixed(2)}</div>
+              <div className="text-right font-bold text-lg mt-2">{pricing.currency}{pricePerTicket.toFixed(2)}</div>
             </label>
             <label className="block cursor-pointer border rounded-xl p-4 flex flex-col gap-2 transition-all duration-200 mt-4 border-gray-300 bg-gray-50">
               <div className="flex items-center gap-2">
@@ -143,11 +177,11 @@ const Flexibility = () => {
                 <span className="font-bold">Ticket + Flexibility Upgrade</span>
               </div>
               <ul className="text-green-700 ml-6 list-disc space-y-1 text-sm">
-                <li>Cancel up to 1 hour before start and get <b>{tour.currency || "$"}{pricePerTicket.toFixed(2)}</b> back</li>
-                <li>Get the full price <b className="whitespace-nowrap">{tour.currency || "$"}{upgradePrice.toFixed(2)}</b> back when cancelling until 24 hours before</li>
+                <li>Cancel up to 1 hour before start and get <b>{pricing.currency}{pricePerTicket.toFixed(2)}</b> back</li>
+                <li>Get the full price <b className="whitespace-nowrap">{pricing.currency}{upgradePrice.toFixed(2)}</b> back when cancelling until 24 hours before</li>
                 <li>Cancel for any reason, no questions asked</li>
               </ul>
-              <div className="text-right font-bold text-lg mt-2">{tour.currency || "$"}{upgradePrice.toFixed(2)}</div>
+              <div className="text-right font-bold text-lg mt-2">{pricing.currency}{upgradePrice.toFixed(2)}</div>
             </label>
           </div>
           <div className="flex justify-between items-center mt-4 mb-2">
@@ -155,23 +189,35 @@ const Flexibility = () => {
             <input
               type="number"
               min="1"
-              value={localTickets}
+              step="1"
+              value={localTicketCount}
               onChange={e => handleTicketsChange(Number(e.target.value))}
               className="w-16 border rounded px-2 py-1 text-center"
             />
           </div>
+          {minTickets > 1 && (
+            <p className="text-xs text-gray-500 text-right">Minimum {minTickets} tickets required</p>
+          )}
+          {!ticketsMeetMinimum && (
+            <p className="text-xs text-red-600 text-right font-semibold">Increase tickets to continue.</p>
+          )}
           <div className="flex justify-between items-center mt-2 font-bold text-lg">
             <span>Total</span>
-            <span>{tour.currency || "$"}{totalPrice.toFixed(2)}</span>
+            <span>{pricing.currency}{totalPrice.toFixed(2)}</span>
           </div>
           <button
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl mt-4 transition"
+            disabled={!ticketsMeetMinimum}
+            className={`w-full font-bold py-3 rounded-xl mt-4 transition ${
+              ticketsMeetMinimum
+                ? "bg-blue-600 hover:bg-blue-700 text-white"
+                : "bg-gray-300 text-gray-500 cursor-not-allowed"
+            }`}
             onClick={() => {
-              if (localFlex && tour) {
+              if (localFlex && tour && ticketsMeetMinimum) {
                 // Ensure tour data is saved before navigation
                 updateTour(tour);
                 updateFlexibility(localFlex);
-                updateTickets(localTickets);
+                updateTickets(localTicketCount);
                 navigate("/userDetails");
               }
             }}
@@ -188,13 +234,12 @@ const Flexibility = () => {
             )}
             <div>
               <div className="font-bold text-lg">{tour.title || tour.name}</div>
-              <div className="text-yellow-600 text-sm">★ 4.6 (1,268)</div>
             </div>
           </div>
           <div className="border-b pb-2 mb-2">
             <div className="text-sm">{tour.address || tour.location || ""}</div>
             <div className="text-sm">{date || "Date not selected"} • {time || "Time not selected"}</div>
-            <div className="text-sm">{localTickets} adult{localTickets > 1 ? "s" : ""} (Age 13 - 99)</div>
+            <div className="text-sm">{localTicketCount} adult{localTicketCount > 1 ? "s" : ""} (Age 13 - 99)</div>
             <button className="text-blue-600 underline text-xs mt-1">Change date or participants</button>
           </div>
           <div className="flex flex-col gap-1 text-sm">
@@ -203,7 +248,7 @@ const Flexibility = () => {
           </div>
           <div className="flex justify-between items-center mt-4 font-bold text-lg">
             <span>Total</span>
-            <span>{tour.currency || "$"}{totalPrice.toFixed(2)}</span>
+            <span>{pricing.currency}{totalPrice.toFixed(2)}</span>
           </div>
           <div className="text-xs text-gray-500 text-right">All taxes and fees included</div>
         </div>

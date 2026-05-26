@@ -21,9 +21,10 @@ export const mapTourResponse = (tour) => {
     currency: tour.currency || 'CHF',
     
     // Duration & Details
-    duration: tour.duration || 'N/A',
-    type: tour.tourType || tour.type || 'Day Tour, Private Tour',
-    reviewText: tour.reviewText || 'No reviews yet',
+    duration: tour.duration || '',
+    type: tour.tourType || tour.type || '',
+    tourType: tour.tourType || tour.type || '',
+    reviewText: tour.reviewText || '',
     
     // Content Sections
     highlights: Array.isArray(tour.highlights) ? tour.highlights : [],
@@ -162,10 +163,13 @@ export const normalizeTourData = (tour) => {
   return {
     ...mappedTour,
     // Ensure consistent formatting
-    name: mappedTour.name?.toString().trim() || 'Untitled Tour',
-    title: mappedTour.title?.toString().trim() || 'Untitled Tour',
+    name: mappedTour.name?.toString().trim() || '',
+    title: mappedTour.title?.toString().trim() || '',
     price: Number(mappedTour.price) || 0,
-    duration: mappedTour.duration?.toString().trim() || 'Duration not specified',
+    duration: mappedTour.duration?.toString().trim() || '',
+    type: mappedTour.type?.toString().trim() || '',
+    tourType: mappedTour.tourType?.toString().trim() || '',
+    reviewText: mappedTour.reviewText?.toString().trim() || '',
     // Ensure arrays are properly formatted
     highlights: Array.isArray(mappedTour.highlights) ? mappedTour.highlights : [],
     included: Array.isArray(mappedTour.included) ? mappedTour.included : [],

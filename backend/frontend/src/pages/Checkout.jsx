@@ -12,107 +12,12 @@ import { normalizeTourId, isValidObjectId, getTourId } from '../utils/tourId';
 import { apiUrl, getBackendUrl } from '../utils/api';
 import { clearToursCache } from '../services/toursApi';
 import { stripHtmlToText } from '../utils/textFormatting';
-// Import all Zurich AVIF images
-import zurich1 from "../assets/images/Switzerland/Zurich1.avif";
-import zurich3 from "../assets/images/Switzerland/Zurich3.avif";
-import zurich4 from "../assets/images/Switzerland/Zurich4.avif";
-import zurich5 from "../assets/images/Switzerland/Zurich5.avif";
-import zurich6 from "../assets/images/Switzerland/Zurich6.avif";
-import zurich7 from "../assets/images/Switzerland/Zurich7.avif";
-import zurich8 from "../assets/images/Switzerland/Zurich8.avif";
-import zurich9 from "../assets/images/Switzerland/Zurich9.avif";
-import zurich10 from "../assets/images/Switzerland/Zurich10.avif";
-import zurich12 from "../assets/images/Switzerland/Zurich12.avif";
-// Import Crash Landing on You images
-import crashLanding1 from "../assets/images/Crash_Landing/Crash_Landing1.avif";
-import crashLanding2 from "../assets/images/Crash_Landing/Crash_Landing2.avif";
-import crashLanding3 from "../assets/images/Crash_Landing/Crash_Landing3.avif";
-import crashLanding4 from "../assets/images/Crash_Landing/Crash_Landing4.avif";
-import crashLanding5 from "../assets/images/Crash_Landing/Crash_Landing5.avif";
-import crashLanding6 from "../assets/images/Crash_Landing/Crash_Landing6.avif";
-import crashLanding7 from "../assets/images/Crash_Landing/Crash_Landing7.avif";
-import crashLanding8 from "../assets/images/Crash_Landing/Crash_Landing8.avif";
-import crashLanding9 from "../assets/images/Crash_Landing/Crash_Landing9.avif";
-import crashLanding10 from "../assets/images/Crash_Landing/Crash_Landing10.avif";
-import crashLanding11 from "../assets/images/Crash_Landing/Crash_Landing11.avif";
-import crashLanding12 from "../assets/images/Crash_Landing/Crash_Landing12.avif";
-// Import Lucerne images
-import lucerne1 from "../assets/images/Lucerne/Lucerne1.avif";
-import lucerne2 from "../assets/images/Lucerne/Lucerne2.avif";
-import lucerne3 from "../assets/images/Lucerne/Lucerne3.avif";
-import lucerne4 from "../assets/images/Lucerne/Lucerne4.avif";
-import lucerne5 from "../assets/images/Lucerne/Lucerne5.avif";
-import lucerne6 from "../assets/images/Lucerne/Lucerne6.avif";
-import lucerne7 from "../assets/images/Lucerne/Lucerne7.avif";
-// Import Appenzell Day Tour images
-import Appenzell1 from "../assets/images/Appenzell_Day_Tour/Appenzell1.avif";
-import Appenzell2 from "../assets/images/Appenzell_Day_Tour/Appenzell2.avif";
-import Appenzell3 from "../assets/images/Appenzell_Day_Tour/Appenzell3.avif";
-import Appenzell4 from "../assets/images/Appenzell_Day_Tour/Appenzell4.avif";
-import Appenzell5 from "../assets/images/Appenzell_Day_Tour/Appenzell5.avif";
-import Appenzell6 from "../assets/images/Appenzell_Day_Tour/Appenzell6.avif";
-// Import Rhine Falls images
-import rhine1 from "../assets/images/Zurich_to_Rhine_Falls/Rhine1.avif";
-import rhine2 from "../assets/images/Zurich_to_Rhine_Falls/Rhine2.avif";
-import rhine3 from "../assets/images/Zurich_to_Rhine_Falls/Rhine3.avif";
-import rhine4 from "../assets/images/Zurich_to_Rhine_Falls/Rhine4.avif";
-// Import Titlis Engelberg images
-import titlis1 from "../assets/images/Titlis_Engelberg/Titlis1.avif";
-import titlis2 from "../assets/images/Titlis_Engelberg/Titlis2.avif";
-import titlis3 from "../assets/images/Titlis_Engelberg/Titlis3.avif";
-import titlis4 from "../assets/images/Titlis_Engelberg/Titlis4.avif";
-import titlis5 from "../assets/images/Titlis_Engelberg/Titlis5.avif";
-// Import Basel and Colmar images
-import basel1 from "../assets/images/Basel_and_Colmar/Basel1.avif";
-import basel2 from "../assets/images/Basel_and_Colmar/Basel2.avif";
-import basel3 from "../assets/images/Basel_and_Colmar/Basel3.avif";
-import basel4 from "../assets/images/Basel_and_Colmar/Basel4.avif";
-// Import Interlaken and Grindelwald images
-import interlaken1 from "../assets/images/Interlaken_and_Grindelwald/Interlaken1.avif";
-import interlaken2 from "../assets/images/Interlaken_and_Grindelwald/Interlaken2.avif";
-import interlaken3 from "../assets/images/Interlaken_and_Grindelwald/Interlaken3.avif";
-import interlaken4 from "../assets/images/Interlaken_and_Grindelwald/Interlaken4.avif";
-import interlaken5 from "../assets/images/Interlaken_and_Grindelwald/Interlaken5.avif";
-import interlaken6 from "../assets/images/Interlaken_and_Grindelwald/Interlaken6.avif";
 import ImageCarousel from "../components/ImageCarousel";
 import { motion, AnimatePresence } from "framer-motion";
 import PaymentSection from "../components/PaymentSection";
-import { tourDescriptions } from "../data/tourDescriptions";
+import { calculateBookingPricing } from "../utils/bookingPricing";
 
-const itineraryData = [
-  {
-    title: "2 pickup location options:",
-    locations: "Lucerne, Zürich",
-    icon: (
-      <svg className="inline-block mr-2 text-red-600" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 21c-4.418 0-8-5.373-8-10a8 8 0 1116 0c0 4.627-3.582 10-8 10z" /><circle cx="12" cy="11" r="3" stroke="currentColor" strokeWidth={2} fill="white" /></svg>
-    ),
-    duration: null,
-    isPickup: true,
-  },
-  {
-    title: "Isetwald",
-    icon: (
-      <svg className="inline-block mr-2 text-red-600" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 21c-4.418 0-8-5.373-8-10a8 8 0 1116 0c0 4.627-3.582 10-8 10z" /><circle cx="12" cy="11" r="3" stroke="currentColor" strokeWidth={2} fill="white" /></svg>
-    ),
-    duration: "Sightseeing (2.5 hours)",
-  },
-  {
-    title: "Lauterbrunnen",
-    icon: (
-      <svg className="inline-block mr-2 text-red-600" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 21c-4.418 0-8-5.373-8-10a8 8 0 1116 0c0 4.627-3.582 10-8 10z" /><circle cx="12" cy="11" r="3" stroke="currentColor" strokeWidth={2} fill="white" /></svg>
-    ),
-    duration: "Sightseeing (2 hours)",
-  },
-  {
-    title: "Grindelwald",
-    icon: (
-      <svg className="inline-block mr-2 text-red-600" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 21c-4.418 0-8-5.373-8-10a8 8 0 1116 0c0 4.627-3.582 10-8 10z" /><circle cx="12" cy="11" r="3" stroke="currentColor" strokeWidth={2} fill="white" /></svg>
-    ),
-    duration: "Sightseeing (1.5 hours)",
-  },
-];
-
-function ItineraryAccordion({ itinerary = [], adminOn = false, onSave, tour, passcodeHeader }) {
+function ItineraryAccordion({ itinerary = [], adminOn = false, onSave, onAddDraft }) {
   const [open, setOpen] = useState(itinerary.map(() => false));
   const { isAdmin } = useAdmin();
   const effectiveEditMode = adminOn || isAdmin;
@@ -214,9 +119,8 @@ function ItineraryAccordion({ itinerary = [], adminOn = false, onSave, tour, pas
           onClick={async (e) => {
             e.preventDefault();
             e.stopPropagation();
-            const newItem = { title: 'New Location', description: '', duration: '', location: '', activities: [] };
-            const updated = [...itinerary, newItem];
-            if (onSave) await onSave(updated);
+            const newItem = { title: '', description: '', duration: '', location: '', activities: [] };
+            if (onAddDraft) onAddDraft(newItem);
           }}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
         >
@@ -267,15 +171,22 @@ const Checkout = () => {
   // Track previous id to detect changes
   const prevIdRef = useRef(id);
 
+  const syncTourState = (tourData) => {
+    const normalizedData = normalizeTourData(tourData);
+    setTour(normalizedData);
+    setHighlights(Array.isArray(normalizedData.highlights) ? [...normalizedData.highlights] : []);
+    setIncluded(Array.isArray(normalizedData.included) ? [...normalizedData.included] : []);
+    setExcluded(Array.isArray(normalizedData.excluded) ? [...normalizedData.excluded] : []);
+    setItinerary(Array.isArray(normalizedData.itinerary) ? normalizedData.itinerary.map((item) => ({ ...item })) : []);
+    return normalizedData;
+  };
+
   // Fetch tour from API when id changes
   useEffect(() => {
     // Always fetch when id changes, even if we have state tour
     if (!id) {
-      // If no id but we have state, use it
-      if (location.state?.tour) {
-        setTour(normalizeTourData(location.state.tour));
-        setLoading(false);
-      }
+      setTour(null);
+      setLoading(false);
       return;
     }
 
@@ -353,18 +264,12 @@ const Checkout = () => {
           });
           
           // Always use database data - do NOT fallback to hardcoded data
-          setTour(normalizedData);
+          syncTourState(normalizedData);
           setError(null); // Clear any previous errors
-          // Initialize array states from normalized data - ensure they're always arrays
           const highlightsArray = Array.isArray(normalizedData.highlights) ? normalizedData.highlights : [];
           const includedArray = Array.isArray(normalizedData.included) ? normalizedData.included : [];
           const excludedArray = Array.isArray(normalizedData.excluded) ? normalizedData.excluded : [];
           const itineraryArray = Array.isArray(normalizedData.itinerary) ? normalizedData.itinerary : [];
-          
-          setHighlights(highlightsArray);
-          setIncluded(includedArray);
-          setExcluded(excludedArray);
-          setItinerary(itineraryArray);
           
           console.log('Initialized array states:', {
             highlights: highlightsArray.length,
@@ -409,19 +314,7 @@ const Checkout = () => {
           errorMessage = `Error loading tour: ${error.message}`;
         }
         
-        const fallbackTour = location.state?.tour ? normalizeTourData(location.state.tour) : null;
-        if (fallbackTour) {
-          setTour(fallbackTour);
-          setHighlights(Array.isArray(fallbackTour.highlights) ? fallbackTour.highlights : []);
-          setIncluded(Array.isArray(fallbackTour.included) ? fallbackTour.included : []);
-          setExcluded(Array.isArray(fallbackTour.excluded) ? fallbackTour.excluded : []);
-          setItinerary(Array.isArray(fallbackTour.itinerary) ? fallbackTour.itinerary : []);
-          setError(null);
-          return;
-        }
-
         setError(errorMessage);
-        // Don't fallback to hardcoded data - we want to use database data only
       } finally {
         setLoading(false);
       }
@@ -506,7 +399,7 @@ const Checkout = () => {
   }
 
   // Show error if no tour and no ID
-  if (!tour && !id && !location.state?.tour) {
+  if (!tour && !id) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -523,9 +416,10 @@ const Checkout = () => {
     );
   }
 
-  const tourName = tour?.title || tour?.name || "the Tour";
-  const pricePerTicket = tour?.price || 199;
-  const totalPrice = pricePerTicket * tickets;
+  const tourName = tour?.title || tour?.name || "Tour";
+  const pricing = calculateBookingPricing({ tour, tickets, selectedDate });
+  const pricePerTicket = pricing.baseUnitPrice;
+  const totalPrice = pricing.total;
   // Only admins can edit - no toggle needed
   const effectiveEditMode = adminOn;
 
@@ -534,17 +428,6 @@ const Checkout = () => {
     const payload = { [fieldName]: value };
 
     if (!isValidObjectId(tourId)) {
-      payload.name = tour?.name || tour?.title || tourName;
-      payload.description = tour?.description || tour?.overview || tour?.desc || '';
-      payload.overview = tour?.overview || tour?.description || tour?.desc || '';
-      payload.price = Number(tour?.price || 0);
-      payload.startLocation = tour?.startLocation || tour?.address || 'Switzerland';
-      payload.endLocation = tour?.endLocation || tour?.address || tour?.startLocation || 'Switzerland';
-      payload.images = Array.isArray(tour?.images) ? tour.images : [];
-      payload.duration = tour?.duration || 'N/A';
-      payload.tourType = tour?.tourType || tour?.type || 'Day Tour, Private Tour';
-      payload.reviewText = tour?.reviewText || 'No reviews yet';
-      payload.currency = tour?.currency || 'CHF';
       payload.metadata = {
         ...(tour?.metadata || {}),
         staticId: String(tourId),
@@ -559,6 +442,11 @@ const Checkout = () => {
   const saveArrayField = async (fieldName, arrayData) => {
     const tourId = getTourId(tour);
     if (!tourId) return false;
+    const cleanedData = Array.isArray(arrayData)
+      ? arrayData
+          .map((item) => (typeof item === 'string' ? item.trim() : item))
+          .filter((item) => (typeof item === 'string' ? item.length > 0 : Boolean(item)))
+      : [];
     try {
       const res = await fetch(`${getBackendUrl()}/api/tours/${tourId}`, {
         method: 'PUT',
@@ -566,20 +454,14 @@ const Checkout = () => {
           'Content-Type': 'application/json',
           'X-Admin-Passcode': passcodeHeader || ''
         },
-        body: JSON.stringify(buildTourUpdatePayload(fieldName, arrayData))
+        body: JSON.stringify(buildTourUpdatePayload(fieldName, cleanedData))
       });
       if (res.ok) {
         const response = await res.json();
         // Backend returns { success, tour } - extract the tour object
         const tourData = response.tour || response;
-        const normalizedData = normalizeTourData(tourData);
         clearToursCache();
-        setTour(normalizedData);
-        // Update local state
-        if (fieldName === 'highlights') setHighlights(normalizedData.highlights || []);
-        else if (fieldName === 'included') setIncluded(normalizedData.included || []);
-        else if (fieldName === 'excluded') setExcluded(normalizedData.excluded || []);
-        else if (fieldName === 'itinerary') setItinerary(normalizedData.itinerary || []);
+        syncTourState(tourData);
         return true;
       }
       return false;
@@ -605,9 +487,8 @@ const Checkout = () => {
       if (res.ok) {
         const response = await res.json();
         const tourData = response.tour || response;
-        const normalizedData = normalizeTourData(tourData);
         clearToursCache();
-        setTour(normalizedData);
+        syncTourState(tourData);
         return true;
       }
       return false;
@@ -638,9 +519,10 @@ const Checkout = () => {
                 body: JSON.stringify(buildTourUpdatePayload('name', value.replace('Explore ', '')))
               });
               if (res.ok) {
-                const updatedTour = await res.json();
+                const response = await res.json();
+                const tourData = response.tour || response;
                 clearToursCache();
-                setTour(updatedTour);
+                syncTourState(tourData);
                 return true;
               }
               return false;
@@ -661,7 +543,7 @@ const Checkout = () => {
           </div>
         ) : (
           <ImageCarousel 
-            images={tour?.images && Array.isArray(tour.images) && tour.images.length > 0 ? tour.images : ['/placeholder-tour.jpg']} 
+            images={Array.isArray(tour?.images) ? tour.images : []} 
             alt={tourName} 
             className="h-64 sm:h-80 md:h-[400px] lg:h-[500px] object-cover rounded-lg" 
             adminOn={effectiveEditMode}
@@ -695,7 +577,7 @@ const Checkout = () => {
         <div className="flex flex-col items-start">
           <span className="text-xs text-gray-500">Duration</span>
           <EditableField
-            value={tour?.duration || "12 hours"}
+            value={tour?.duration || "Not specified"}
             tag="span"
             className="text-lg font-bold"
             forceEditMode={effectiveEditMode}
@@ -705,7 +587,7 @@ const Checkout = () => {
         <div className="flex flex-col items-start">
           <span className="text-xs text-gray-500">Tour Type</span>
           <EditableField
-            value={tour?.type || "Day Tour, Private Tour"}
+            value={tour?.type || "Not specified"}
             tag="span"
             className="text-lg font-bold"
             forceEditMode={effectiveEditMode}
@@ -715,7 +597,7 @@ const Checkout = () => {
         <div className="flex flex-col items-start">
           <span className="text-xs text-gray-500">Reviews</span>
           <EditableField
-            value={tour?.reviewText || "No reviews yet"}
+            value={tour?.reviewText || "Not specified"}
             tag="span"
             className="text-lg font-bold"
             forceEditMode={effectiveEditMode}
@@ -736,7 +618,7 @@ const Checkout = () => {
             </div>
             <div className="text-right">
               <div className="text-sm text-blue-600">Total Price</div>
-              <div className="text-2xl font-bold text-blue-800">{tour?.currency || "CHF"}{totalPrice}</div>
+              <div className="text-2xl font-bold text-blue-800">{pricing.currency}{totalPrice.toFixed(2)}</div>
             </div>
           </div>
         </div>
@@ -773,9 +655,8 @@ const Checkout = () => {
                     if (res.ok) {
                       const response = await res.json();
                       const tourData = response.tour || response;
-                      const normalizedData = normalizeTourData(tourData);
                       clearToursCache();
-                      setTour(normalizedData);
+                      syncTourState(tourData);
                       return true;
                     }
                     return false;
@@ -788,7 +669,7 @@ const Checkout = () => {
                 tag="h3"
               />
               <EditableField
-                value={stripHtmlToText(tour.overview || tour.description || tourDescriptions['default'].overview || '')}
+                value={stripHtmlToText(tour.overview || tour.description || '')}
                 forceEditMode={effectiveEditMode}
                 onSave={async (value) => {
                   const tourId = getTourId(tour);
@@ -808,9 +689,8 @@ const Checkout = () => {
                     if (res.ok) {
                       const response = await res.json();
                       const tourData = response.tour || response;
-                      const normalizedData = normalizeTourData(tourData);
                       clearToursCache();
-                      setTour(normalizedData);
+                      syncTourState(tourData);
                       return true;
                     }
                     return false;
@@ -904,8 +784,7 @@ const Checkout = () => {
               onClick={async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                const updated = [...highlights, 'New highlight'];
-                await saveArrayField('highlights', updated);
+                setHighlights((current) => [...current, '']);
               }}
               className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
             >
@@ -999,8 +878,7 @@ const Checkout = () => {
                   onClick={async (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    const updated = [...included, "New included item"];
-                    await saveArrayField('included', updated);
+                    setIncluded((current) => [...current, ""]);
                   }}
                   className="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors"
                 >
@@ -1092,8 +970,7 @@ const Checkout = () => {
                   onClick={async (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    const updated = [...excluded, 'New excluded item'];
-                    await saveArrayField('excluded', updated);
+                    setExcluded((current) => [...current, '']);
                   }}
                   className="mt-4 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
                 >
@@ -1112,8 +989,7 @@ const Checkout = () => {
             onSave={async (updatedItinerary) => {
               return await saveArrayField('itinerary', updatedItinerary);
             }}
-            tour={tour}
-            passcodeHeader={passcodeHeader}
+            onAddDraft={(newItem) => setItinerary((current) => [...current, newItem])}
           />
 
           {/* Calendar & Prices Section */}
@@ -1137,7 +1013,7 @@ const Checkout = () => {
                 onChange={(e) => setSelectedDate(e.target.value)}
                 className="border rounded px-3 py-2"
               />
-              <span className="text-red-700 font-semibold">{tour?.currency || "CHF"}{pricePerTicket}</span>
+              <span className="text-red-700 font-semibold">{pricing.currency}{pricePerTicket.toFixed(2)}</span>
             </div>
           )}
         </div>
@@ -1152,7 +1028,7 @@ const Checkout = () => {
             tickets={tickets}
             setTickets={setTickets}
             totalPrice={totalPrice}
-            currency={tour?.currency || "CHF"}
+            currency={pricing.currency}
             date={selectedDate}
             time={selectedTime}
             onPriceUpdated={(newPrice) => {
@@ -1177,9 +1053,8 @@ const Checkout = () => {
                 if (res.ok) {
                   const response = await res.json();
                   const tourData = response.tour || response;
-                  const normalizedData = normalizeTourData(tourData);
                   clearToursCache();
-                  setTour(normalizedData);
+                  syncTourState(tourData);
                   return true;
                 }
                 return false;

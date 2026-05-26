@@ -1,14 +1,12 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect } from "react";
 import { AppContext } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { useAdmin } from "../context/AdminContext";
 
 const AdminDashboard = () => {
   const { users, bookings, loading: appLoading } = useContext(AppContext);
-  const { isAdmin, loading: adminLoading, passcodeHeader } = useAdmin();
+  const { isAdmin, loading: adminLoading } = useAdmin();
   const navigate = useNavigate();
-  const [migrating, setMigrating] = useState(false);
   
   const loading = appLoading || adminLoading;
   
@@ -46,26 +44,6 @@ const AdminDashboard = () => {
               className="px-6 py-3 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700"
             >
               Update Tours
-            </button>
-            <button
-              onClick={async () => {
-                if (!confirm('This will migrate all hardcoded tours to the database. Continue?')) return;
-                setMigrating(true);
-                try {
-                  const headers = passcodeHeader ? { 'X-Admin-Passcode': passcodeHeader } : {};
-                  const res = await axios.post('/api/migrate-tours', {}, { headers });
-                  alert(`Success! ${res.data.message}`);
-                  window.location.reload();
-                } catch (error) {
-                  alert('Migration failed: ' + (error.response?.data?.message || error.message));
-                } finally {
-                  setMigrating(false);
-                }
-              }}
-              disabled={migrating}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 disabled:bg-gray-400"
-            >
-              {migrating ? 'Migrating...' : 'Migrate Hardcoded Tours to DB'}
             </button>
           </div>
         </section>

@@ -1,19 +1,23 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Plus, X, Edit3, Move } from "lucide-react";
 
 const EditableItinerary = ({ itinerary, onSave, isAdmin }) => {
   const [editMode, setEditMode] = useState(false);
   const [itineraryData, setItineraryData] = useState(itinerary || []);
 
+  useEffect(() => {
+    setItineraryData(Array.isArray(itinerary) ? itinerary : []);
+  }, [itinerary]);
+
   const handleAddItem = () => {
     const newItem = {
-      title: "New Location",
-      description: "Add description here...",
-      duration: "1-2 hours",
-      location: "Location name",
-      activities: ["Activity 1"]
+      title: "",
+      description: "",
+      duration: "",
+      location: "",
+      activities: []
     };
-    setItineraryData([...itineraryData, newItem]);
+    setItineraryData((current) => [...current, newItem]);
   };
 
   const handleRemoveItem = (index) => {
@@ -40,21 +44,28 @@ const EditableItinerary = ({ itinerary, onSave, isAdmin }) => {
   };
 
   const handleActivityChange = (itemIndex, activityIndex, value) => {
-    const updated = [...itineraryData];
-    updated[itemIndex].activities[activityIndex] = value;
-    setItineraryData(updated);
+    setItineraryData((current) => current.map((item, index) => {
+      if (index !== itemIndex) return item;
+      const activities = Array.isArray(item.activities) ? [...item.activities] : [];
+      activities[activityIndex] = value;
+      return { ...item, activities };
+    }));
   };
 
   const handleAddActivity = (itemIndex) => {
-    const updated = [...itineraryData];
-    updated[itemIndex].activities.push("New Activity");
-    setItineraryData(updated);
+    setItineraryData((current) => current.map((item, index) => (
+      index === itemIndex
+        ? { ...item, activities: [...(Array.isArray(item.activities) ? item.activities : []), ""] }
+        : item
+    )));
   };
 
   const handleRemoveActivity = (itemIndex, activityIndex) => {
-    const updated = [...itineraryData];
-    updated[itemIndex].activities.splice(activityIndex, 1);
-    setItineraryData(updated);
+    setItineraryData((current) => current.map((item, index) => (
+      index === itemIndex
+        ? { ...item, activities: (Array.isArray(item.activities) ? item.activities : []).filter((_, activityIdx) => activityIdx !== activityIndex) }
+        : item
+    )));
   };
 
   const handleSave = () => {

@@ -20,6 +20,12 @@ const tourSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
+  currency: {
+    type: String,
+    default: 'CHF',
+    uppercase: true,
+    trim: true
+  },
   startDate: {
     type: Date,
     required: true
@@ -51,6 +57,8 @@ const tourSchema = new mongoose.Schema({
     type: Number,
     min: 1
   },
+  // Stored image URLs/data URLs belong to the MongoDB tour document, not to a title-derived folder.
+  // Renaming a tour must never change or regenerate this array.
   images: [{
     type: String,
     trim: true
@@ -80,6 +88,10 @@ const tourSchema = new mongoose.Schema({
       type: String,
       trim: true
     },
+    type: {
+      type: String,
+      trim: true
+    },
     activities: [{
       type: String,
       trim: true
@@ -92,18 +104,15 @@ const tourSchema = new mongoose.Schema({
   },
   duration: {
     type: String,
-    trim: true,
-    default: "12 hours"
+    trim: true
   },
   tourType: {
     type: String,
-    trim: true,
-    default: "Day Tour, Private Tour"
+    trim: true
   },
   reviewText: {
     type: String,
-    trim: true,
-    default: "No reviews yet"
+    trim: true
   },
   highlights: [{
     type: String,
@@ -143,12 +152,12 @@ tourSchema.virtual('divisionName', {
   justOne: true
 });
 
-// Ensure virtual fields are serialized
-tourSchema.set('toJSON', { virtuals: true });
+// Ensure virtual fields and Map fields are serialized consistently for the frontend.
+tourSchema.set('toJSON', { virtuals: true, flattenMaps: true });
+tourSchema.set('toObject', { virtuals: true, flattenMaps: true });
 
 tourSchema.index({ division: 1, isActive: 1, createdAt: -1 });
 tourSchema.index({ isActive: 1, createdAt: -1 });
+tourSchema.index({ 'metadata.staticId': 1 }, { sparse: true });
 
 module.exports = mongoose.model('Tour', tourSchema);
-
-

@@ -6,6 +6,8 @@ import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-
 import { Lock, CreditCard } from "lucide-react";
 import axios from "axios";
 import { apiUrl } from "../utils/api";
+import { getTourId } from "../utils/tourId";
+import { calculateBookingPricing } from "../utils/bookingPricing";
 
 const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
 if (!publishableKey) {
@@ -13,7 +15,7 @@ if (!publishableKey) {
 }
 const stripePromise = publishableKey ? loadStripe(publishableKey) : null;
 
-const PaymentForm = ({ clientSecret }) => {
+const PaymentForm = ({ clientSecret, paymentSummary }) => {
   const navigate = useNavigate();
   const { booking } = useBooking();
   const { tour, tickets = 1, date, time, contact, flexibility } = booking || {};
@@ -23,10 +25,10 @@ const PaymentForm = ({ clientSecret }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const pricePerTicket = tour?.price || 35;
-  const upgradePrice = Math.round(pricePerTicket * 1.225 * 100) / 100;
-  const basePrice = flexibility === "upgrade" ? upgradePrice : pricePerTicket;
-  const totalPrice = basePrice * tickets;
+  const displayPricing = paymentSummary || calculateBookingPricing({ tour, tickets, selectedDate: date, flexibility });
+  const totalPrice = Number(displayPricing.total || displayPricing.amount || 0);
+  const displayTickets = Number(displayPricing.tickets || tickets || 1);
+  const displayCurrency = displayPricing.currency || tour?.currency || "CHF";
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -76,67 +78,18 @@ const PaymentForm = ({ clientSecret }) => {
   };
 
   if (!tour) {
-    // For testing purposes, create a default tour if none exists
-    const defaultTour = {
-      title: "Test Tour",
-      name: "Test Tour", 
-      price: 100,
-      id: "test-tour"
-    };
-    
     return (
-      <div className="min-h-screen bg-neutral-100 py-8 px-2">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold text-center mb-8">Payment Test</h1>
-          
-          <div className="bg-white rounded-xl shadow p-6">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold mb-4">Payment Details</h2>
-              
-              {/* Tour Info */}
-              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-bold">{defaultTour.title}</h3>
-                <p className="text-gray-600">Test Date • 09:00</p>
-                <p className="text-gray-600">1 ticket(s) • $100.00</p>
-              </div>
-
-              {/* Payment Form */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Payment Information
-                </label>
-                <div className="border border-gray-300 rounded-lg p-4">
-                  <PaymentElement />
-                </div>
-              </div>
-
-              {/* Pay Button */}
-              <button
-                type="submit"
-                disabled={!stripe || loading}
-                className="w-full bg-transparent border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:border-white hover:text-white disabled:bg-gray-400 disabled:border-gray-400 disabled:text-gray-400 font-bold py-3 rounded-xl transition-all duration-300 flex items-center justify-center gap-2"
-                onClick={handleSubmit}
-              >
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    Processing Payment...
-                  </>
-                ) : (
-                  <>
-                    <Lock className="w-5 h-5" />
-                    Pay $100.00
-                  </>
-                )}
-              </button>
-
-              {/* Security Notice */}
-              <div className="mt-4 text-xs text-gray-500 flex items-center gap-2">
-                <Lock className="w-4 h-4" />
-                Your payment will be processed securely by Stripe. We never store your card details.
-              </div>
-            </div>
-          </div>
+      <div className="min-h-screen bg-neutral-100 py-8 px-2 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">No Tour Selected</h2>
+          <p className="text-gray-600 mb-6">Please choose a MongoDB tour before starting payment.</p>
+          <button
+            type="button"
+            onClick={() => navigate("/switzerland")}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-xl transition"
+          >
+            View Tours
+          </button>
         </div>
       </div>
     );
@@ -155,7 +108,7 @@ const PaymentForm = ({ clientSecret }) => {
             <div className="mb-6 p-4 bg-gray-50 rounded-lg">
               <h3 className="font-bold">{tour.title || tour.name}</h3>
               <p className="text-gray-600">{date} • {time}</p>
-              <p className="text-gray-600">{tickets} ticket(s) • ${totalPrice.toFixed(2)}</p>
+              <p className="text-gray-600">{displayTickets} ticket(s) • {displayCurrency}{totalPrice.toFixed(2)}</p>
               </div>
 
             {/* Payment Form */}
@@ -190,7 +143,7 @@ const PaymentForm = ({ clientSecret }) => {
               ) : (
                 <>
                   <Lock className="w-5 h-5" />
-                  Pay ${totalPrice.toFixed(2)}
+                  Pay {displayCurrency}{totalPrice.toFixed(2)}
                 </>
               )}
             </button>
@@ -211,34 +164,95 @@ const Payment = () => {
   const [clientSecret, setClientSecret] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(!publishableKey);
-  const { booking } = useBooking();
-  const { tour, tickets = 1, flexibility } = booking || {};
+  const [freshTour, setFreshTour] = useState(null);
+  const [tourRefreshComplete, setTourRefreshComplete] = useState(false);
+  const [paymentSummary, setPaymentSummary] = useState(null);
+  const { booking, updateTour } = useBooking();
+  const { tour: bookingTour, tickets = 1, date, flexibility } = booking || {};
+  const tour = freshTour || bookingTour;
+  const bookingTourId = getTourId(bookingTour);
 
-  const pricePerTicket = tour?.price || 35;
-  const upgradePrice = Math.round(pricePerTicket * 1.225 * 100) / 100;
-  const basePrice = flexibility === "upgrade" ? upgradePrice : pricePerTicket;
-  const totalPrice = basePrice * tickets;
+  const pricing = calculateBookingPricing({ tour, tickets, selectedDate: date, flexibility });
+  const minTickets = pricing.minTickets;
+  const currentTickets = pricing.tickets;
+  const totalPrice = pricing.total;
+
+  useEffect(() => {
+    if (!bookingTourId) {
+      setTourRefreshComplete(true);
+      return;
+    }
+
+    let cancelled = false;
+    const refreshTour = async () => {
+      try {
+        setIsLoading(true);
+        setTourRefreshComplete(false);
+        const response = await fetch(apiUrl(`/api/tours/${bookingTourId}`), {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+          },
+        });
+        if (!response.ok) throw new Error(`Failed to refresh tour (${response.status})`);
+        const data = await response.json();
+        if (!cancelled) {
+          setFreshTour(data);
+          updateTour(data);
+          setTourRefreshComplete(true);
+        }
+      } catch (error) {
+        console.error('Failed to refresh MongoDB tour for payment:', error);
+        if (!cancelled) {
+          setError('Could not verify the latest tour details from MongoDB. Please go back and try again.');
+          setTourRefreshComplete(true);
+          setIsLoading(false);
+        }
+      }
+    };
+
+    refreshTour();
+    return () => {
+      cancelled = true;
+    };
+  }, [bookingTourId, updateTour]);
 
   useEffect(() => {
     const createPaymentIntent = async () => {
+      if (!tourRefreshComplete) return;
+      if (error) {
+        setIsLoading(false);
+        return;
+      }
+      if (!tour) {
+        setError("No MongoDB tour selected for payment.");
+        setIsLoading(false);
+        return;
+      }
+      if (!pricing.validTickets) {
+        setError(`Minimum ${minTickets} tickets are required for this tour.`);
+        setIsLoading(false);
+        return;
+      }
       try {
         setIsLoading(true);
         setError("");
-        console.log('Creating payment intent for amount:', totalPrice);
         const response = await axios.post(apiUrl('/api/create-payment-intent'), {
-          amount: Number(totalPrice),
-          currency: 'usd',
-          metadata: {
-            tourId: tour?.id,
-            tourName: tour?.title || tour?.name,
-            tickets: tickets,
-            flexibility: flexibility
-          }
+          tourId: getTourId(tour),
+          tickets: currentTickets,
+          selectedDate: date,
+          flexibility,
         });
         const cs = response?.data?.clientSecret || response?.data?.client_secret;
         if (!cs) throw new Error('No client secret returned');
-        console.log('Payment intent created successfully:', response.data);
         setClientSecret(cs);
+        setPaymentSummary({
+          ...(response.data?.pricing || {}),
+          total: Number(response.data?.amount ?? response.data?.pricing?.total ?? totalPrice),
+          currency: response.data?.currency || pricing.currency,
+          tickets: response.data?.pricing?.tickets || currentTickets,
+        });
       } catch (err) {
         console.error('Error creating payment intent:', err);
         const apiMessage = err.response?.data?.error || err.response?.data?.message;
@@ -251,12 +265,16 @@ const Payment = () => {
       }
     };
 
+    if (!tourRefreshComplete) {
+      return;
+    }
+
     if (totalPrice > 0 && tour) {
       createPaymentIntent();
     } else {
       setIsLoading(false);
     }
-  }, [totalPrice, tour, tickets, flexibility]);
+  }, [tourRefreshComplete, tour, currentTickets, minTickets, pricing.validTickets, pricing.currency, totalPrice, date, flexibility]);
 
   if (!publishableKey) {
     return (
@@ -328,7 +346,7 @@ const Payment = () => {
 
   return (
     <Elements stripe={stripePromise} options={{ clientSecret }}>
-      <PaymentForm clientSecret={clientSecret} />
+      <PaymentForm clientSecret={clientSecret} paymentSummary={paymentSummary} />
     </Elements>
   );
 };

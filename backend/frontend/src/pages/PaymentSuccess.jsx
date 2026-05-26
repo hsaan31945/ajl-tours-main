@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { CheckCircle, Download, Mail, Home } from "lucide-react";
 import { useContext } from "react";
 import { AppContext } from "../context/AppContext";
+import { apiUrl } from "../utils/api";
+import { calculateBookingPricing } from "../utils/bookingPricing";
 
 const PaymentSuccess = () => {
   const navigate = useNavigate();
@@ -31,25 +33,25 @@ const PaymentSuccess = () => {
       const normalize = (d) => {
         if (!d) return null;
         
-        // Calculate the correct total price based on flexibility
-        let totalAmount = d.tourPrice ?? d.amount ?? 0;
         const tickets = d.tickets ?? d.participants ?? 1;
         const flexibility = d.flexibility || 'standard';
-        
-        // If we have flexibility info, recalculate the total
-        if (flexibility === 'upgrade' && d.tourPrice) {
-          const upgradePrice = Math.round(d.tourPrice * 1.225 * 100) / 100;
-          totalAmount = upgradePrice * tickets;
-        } else if (d.tourPrice) {
-          totalAmount = d.tourPrice * tickets;
-        }
+        const pricing = calculateBookingPricing({
+          tour: {
+            price: d.tourPrice ?? d.amount ?? 0,
+            currency: d.tourCurrency || d.currency || 'CHF',
+            minTicketsPerBooking: d.minTicketsPerBooking || 1,
+          },
+          tickets,
+          selectedDate: d.selectedDate || d.date,
+          flexibility,
+        });
         
         return {
           tourName: d.tourName || d.tourTitle || 'Tour',
-          amount: totalAmount,
-          tickets: tickets,
+          amount: pricing.total,
+          tickets: pricing.tickets,
           tourId: d.tourId || 'unknown',
-          currency: d.tourCurrency || d.currency || '$',
+          currency: pricing.currency,
           selectedDate: d.selectedDate || d.date || new Date().toLocaleDateString(),
           time: d.time || '09:00',
           flexibility: flexibility
@@ -77,7 +79,7 @@ const PaymentSuccess = () => {
         }
       }
 
-      // Use normalized data if available, otherwise fallback
+      // Use normalized checkout data if available; keep missing details neutral.
       const data = tourData || {
         tourName: 'Tour',
         amount: 0,
@@ -133,29 +135,25 @@ const PaymentSuccess = () => {
       console.log('Booking saved to history:', newBooking);
       console.log('All bookings for user:', updatedBookings);
 
-      // Also save to database for admin panel
+      // Also save to database for admin panel. The backend re-validates tour, tickets, and total.
       try {
+        const paymentIntentId = new URLSearchParams(location.search).get('payment_intent');
         const bookingData = {
-          user_name: data.userName || data.name || "Guest User",
+          name: data.userName || data.name || user?.name || "Guest User",
           email: data.userEmail || userEmail,
           phone: data.userPhone || data.phone || "",
-          tour_name: data.tourName || "Unknown Tour",
-          tour_id: data.tourId || "",
-          tour_date: data.selectedDate || data.date || new Date().toISOString().split('T')[0],
-          tour_time: data.selectedTime || data.time || "09:00",
-          number_of_tickets: data.tickets || 1,
-          total_price: data.amount || 0, // Use the calculated total amount
-          currency: data.tourCurrency || data.currency || "USD",
-          special_requests: data.specialRequests || "",
-          payment_method: "Credit Card",
-          payment_status: "paid"
+          tourId: data.tourId || "",
+          tickets: data.tickets || 1,
+          travelers: data.tickets || 1,
+          selectedDate: data.selectedDate || data.date || new Date().toISOString().split('T')[0],
+          tripDate: data.selectedDate || data.date || new Date().toISOString().split('T')[0],
+          specialRequests: data.specialRequests || "",
+          paymentStatus: "paid",
+          stripePaymentId: paymentIntentId || undefined,
+          flexibility: data.flexibility || "standard"
         };
 
-        const apiUrl = process.env.NODE_ENV === 'production' 
-          ? '/api/bookings' 
-          : '/api/bookings';
-
-        const response = await fetch(apiUrl, {
+        const response = await fetch(apiUrl('/api/bookings'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -196,7 +194,7 @@ const PaymentSuccess = () => {
           <div className="text-left space-y-3">
             <div className="flex justify-between">
               <span className="text-gray-600">Tour Name:</span>
-              <span className="font-semibold">{bookingData?.tourName || "Switzerland Tour"}</span>
+              <span className="font-semibold">{bookingData?.tourName || "Tour"}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Booking ID:</span>
@@ -259,47 +257,9 @@ const PaymentSuccess = () => {
           </button>
         </div>
 
-        {/* Debug Button - Remove this after testing */}
-        <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <p className="text-sm text-yellow-800 mb-2">🧪 Debug: Clear old booking data to test fresh bookings</p>
-          <button
-            onClick={() => {
-              const userEmail = user?.email || 'guest';
-              localStorage.removeItem(`bookings_${userEmail}`);
-              alert('Old booking data cleared! Now test with a fresh booking.');
-            }}
-            className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 text-sm"
-          >
-            🧹 Clear Old Booking Data
-          </button>
-        </div>
-
         {/* Support Info */}
         <div className="mt-8 text-sm text-gray-500">
           <p>Need help? Contact our support team at support@tripgo.com</p>
-        </div>
-        
-        {/* Debug: Add Test Switzerland Tour */}
-        <div className="mt-4 p-4 bg-gray-100 rounded-lg">
-          <h3 className="font-semibold mb-2">Debug: Add Test Tour</h3>
-          <button 
-            onClick={async () => {
-              const testData = {
-                tourName: "Swiss Alps Tour",
-                amount: 15000,
-                tickets: 1,
-                tourId: "switzerland-alps",
-                currency: "$",
-                date: new Date().toLocaleDateString(),
-                time: "09:00"
-              };
-              await saveBookingToHistory(testData, `BK${Date.now()}TEST`);
-              alert('Test tour added! Check checkout page and admin panel.');
-            }}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm"
-          >
-            Add Test Switzerland Tour
-          </button>
         </div>
       </div>
     </div>

@@ -3,8 +3,8 @@
  * Business logic for booking operations
  */
 const Booking = require('../../models/Booking');
-const Tour = require('../../models/Tour');
 const { normalizeTourId, isValidObjectId } = require('../utils/tourId');
+const { getValidatedTourPricing } = require('./bookingPricingService');
 
 class BookingService {
   /**
@@ -52,13 +52,28 @@ class BookingService {
    * Create booking
    */
   async createBooking(bookingData) {
-    // Validate tour exists
     if (bookingData.tourId) {
-      const tourId = normalizeTourId(bookingData.tourId);
-      const tour = await Tour.findById(tourId);
-      if (!tour) {
-        throw new Error('Tour not found');
-      }
+      const pricing = await getValidatedTourPricing({
+        tourId: bookingData.tourId,
+        tickets: bookingData.tickets ?? bookingData.travelers,
+        selectedDate: bookingData.selectedDate || bookingData.tripDate,
+        flexibility: bookingData.flexibility,
+      });
+      const tripDate = bookingData.tripDate || bookingData.selectedDate || new Date();
+      bookingData = {
+        ...bookingData,
+        tourId: pricing.tour._id,
+        tourTitle: pricing.tour.name,
+        travelers: pricing.tickets,
+        totalPrice: pricing.total,
+        unitPrice: pricing.pricedUnit,
+        paymentCurrency: pricing.currency.toUpperCase(),
+        minTicketsAtBooking: pricing.minTickets,
+        flexibility: pricing.flexibility,
+        tripDate,
+      };
+    } else {
+      throw new Error('Valid tourId is required');
     }
     
     const booking = new Booking(bookingData);
@@ -108,8 +123,6 @@ class BookingService {
 }
 
 module.exports = new BookingService();
-
-
 
 
 

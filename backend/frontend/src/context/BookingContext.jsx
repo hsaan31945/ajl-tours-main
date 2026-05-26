@@ -24,7 +24,11 @@ export function BookingProvider({ children }) {
   // Helper functions to update each part
   const updateFlexibility = (flex) => setBooking(prev => ({ ...prev, flexibility: flex }));
   const updateContact = (contact) => setBooking(prev => ({ ...prev, contact: { ...prev.contact, ...contact } }));
-  const updateTickets = (tickets) => setBooking(prev => ({ ...prev, tickets }));
+  const updateTickets = (tickets) => {
+    const number = Number(tickets);
+    if (!Number.isInteger(number) || number < 1) return;
+    setBooking(prev => ({ ...prev, tickets: number }));
+  };
   const updateDateTime = (date, time) => setBooking(prev => ({ ...prev, date, time }));
   const updateTour = (tour) => setBooking(prev => ({ ...prev, tour }));
 

@@ -3,6 +3,7 @@ import { useAdmin } from "../context/AdminContext";
 import TourEditWizard from "../components/TourEditWizard";
 import { getTourId } from "../utils/tourId";
 import { apiUrl } from "../utils/api";
+import { normalizeTourData } from "../utils/tourDataMapper";
 
 const AdminUpdateTours = () => {
   const { isAdmin, passcodeHeader } = useAdmin();
@@ -27,7 +28,7 @@ const AdminUpdateTours = () => {
       });
       if (response.ok) {
         const data = await response.json();
-        setTours(data);
+        setTours(Array.isArray(data) ? data.map(normalizeTourData) : []);
       }
     } catch (error) {
       console.error('Error fetching tours:', error);
@@ -43,24 +44,21 @@ const AdminUpdateTours = () => {
   const handleSaveTour = async (savedTour) => {
     try {
       const savedRecord = savedTour?.tour || savedTour;
+      const normalizedSavedRecord = normalizeTourData(savedRecord);
       // savedTour is already the response from the API (saved in database)
       // No need to make another API call - just update local state
-      console.log('Handling saved tour:', savedRecord);
+      console.log('Handling saved tour:', normalizedSavedRecord);
       
       // Update the tours list with the saved tour from database
-      const updatedTours = tours.map(tour => {
+      setTours((currentTours) => currentTours.map(tour => {
         const tourId = getTourId(tour);
-        const savedTourId = getTourId(savedRecord);
-        return (tourId === savedTourId || tourId?.toString() === savedTourId?.toString()) ? savedRecord : tour;
-      });
-      
-      setTours(updatedTours);
+        const savedTourId = getTourId(normalizedSavedRecord);
+        return (tourId === savedTourId || tourId?.toString() === savedTourId?.toString()) ? normalizedSavedRecord : tour;
+      }));
       setEditingTour(null); // Close the wizard
       
       // Refresh the list from server to ensure data consistency
-      setTimeout(() => {
-        fetchTours();
-      }, 500); // Small delay to ensure UI updates first
+      await fetchTours();
       
       // Show success message
       alert('Tour updated successfully!');
@@ -90,7 +88,7 @@ const AdminUpdateTours = () => {
       
       if (response.ok) {
         // Remove from local state
-        setTours(tours.filter(t => getTourId(t)?.toString() !== tourId?.toString()));
+        setTours((currentTours) => currentTours.filter(t => getTourId(t)?.toString() !== tourId?.toString()));
         alert('Tour deleted successfully!');
       } else {
         const data = await response.json();

@@ -57,6 +57,57 @@ const compressImageToWebp = (file) => new Promise((resolve, reject) => {
   image.src = objectUrl;
 });
 
+const datePricesToRows = (datePrices) => {
+  if (!datePrices) return [];
+  if (Array.isArray(datePrices)) {
+    return datePrices
+      .map((entry) => ({
+        date: entry?.date || '',
+        price: Number(entry?.price || 0),
+      }))
+      .filter((entry) => entry.date);
+  }
+  if (typeof datePrices === 'object') {
+    return Object.entries(datePrices)
+      .map(([date, price]) => ({ date, price: Number(price || 0) }))
+      .filter((entry) => entry.date);
+  }
+  return [];
+};
+
+const datePriceRowsToMap = (rows) => {
+  if (!Array.isArray(rows)) return {};
+  return rows.reduce((acc, entry) => {
+    if (!entry?.date) return acc;
+    const price = Number(entry.price);
+    if (Number.isFinite(price)) {
+      acc[entry.date] = price;
+    }
+    return acc;
+  }, {});
+};
+
+const cleanTextArray = (items) => (
+  Array.isArray(items)
+    ? items.map((item) => String(item || '').trim()).filter(Boolean)
+    : []
+);
+
+const cleanObjectArray = (items, keys) => (
+  Array.isArray(items)
+    ? items
+        .map((item) => {
+          const cleaned = {};
+          keys.forEach((key) => {
+            const value = String(item?.[key] || '').trim();
+            if (value) cleaned[key] = value;
+          });
+          return cleaned;
+        })
+        .filter((item) => Object.keys(item).length > 0)
+    : []
+);
+
 const TourWizard = () => {
   const navigate = useNavigate();
   const { tourId } = useParams(); // Get tour ID from URL params
@@ -68,9 +119,9 @@ const TourWizard = () => {
   const [tourData, setTourData] = useState({
     // Basic info
     name: "",
-    description: "Enter tour description here...",
+    description: "",
     price: 0,
-    currency: "USD",
+    currency: "CHF",
     isActive: true,
     
     // Images
@@ -78,45 +129,18 @@ const TourWizard = () => {
     imageFiles: [], // For file uploads
     
     // Blue bar info
-    rating: 4.9,
-    reviews: 0,
-    topRated: true,
+    rating: "",
+    reviews: "",
+    topRated: false,
     
     // About this activity
-    activities: [
-      { icon: "check", title: "Free cancellation", desc: "Cancel up to 24 hours in advance for a full refund" },
-      { icon: "user", title: "Reserve now & pay later", desc: "Keep your travel plans flexible — book your spot and pay nothing today." },
-      { icon: "clock", title: "Duration 10.5 hours", desc: "Check availability to see starting times" },
-      { icon: "globe", title: "Live tour guide", desc: "German, English" },
-      { icon: "car", title: "Pickup included", desc: "Complimentary hotel pickup and drop-off service" },
-      { icon: "users", title: "Private group", desc: "Exclusive private tour experience for your group" }
-    ],
+    activities: [],
     
     // Itinerary
-    itinerary: [
-      { location: "Zürich", type: "Pickup location" },
-      { location: "Rhine Falls", type: "Visit, Sightseeing, Scenic drive" },
-      { location: "Meersburg", type: "Visit, Sightseeing, Walk, Scenic drive" },
-      { location: "Lindau", type: "Visit, Sightseeing" },
-      { location: "Bregenz", type: "Visit, Sightseeing, Scenic views on the way" },
-      { location: "Liechtenstein", type: "Visit, Sightseeing, Walk, Scenic views on the way" },
-      { location: "Zürich", type: "Arrive back at" }
-    ],
+    itinerary: [],
     
     // What's included
-    included: [
-      "Professional tour guide",
-      "Transportation",
-      "Hotel pickup and drop-off",
-      "All entrance fees"
-    ],
-    
-    // What's not included
-    notIncluded: [
-      "Meals and drinks",
-      "Personal expenses",
-      "Tips (optional)"
-    ],
+    included: [],
     
     // Additional sections for editing
     overview: "",
@@ -153,7 +177,7 @@ const TourWizard = () => {
             const normalizedTourData = {
               ...data,
               name: data.name || data.title || "",
-              description: data.description || data.desc || "Enter tour description here...",
+              description: data.description || data.desc || "",
               price: data.price || 0,
               images: data.images || [],
               startLocation: data.startLocation || "",
@@ -166,22 +190,14 @@ const TourWizard = () => {
               overview: data.overview || data.metadata?.overview || "",
               highlights: data.highlights || data.metadata?.highlights || [],
               included: data.included || data.metadata?.included || [],
-              excluded: data.excluded || data.metadata?.excluded || [],
-              notIncluded: data.notIncluded || data.metadata?.notIncluded || [],
+              excluded: data.excluded || data.metadata?.excluded || data.metadata?.notIncluded || [],
               itinerary: data.itinerary || data.metadata?.itinerary || [],
-              activities: data.activities || data.metadata?.activities || [
-                { icon: "check", title: "Free cancellation", desc: "Cancel up to 24 hours in advance for a full refund" },
-                { icon: "user", title: "Reserve now & pay later", desc: "Keep your travel plans flexible — book your spot and pay nothing today." },
-                { icon: "clock", title: "Duration 10.5 hours", desc: "Check availability to see starting times" },
-                { icon: "globe", title: "Live tour guide", desc: "German, English" },
-                { icon: "car", title: "Pickup included", desc: "Complimentary hotel pickup and drop-off service" },
-                { icon: "users", title: "Private group", desc: "Exclusive private tour experience for your group" }
-              ],
-              datePrices: data.datePrices || data.metadata?.datePrices || [],
-              rating: data.rating || data.metadata?.rating || 4.9,
+              activities: data.activities || data.metadata?.activities || [],
+              datePrices: datePricesToRows(data.datePrices || data.metadata?.datePrices),
+              rating: data.rating || data.metadata?.rating || "",
               reviews: data.reviews || data.metadata?.reviews || 0,
-              topRated: data.topRated !== undefined ? data.topRated : true,
-              currency: data.currency || data.metadata?.currency || "USD",
+              topRated: data.topRated !== undefined ? data.topRated : Boolean(data.metadata?.topRated),
+              currency: data.currency || data.metadata?.currency || "CHF",
               isActive: data.isActive !== undefined ? data.isActive : true
             };
             
@@ -252,7 +268,7 @@ const TourWizard = () => {
   const addActivity = () => {
     setTourData(prev => ({
       ...prev,
-      activities: [...prev.activities, { icon: "check", title: "New activity", desc: "Enter description" }]
+      activities: [...prev.activities, { icon: "check", title: "", desc: "" }]
     }));
   };
 
@@ -288,7 +304,7 @@ const TourWizard = () => {
   const addItineraryItem = () => {
     setTourData(prev => ({
       ...prev,
-      itinerary: [...prev.itinerary, { location: "New location", type: "Enter activity type" }]
+      itinerary: [...prev.itinerary, { location: "", type: "" }]
     }));
   };
 
@@ -312,7 +328,7 @@ const TourWizard = () => {
   const addIncluded = () => {
     setTourData(prev => ({
       ...prev,
-      included: [...prev.included, "New item"]
+      included: [...prev.included, ""]
     }));
   };
 
@@ -330,24 +346,24 @@ const TourWizard = () => {
     }));
   };
 
-  const addNotIncluded = () => {
+  const addExcluded = () => {
     setTourData(prev => ({
       ...prev,
-      notIncluded: [...prev.notIncluded, "New item"]
+      excluded: [...prev.excluded, ""]
     }));
   };
 
-  const removeNotIncluded = (index) => {
+  const removeExcluded = (index) => {
     setTourData(prev => ({
       ...prev,
-      notIncluded: prev.notIncluded.filter((_, i) => i !== index)
+      excluded: prev.excluded.filter((_, i) => i !== index)
     }));
   };
 
-  const updateNotIncluded = (index, value) => {
+  const updateExcluded = (index, value) => {
     setTourData(prev => ({
       ...prev,
-      notIncluded: prev.notIncluded.map((item, i) => i === index ? value : item)
+      excluded: prev.excluded.map((item, i) => i === index ? value : item)
     }));
   };
 
@@ -392,11 +408,7 @@ const TourWizard = () => {
         }
       } catch (error) {
         console.error('Error fetching divisions:', error);
-        // Default to Switzerland if API fails
-        setDivisions([{ _id: "default", name: "Switzerland" }]);
-        if (!selectedDivision) {
-          setSelectedDivision("default");
-        }
+        setDivisions([]);
       }
     };
     if (currentStep === 2) {
@@ -450,12 +462,12 @@ const TourWizard = () => {
       // Images are already compressed base64 data URLs from handleImageUpload
       const imageUrls = tourData.images;
 
-      // Better fallback logic for dates to ensure endDate >= startDate
       const finalStartDate = tourData.startDate ? new Date(tourData.startDate) : new Date();
-      // If endDate is empty, default it to startDate + 24 hours
       const finalEndDate = tourData.endDate ? new Date(tourData.endDate) : new Date(finalStartDate.getTime() + 24 * 60 * 60 * 1000);
 
       // Prepare tour data for API
+      const normalizedDatePrices = datePriceRowsToMap(tourData.datePrices);
+
       const tourPayload = {
         division: isEditing ? tourData.division : selectedDivision,
         name: tourData.name,
@@ -471,25 +483,24 @@ const TourWizard = () => {
         maxTotalTickets: tourData.maxTotalTickets || null,
         // Store additional sections
         overview: tourData.overview,
-        highlights: tourData.highlights,
-        included: tourData.included,
-        excluded: tourData.excluded,
-        itinerary: tourData.itinerary,
-        datePrices: tourData.datePrices,
+        highlights: cleanTextArray(tourData.highlights),
+        included: cleanTextArray(tourData.included),
+        excluded: cleanTextArray(tourData.excluded),
+        itinerary: cleanObjectArray(tourData.itinerary, ['title', 'description', 'duration', 'location', 'type']),
+        datePrices: normalizedDatePrices,
         metadata: {
-          rating: tourData.rating,
-          reviews: tourData.reviews,
-          topRated: tourData.topRated,
-          activities: tourData.activities,
-          itinerary: tourData.itinerary,
-          included: tourData.included,
-          notIncluded: tourData.notIncluded,
+          ...(tourData.rating !== "" && tourData.rating !== null && tourData.rating !== undefined ? { rating: Number(tourData.rating) } : {}),
+          ...(tourData.reviews !== "" && tourData.reviews !== null && tourData.reviews !== undefined ? { reviews: Number(tourData.reviews) } : {}),
+          ...(tourData.topRated !== undefined ? { topRated: Boolean(tourData.topRated) } : {}),
+          activities: cleanObjectArray(tourData.activities, ['icon', 'title', 'desc']),
+          itinerary: cleanObjectArray(tourData.itinerary, ['title', 'description', 'duration', 'location', 'type']),
+          included: cleanTextArray(tourData.included),
           currency: tourData.currency,
           // Additional sections
           overview: tourData.overview,
-          highlights: tourData.highlights,
-          excluded: tourData.excluded,
-          datePrices: tourData.datePrices
+          highlights: cleanTextArray(tourData.highlights),
+          excluded: cleanTextArray(tourData.excluded),
+          datePrices: normalizedDatePrices
         }
       };
 
@@ -846,18 +857,18 @@ const TourWizard = () => {
           <div className="bg-white rounded-xl shadow-lg p-6">
             <h2 className="text-2xl font-bold mb-4">What's Not Included</h2>
             <div className="space-y-2">
-              {tourData.notIncluded.map((item, idx) => (
+              {tourData.excluded.map((item, idx) => (
                 <div key={idx} className="flex gap-2">
                   <input
                     type="text"
                     value={item}
-                    onChange={(e) => updateNotIncluded(idx, e.target.value)}
+                    onChange={(e) => updateExcluded(idx, e.target.value)}
                     className="flex-1 border rounded px-3 py-2"
                   />
-                  <button onClick={() => removeNotIncluded(idx)} className="px-3 py-2 bg-red-200 rounded">×</button>
+                  <button onClick={() => removeExcluded(idx)} className="px-3 py-2 bg-red-200 rounded">×</button>
                 </div>
               ))}
-              <button onClick={addNotIncluded} className="px-4 py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700">
+              <button onClick={addExcluded} className="px-4 py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700">
                 + Add Item
               </button>
             </div>
@@ -910,7 +921,7 @@ const TourWizard = () => {
             <button
               onClick={() => setTourData(prev => ({
                 ...prev,
-                highlights: [...(prev.highlights || []), "New highlight"]
+                highlights: [...(prev.highlights || []), ""]
               }))}
               className="px-4 py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700"
             >
@@ -946,7 +957,7 @@ const TourWizard = () => {
               ))}
               <button onClick={() => setTourData(prev => ({
                 ...prev,
-                included: [...prev.included, "New included item"]
+                included: [...prev.included, ""]
               }))} className="px-4 py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700">
                 + Add Item
               </button>
@@ -956,71 +967,31 @@ const TourWizard = () => {
           <div className="bg-white rounded-xl shadow-lg p-6">
             <h2 className="text-2xl font-bold mb-4">What's Not Included</h2>
             <div className="space-y-2">
-              {tourData.notIncluded.map((item, idx) => (
+              {tourData.excluded.map((item, idx) => (
                 <div key={idx} className="flex gap-2">
                   <input
                     type="text"
                     value={item}
                     onChange={(e) => {
-                      const newNotIncluded = [...tourData.notIncluded];
-                      newNotIncluded[idx] = e.target.value;
-                      setTourData(prev => ({ ...prev, notIncluded: newNotIncluded }));
+                      const newExcluded = [...tourData.excluded];
+                      newExcluded[idx] = e.target.value;
+                      setTourData(prev => ({ ...prev, excluded: newExcluded }));
                     }}
                     className="flex-1 border rounded px-3 py-2"
                   />
                   <button onClick={() => {
-                    const newNotIncluded = tourData.notIncluded.filter((_, i) => i !== idx);
-                    setTourData(prev => ({ ...prev, notIncluded: newNotIncluded }));
+                    const newExcluded = tourData.excluded.filter((_, i) => i !== idx);
+                    setTourData(prev => ({ ...prev, excluded: newExcluded }));
                   }} className="px-3 py-2 bg-red-200 rounded">×</button>
                 </div>
               ))}
               <button onClick={() => setTourData(prev => ({
                 ...prev,
-                notIncluded: [...prev.notIncluded, "New not included item"]
+                excluded: [...prev.excluded, ""]
               }))} className="px-4 py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700">
                 + Add Item
               </button>
             </div>
-          </div>
-        </div>
-
-        {/* Excluded Section - New */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          <h2 className="text-2xl font-bold mb-4">What's Excluded</h2>
-          <div className="space-y-2">
-            {tourData.excluded?.map((item, idx) => (
-              <div key={idx} className="flex gap-2">
-                <input
-                  type="text"
-                  value={item}
-                  onChange={(e) => {
-                    const newExcluded = [...tourData.excluded];
-                    newExcluded[idx] = e.target.value;
-                    setTourData(prev => ({ ...prev, excluded: newExcluded }));
-                  }}
-                  placeholder="Enter excluded item"
-                  className="flex-1 border rounded-lg px-4 py-2"
-                />
-                <button
-                  onClick={() => {
-                    const newExcluded = tourData.excluded.filter((_, i) => i !== idx);
-                    setTourData(prev => ({ ...prev, excluded: newExcluded }));
-                  }}
-                  className="px-3 py-2 bg-red-200 rounded-lg hover:bg-red-300"
-                >
-                  ×
-                </button>
-              </div>
-            )) || <p className="text-gray-500">No excluded items yet</p>}
-            <button
-              onClick={() => setTourData(prev => ({
-                ...prev,
-                excluded: [...(prev.excluded || []), "New excluded item"]
-              }))}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700"
-            >
-              + Add Excluded Item
-            </button>
           </div>
         </div>
 

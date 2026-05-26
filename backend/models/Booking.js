@@ -39,6 +39,25 @@ const bookingSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
+  unitPrice: {
+    type: Number,
+    min: 0
+  },
+  paymentCurrency: {
+    type: String,
+    default: 'CHF',
+    uppercase: true,
+    trim: true
+  },
+  minTicketsAtBooking: {
+    type: Number,
+    min: 1
+  },
+  flexibility: {
+    type: String,
+    enum: ['standard', 'upgrade'],
+    default: 'standard'
+  },
   tripDate: {
     type: Date,
     required: true
@@ -74,5 +93,4 @@ const bookingSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model('Booking', bookingSchema);
-
 

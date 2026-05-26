@@ -6,6 +6,8 @@ import Button from "../components/Button";
 import { AppContext } from "../context/AppContext";
 import { GoogleMap, Marker, useLoadScript, Autocomplete } from "@react-google-maps/api";
 import { useCurrency } from "../context/CurrencyContext";
+import { calculateBookingPricing, parseTicketCount } from "../utils/bookingPricing";
+import { getTourId } from "../utils/tourId";
 
 const GOOGLE_MAPS_API_KEY = "AIzaSyBIsqW3BgowXGN6qM4RTiPdMi2a-9MT-Xs";
 const mapContainerStyle = { width: "100%", height: "300px" };
@@ -38,6 +40,7 @@ const Booking = () => {
   });
   const [totalPrice, setTotalPrice] = useState(price);
   const [autocomplete, setAutocomplete] = useState(null);
+  const pricing = calculateBookingPricing({ tour, tickets: formData.travelers, selectedDate: formData.tripDate, fallbackPrice: price });
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
@@ -85,7 +88,20 @@ const Booking = () => {
       toast.error("Please select your starting location (address or map pin).");
       return;
     }
-    const booking = { ...formData, tourTitle: title, totalPrice };
+    const travelers = parseTicketCount(formData.travelers);
+    if (!travelers || travelers < pricing.minTickets) {
+      toast.error(`Minimum ${pricing.minTickets} tickets are required for this tour.`);
+      return;
+    }
+    const booking = {
+      ...formData,
+      travelers,
+      tickets: travelers,
+      tourId: getTourId(tour),
+      tourTitle: title,
+      totalPrice: pricing.total,
+      paymentCurrency: pricing.currency,
+    };
     try {
       await addBooking(booking);
     toast.success("Booking successful!");
@@ -96,8 +112,8 @@ const Booking = () => {
   };
 
   React.useEffect(() => {
-    setTotalPrice((price * parseInt(formData.travelers, 10) * rate).toFixed(2));
-  }, [formData.travelers, price, tour, rate]);
+    setTotalPrice((pricing.total * rate).toFixed(2));
+  }, [pricing.total, rate]);
 
   const formVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -199,7 +215,8 @@ const Booking = () => {
           <motion.input
             type="number"
             name="travelers"
-            min="1"
+            min={pricing.minTickets}
+            step="1"
             value={formData.travelers}
             onChange={handleChange}
             className="w-full p-3 border rounded-lg bg-inherit"

@@ -50,17 +50,20 @@ async function checkSpecificTour() {
       
       // Update the tour if it has error messages
       if (hasErrorName || hasErrorStartLocation || hasErrorEndLocation) {
+        if (!division) {
+          throw new Error('Cannot repair tour-like fields without a valid division in MongoDB');
+        }
         const updateData = {};
         if (hasErrorName) {
-          updateData.name = division ? `${division.name} Tour` : 'Switzerland Tour';
+          updateData.name = `${division.name} Tour`;
           console.log('Updating name field');
         }
         if (hasErrorStartLocation) {
-          updateData.startLocation = division ? division.name : 'Switzerland';
+          updateData.startLocation = division.name;
           console.log('Updating startLocation field');
         }
         if (hasErrorEndLocation) {
-          updateData.endLocation = division ? division.name : 'Switzerland';
+          updateData.endLocation = division.name;
           console.log('Updating endLocation field');
         }
         
@@ -71,19 +74,28 @@ async function checkSpecificTour() {
         
         // Check if the tour has invalid or placeholder data
         if (!tour.name || tour.name.includes('Failed to save tour') || tour.name === 'Enter tour name here...') {
-          const correctedName = division ? `${division.name} Tour` : 'Switzerland Tour';
+          if (!division) {
+            throw new Error('Cannot repair tour name without a valid division in MongoDB');
+          }
+          const correctedName = `${division.name} Tour`;
           await Tour.findByIdAndUpdate(specificTourId, { name: correctedName });
           console.log('Updated tour name to:', correctedName);
         }
         
         if (!tour.startLocation || tour.startLocation.includes('Failed to save tour') || tour.startLocation === 'Enter start location here...') {
-          const correctedStartLocation = division ? division.name : 'Switzerland';
+          if (!division) {
+            throw new Error('Cannot repair start location without a valid division in MongoDB');
+          }
+          const correctedStartLocation = division.name;
           await Tour.findByIdAndUpdate(specificTourId, { startLocation: correctedStartLocation });
           console.log('Updated start location to:', correctedStartLocation);
         }
         
         if (!tour.endLocation || tour.endLocation.includes('Failed to save tour') || tour.endLocation === 'Enter end location here...') {
-          const correctedEndLocation = division ? division.name : 'Switzerland';
+          if (!division) {
+            throw new Error('Cannot repair end location without a valid division in MongoDB');
+          }
+          const correctedEndLocation = division.name;
           await Tour.findByIdAndUpdate(specificTourId, { endLocation: correctedEndLocation });
           console.log('Updated end location to:', correctedEndLocation);
         }

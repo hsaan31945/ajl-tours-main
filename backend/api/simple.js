@@ -2,10 +2,11 @@ const { connectDB, models } = require('../lib/db');
 const Tour = require('../models/Tour');
 const Division = require('../models/Division');
 const config = require('../lib/config');
+const tourService = require('../src/services/tourService');
 
-// Simple in-memory cache to avoid repeatedly hitting Mongo for reads
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes for list responses
-const SINGLE_CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes for individual tour responses
+// Do not keep tour data in serverless memory; MongoDB is the source of truth.
+const CACHE_TTL_MS = 0;
+const SINGLE_CACHE_TTL_MS = 0;
 let toursCache = { data: null, expiresAt: 0 };
 const tourByIdCache = new Map();
 
@@ -14,7 +15,21 @@ const cacheValid = (entry) => entry && entry.expiresAt > Date.now();
 const normalizeDatePrices = (datePrices) => {
   if (!datePrices) return {};
   if (datePrices instanceof Map) return Object.fromEntries(datePrices);
-  if (typeof datePrices === 'object') return datePrices;
+  if (Array.isArray(datePrices)) {
+    return datePrices.reduce((acc, entry) => {
+      if (!entry?.date) return acc;
+      const price = Number(entry.price);
+      if (Number.isFinite(price)) acc[entry.date] = price;
+      return acc;
+    }, {});
+  }
+  if (typeof datePrices === 'object') {
+    return Object.entries(datePrices).reduce((acc, [date, price]) => {
+      const numericPrice = Number(price);
+      if (date && Number.isFinite(numericPrice)) acc[date] = numericPrice;
+      return acc;
+    }, {});
+  }
   return {};
 };
 
@@ -32,6 +47,7 @@ const normalizeTour = (tour) => {
     description: tour.description,
     overview: tour.overview || '',
     price: tour.price,
+    currency: tour.currency || 'CHF',
     images: tour.images || [],
     startLocation: tour.startLocation,
     endLocation: tour.endLocation,
@@ -66,7 +82,9 @@ const normalizeTour = (tour) => {
 };
 
 const setCacheHeaders = (res) => {
-  res.setHeader('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=120');
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
 };
 
 const invalidateTourCache = (id) => {
@@ -202,7 +220,7 @@ module.exports = async (req, res) => {
             }
 
             const tour = await Tour.findById(tourId)
-              .select('name description price images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt')
+              .select('name description price currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt')
               .populate({ path: 'division', select: 'name', options: { lean: true } })
               .lean({ virtuals: true });
             if (!tour) {
@@ -262,7 +280,7 @@ module.exports = async (req, res) => {
                   };
               
               const tours = await Tour.find(query)
-                .select('name description price images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt destination')
+                .select('name description price currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt destination')
                 .populate({ path: 'division', select: 'name', options: { lean: true } })
                 .sort({ createdAt: -1 })
                 .limit(6) // Only fetch what we need
@@ -291,7 +309,7 @@ module.exports = async (req, res) => {
               console.log('Fetching all tours from database...');
               const nowTs = Date.now();
               const tours = await Tour.find({ isActive: true })
-                .select('name description price images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt')
+                .select('name description price currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt')
                 .populate({ path: 'division', select: 'name', options: { lean: true } })
                 .sort({ createdAt: -1 })
                 .lean({ virtuals: true });
@@ -321,73 +339,8 @@ module.exports = async (req, res) => {
                 return res.status(401).json({ message: 'Invalid or missing admin passcode' });
               }
 
-              const { division, name, description, overview, price, startLocation, endLocation, routeDetails, startDate, endDate, images, itinerary, highlights, included, excluded, duration, tourType, reviewText, minTicketsPerBooking, maxTotalTickets, metadata } = body;
-
-              if (!name || price === undefined || price === null) {
-                return res.status(400).json({ message: 'Name and price are required' });
-              }
-
-              // Handle division - create if doesn't exist or use provided
-              let divisionId = division;
-              try {
-                if (!division) {
-                  // Try to find or create a default division
-                  let defaultDivision = await Division.findOne({ name: 'Switzerland' });
-                  if (!defaultDivision) {
-                    defaultDivision = new Division({
-                      name: 'Switzerland',
-                      description: 'Tours in Switzerland',
-                      isActive: true
-                    });
-                    await defaultDivision.save();
-                    console.log('Created default Switzerland division:', defaultDivision._id);
-                  }
-                  divisionId = defaultDivision._id;
-                } else {
-                  // Verify division exists
-                  const divisionExists = await Division.findById(division);
-                  if (!divisionExists) {
-                    return res.status(400).json({ message: 'Division not found. Please create a division first.' });
-                  }
-                  divisionId = division;
-                }
-              } catch (divError) {
-                console.error('Error handling division:', divError);
-                return res.status(500).json({ 
-                  message: 'Failed to process division', 
-                  error: config.NODE_ENV === 'development' ? divError.message : 'Internal server error'
-                });
-              }
-
-              const tour = new Tour({
-                division: divisionId,
-                name: String(name).trim(),
-                description: description ? String(description).trim() : '',
-                overview: overview ? String(overview).trim() : '',
-                price: Number(price),
-                startDate: startDate ? new Date(startDate) : new Date(),
-                endDate: endDate ? new Date(endDate) : new Date(Date.now() + 24 * 60 * 60 * 1000),
-                startLocation: startLocation ? String(startLocation).trim() : '',
-                endLocation: endLocation ? String(endLocation).trim() : '',
-                routeDetails: routeDetails ? String(routeDetails).trim() : '',
-                images: Array.isArray(images) ? images : [],
-                itinerary: Array.isArray(itinerary) ? itinerary : [],
-                highlights: Array.isArray(highlights) ? highlights : [],
-                included: Array.isArray(included) ? included : [],
-                excluded: Array.isArray(excluded) ? excluded : [],
-                duration: duration ? String(duration).trim() : '',
-                tourType: tourType ? String(tourType).trim() : '',
-                reviewText: reviewText ? String(reviewText).trim() : '',
-                minTicketsPerBooking: minTicketsPerBooking ? Number(minTicketsPerBooking) : 1,
-                maxTotalTickets: maxTotalTickets ? Number(maxTotalTickets) : null,
-                metadata: metadata && typeof metadata === 'object' ? metadata : {},
-                isActive: true
-              });
-
-              await tour.save();
-              await tour.populate('division', 'name');
-
-              const normalizedTour = normalizeTour(tour.toObject({ virtuals: true }));
+              const tour = await tourService.createTour(body);
+              const normalizedTour = normalizeTour(tour);
               invalidateTourCache(normalizedTour.id);
 
               return res.status(201).json({
@@ -418,39 +371,25 @@ module.exports = async (req, res) => {
               return res.status(401).json({ message: 'Invalid or missing admin passcode' });
             }
 
-            const tour = await Tour.findById(tourId);
-            if (!tour) {
-              return res.status(404).json({ message: 'Tour not found' });
-            }
-
-            // Update fields
-            if (body.name !== undefined) tour.name = body.name;
-            if (body.description !== undefined) tour.description = body.description;
-            if (body.price !== undefined) tour.price = Number(body.price);
-            if (body.startLocation !== undefined) tour.startLocation = body.startLocation;
-            if (body.endLocation !== undefined) tour.endLocation = body.endLocation;
-            if (body.routeDetails !== undefined) tour.routeDetails = body.routeDetails;
-            if (body.images !== undefined) tour.images = Array.isArray(body.images) ? body.images : [];
-            if (body.metadata !== undefined) tour.metadata = body.metadata;
-            if (body.itinerary !== undefined) tour.itinerary = Array.isArray(body.itinerary) ? body.itinerary : [];
-            if (body.datePrices !== undefined) {
-              // Convert object to Map
-              tour.datePrices = new Map(Object.entries(body.datePrices));
-            }
-
-            await tour.save();
-            await tour.populate('division', 'name');
-
-            const normalizedTour = normalizeTour(tour.toObject({ virtuals: true }));
+            const tour = await tourService.updateTour(tourId, body);
+            const normalizedTour = normalizeTour(tour);
             invalidateTourCache(normalizedTour.id);
 
-            return res.json(normalizedTour);
+            return res.json({ success: true, tour: normalizedTour });
           }
           break;
           
         case 'DELETE':
           // DELETE tour
           if (tourId) {
+            const header = req.headers['x-admin-passcode'] || req.headers['X-Admin-Passcode'];
+            const expected = process.env.ADMIN_PASSCODE || 'admin123';
+            const headerTrimmed = header ? header.trim() : null;
+            const expectedTrimmed = expected ? expected.trim() : null;
+            if (!headerTrimmed || headerTrimmed !== expectedTrimmed) {
+              return res.status(401).json({ message: 'Invalid or missing admin passcode' });
+            }
+
             const tour = await Tour.findById(tourId);
             if (!tour) {
               return res.status(404).json({ message: 'Tour not found' });

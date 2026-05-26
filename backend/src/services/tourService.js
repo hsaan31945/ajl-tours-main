@@ -14,6 +14,76 @@ const clearTourListCache = () => {
   listCache.clear();
 };
 
+const normalizeDatePrices = (datePrices) => {
+  if (!datePrices) return {};
+  if (datePrices instanceof Map) return Object.fromEntries(datePrices);
+  if (Array.isArray(datePrices)) {
+    return datePrices.reduce((acc, entry) => {
+      if (!entry || !entry.date) return acc;
+      const price = Number(entry.price);
+      if (Number.isFinite(price)) {
+        acc[String(entry.date)] = price;
+      }
+      return acc;
+    }, {});
+  }
+  if (typeof datePrices === 'object') {
+    return Object.entries(datePrices).reduce((acc, [date, price]) => {
+      const numericPrice = Number(price);
+      if (date && Number.isFinite(numericPrice)) {
+        acc[date] = numericPrice;
+      }
+      return acc;
+    }, {});
+  }
+  return {};
+};
+
+const cleanTextArray = (items) => (
+  Array.isArray(items)
+    ? items.map((item) => String(item || '').trim()).filter(Boolean)
+    : []
+);
+
+const normalizeImageValue = (image) => {
+  if (!image || typeof image !== 'string') return null;
+  const value = image.trim();
+  if (!value) return null;
+  return /^(https?:\/\/|\/|\.\/|data:image\/(webp|avif);base64,)/i.test(value) ? value : null;
+};
+
+const normalizeImages = (images) => {
+  const list = Array.isArray(images) ? images : images ? [images] : [];
+  return list.map(normalizeImageValue).filter(Boolean);
+};
+
+const normalizeItinerary = (items) => (
+  Array.isArray(items)
+    ? items
+        .map((item) => {
+          if (!item || typeof item !== 'object') return null;
+          const normalized = {
+            title: item.title ? String(item.title).trim() : undefined,
+            description: item.description ? String(item.description).trim() : undefined,
+            duration: item.duration ? String(item.duration).trim() : undefined,
+            location: item.location ? String(item.location).trim() : undefined,
+            type: item.type ? String(item.type).trim() : undefined,
+            activities: cleanTextArray(item.activities),
+          };
+          Object.keys(normalized).forEach((key) => {
+            if (
+              normalized[key] === undefined ||
+              (Array.isArray(normalized[key]) && normalized[key].length === 0)
+            ) {
+              delete normalized[key];
+            }
+          });
+          return Object.keys(normalized).length ? normalized : null;
+        })
+        .filter(Boolean)
+    : []
+);
+
 class TourService {
   /** First usable tour image for card views. */
   pickListImage(images) {
@@ -52,28 +122,66 @@ class TourService {
 
     if (payload.title && !payload.name) payload.name = payload.title;
     if (payload.desc && !payload.description) payload.description = payload.desc;
-    if (payload.price !== undefined) payload.price = Number(payload.price || 0);
-
-    if (withDefaults) {
-      payload.name = payload.name || 'Switzerland Tour';
-      payload.description = payload.description || payload.overview || '';
-      payload.price = Number(payload.price || 0);
-      payload.startDate = payload.startDate || new Date();
-      payload.endDate = payload.endDate || payload.startDate || new Date();
-      payload.startLocation = payload.startLocation || payload.address || 'Switzerland';
-      payload.endLocation = payload.endLocation || payload.address || payload.startLocation || 'Switzerland';
-    } else {
-      ['startDate', 'endDate', 'startLocation', 'endLocation', 'division'].forEach((field) => {
-        if (payload[field] === null || payload[field] === undefined || payload[field] === '') {
-          delete payload[field];
-        }
-      });
+    if (payload.price !== undefined) payload.price = Number(payload.price);
+    if (payload.currency !== undefined) payload.currency = String(payload.currency || 'CHF').trim().toUpperCase() || 'CHF';
+    if (payload.minTicketsPerBooking !== undefined) {
+      const minTickets = Number(payload.minTicketsPerBooking);
+      payload.minTicketsPerBooking = Number.isInteger(minTickets) && minTickets > 0 ? minTickets : 1;
+    }
+    if (payload.maxTotalTickets !== undefined && payload.maxTotalTickets !== null && payload.maxTotalTickets !== '') {
+      const maxTickets = Number(payload.maxTotalTickets);
+      if (Number.isInteger(maxTickets) && maxTickets > 0) {
+        payload.maxTotalTickets = maxTickets;
+      } else {
+        delete payload.maxTotalTickets;
+      }
+    }
+    if (payload.datePrices !== undefined) payload.datePrices = normalizeDatePrices(payload.datePrices);
+    if (payload.images !== undefined) payload.images = normalizeImages(payload.images);
+    if (payload.highlights !== undefined) payload.highlights = cleanTextArray(payload.highlights);
+    if (payload.included !== undefined) payload.included = cleanTextArray(payload.included);
+    if (payload.excluded !== undefined) payload.excluded = cleanTextArray(payload.excluded);
+    if (payload.itinerary !== undefined) payload.itinerary = normalizeItinerary(payload.itinerary);
+    if (payload.pickupLocations !== undefined) {
+      payload.pickupLocations = Array.isArray(payload.pickupLocations)
+        ? payload.pickupLocations
+            .map((item) => ({
+              name: item?.name ? String(item.name).trim() : '',
+              description: item?.description ? String(item.description).trim() : '',
+            }))
+            .filter((item) => item.name || item.description)
+        : [];
+    }
+    if (payload.metadata?.datePrices !== undefined) {
+      payload.metadata = {
+        ...payload.metadata,
+        datePrices: normalizeDatePrices(payload.metadata.datePrices),
+      };
     }
 
-    payload.metadata = {
-      ...(payload.metadata || {}),
-      ...(fallbackId ? { staticId: String(fallbackId) } : {}),
-    };
+    ['startDate', 'endDate', 'startLocation', 'endLocation', 'division'].forEach((field) => {
+      if (payload[field] === null || payload[field] === undefined || payload[field] === '') {
+        delete payload[field];
+      }
+    });
+
+    ['description', 'overview', 'routeDetails', 'duration', 'tourType', 'reviewText'].forEach((field) => {
+      if (payload[field] !== undefined) {
+        const value = String(payload[field]).trim();
+        payload[field] = value || null;
+      }
+    });
+
+    if (payload.metadata !== undefined && (!payload.metadata || typeof payload.metadata !== 'object')) {
+      delete payload.metadata;
+    }
+
+    if (fallbackId) {
+      payload.metadata = {
+        ...(payload.metadata || {}),
+        staticId: String(fallbackId),
+      };
+    }
 
     return payload;
   }
@@ -99,6 +207,7 @@ class TourService {
       name: tour.name,
       description,
       price: Number(tour.price) || 0,
+      currency: tour.currency || 'CHF',
       images: thumbnail ? [thumbnail] : [],
       startLocation: tour.startLocation,
       endLocation: tour.endLocation,
@@ -229,11 +338,18 @@ class TourService {
 
   dedupeTours(tours = []) {
     const byKey = new Map();
+    const withoutStableKey = [];
 
     for (const tour of tours) {
+      const id = tour.id || (tour._id ? String(tour._id) : '');
       const staticId = tour.metadata?.staticId ? String(tour.metadata.staticId) : '';
-      const nameKey = tour.name ? String(tour.name).trim().toLowerCase() : '';
-      const keys = [staticId, nameKey, tour.id].filter(Boolean);
+      const keys = [id, staticId].filter(Boolean);
+
+      if (!keys.length) {
+        withoutStableKey.push(tour);
+        continue;
+      }
+
       const existing = keys.map((key) => byKey.get(key)).find(Boolean);
 
       if (!existing) {
@@ -241,20 +357,18 @@ class TourService {
         continue;
       }
 
-      const existingHasStaticId = Boolean(existing.metadata?.staticId);
-      const tourHasStaticId = Boolean(staticId);
       const existingTime = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
       const tourTime = new Date(tour.updatedAt || tour.createdAt || 0).getTime();
 
-      if (
-        (tourHasStaticId && !existingHasStaticId) ||
-        (tourHasStaticId === existingHasStaticId && tourTime >= existingTime)
-      ) {
+      if (tourTime >= existingTime) {
         keys.forEach((key) => byKey.set(key, tour));
       }
     }
 
-    return [...new Map([...byKey.values()].map((tour) => [tour.id, tour])).values()];
+    return [
+      ...new Map([...byKey.values()].map((tour) => [tour.id || tour._id, tour])).values(),
+      ...withoutStableKey,
+    ];
   }
 
   /**
@@ -380,7 +494,7 @@ class TourService {
         throw new Error('Tour name is required');
       }
       
-      if (!tourData.price || Number(tourData.price) < 0) {
+      if (tourData.price === undefined || tourData.price === null || tourData.price === '' || Number(tourData.price) < 0) {
         throw new Error('Valid price is required');
       }
       
@@ -392,34 +506,49 @@ class TourService {
         throw new Error('End location is required');
       }
 
-      // Prepare tour payload with proper defaults
+      const optionalText = (value) => (value ? String(value).trim() : undefined);
+      const optionalNumber = (value) => {
+        if (value === undefined || value === null || value === '') return undefined;
+        const numeric = Number(value);
+        return Number.isFinite(numeric) ? numeric : undefined;
+      };
+
+      // Prepare tour payload. MongoDB receives only admin-provided tour details.
       const tourPayload = {
         division: division._id,
         name: String(tourData.name).trim(),
-        description: tourData.description ? String(tourData.description).trim() : '',
-        overview: tourData.overview ? String(tourData.overview).trim() : '',
+        description: optionalText(tourData.description) || null,
+        overview: optionalText(tourData.overview) || null,
         price: Number(tourData.price),
         startLocation: String(tourData.startLocation).trim(),
         endLocation: String(tourData.endLocation).trim(),
-        routeDetails: tourData.routeDetails ? String(tourData.routeDetails).trim() : '',
+        routeDetails: optionalText(tourData.routeDetails) || null,
         // Ensure arrays are arrays
-        highlights: Array.isArray(tourData.highlights) ? tourData.highlights : [],
-        included: Array.isArray(tourData.included) ? tourData.included : [],
-        excluded: Array.isArray(tourData.excluded) ? tourData.excluded : [],
-        itinerary: Array.isArray(tourData.itinerary) ? tourData.itinerary : [],
-        images: Array.isArray(tourData.images) ? tourData.images : [],
+        highlights: cleanTextArray(tourData.highlights),
+        included: cleanTextArray(tourData.included),
+        excluded: cleanTextArray(tourData.excluded),
+        itinerary: normalizeItinerary(tourData.itinerary),
+        images: normalizeImages(tourData.images),
         pickupLocations: Array.isArray(tourData.pickupLocations) ? tourData.pickupLocations : [],
         // Ensure dates are Date objects
         startDate: tourData.startDate ? new Date(tourData.startDate) : new Date(),
         endDate: tourData.endDate ? new Date(tourData.endDate) : new Date(Date.now() + 24 * 60 * 60 * 1000),
-        // Optional fields with defaults
-        duration: tourData.duration ? String(tourData.duration).trim() : '12 hours',
-        tourType: tourData.tourType ? String(tourData.tourType).trim() : 'Day Tour, Private Tour',
-        reviewText: tourData.reviewText ? String(tourData.reviewText).trim() : 'No reviews yet',
-        minTicketsPerBooking: tourData.minTicketsPerBooking ? Number(tourData.minTicketsPerBooking) : 1,
-        maxTotalTickets: tourData.maxTotalTickets ? Number(tourData.maxTotalTickets) : null,
-        datePrices: tourData.datePrices && typeof tourData.datePrices === 'object' ? tourData.datePrices : {},
-        metadata: tourData.metadata && typeof tourData.metadata === 'object' ? tourData.metadata : {},
+        // Optional fields without tour-like defaults
+        duration: optionalText(tourData.duration),
+        tourType: optionalText(tourData.tourType),
+        reviewText: optionalText(tourData.reviewText),
+        currency: tourData.currency ? String(tourData.currency).trim().toUpperCase() : 'CHF',
+        minTicketsPerBooking: Number.isInteger(Number(tourData.minTicketsPerBooking)) && Number(tourData.minTicketsPerBooking) > 0
+          ? Number(tourData.minTicketsPerBooking)
+          : 1,
+        maxTotalTickets: optionalNumber(tourData.maxTotalTickets),
+        datePrices: normalizeDatePrices(tourData.datePrices),
+        metadata: {
+          ...(tourData.metadata && typeof tourData.metadata === 'object' ? tourData.metadata : {}),
+          ...(tourData.metadata?.datePrices !== undefined
+            ? { datePrices: normalizeDatePrices(tourData.metadata.datePrices) }
+            : {}),
+        },
         isActive: tourData.isActive !== undefined ? Boolean(tourData.isActive) : true,
       };
       
@@ -462,21 +591,23 @@ class TourService {
     const tourId = normalizeTourId(id);
     
     if (!isValidObjectId(tourId)) {
-      const division = await this.getSwitzerlandDivision();
-      const payload = this.normalizeTourUpdatePayload(updateData, tourId, true);
-      payload.division = division._id;
+      const existingTour = await Tour.findOne({ 'metadata.staticId': tourId }).lean();
+      if (!existingTour) {
+        throw new Error('Tour not found');
+      }
 
-      const query = {
-        $or: [
-          { 'metadata.staticId': tourId },
-          { name: payload.name, division: division._id },
-        ],
-      };
+      const payload = this.normalizeTourUpdatePayload(updateData, tourId);
+      if (payload.metadata !== undefined) {
+        payload.metadata = {
+          ...(existingTour.metadata || {}),
+          ...payload.metadata,
+        };
+      }
 
-      const tour = await Tour.findOneAndUpdate(
-        query,
+      const tour = await Tour.findByIdAndUpdate(
+        existingTour._id,
         { $set: payload },
-        { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+        { new: true, runValidators: true }
       ).populate('division', 'name description');
 
       const tourObj = tour.toObject({ virtuals: true });
@@ -488,10 +619,22 @@ class TourService {
       return tourObj;
     }
     
+    const existingTour = await Tour.findById(tourId).lean();
+    if (!existingTour) {
+      throw new Error('Tour not found');
+    }
+
     const payload = this.normalizeTourUpdatePayload(updateData);
+    if (payload.metadata !== undefined) {
+      payload.metadata = {
+        ...(existingTour.metadata || {}),
+        ...payload.metadata,
+      };
+    }
+
     const tour = await Tour.findByIdAndUpdate(
       tourId,
-      payload,
+      { $set: payload },
       { new: true, runValidators: true }
     ).populate('division', 'name description');
     

@@ -48,17 +48,20 @@ async function fixSpecificTour() {
       
       // Update the tour if it has error messages
       if (hasErrorName || hasErrorStartLocation || hasErrorEndLocation) {
+        if (!division) {
+          throw new Error('Cannot repair tour-like fields without a valid division in MongoDB');
+        }
         const updateData = {};
         if (hasErrorName) {
-          updateData.name = division ? `${division.name} Tour` : 'Switzerland Tour';
+          updateData.name = `${division.name} Tour`;
           console.log('Setting name to:', updateData.name);
         }
         if (hasErrorStartLocation) {
-          updateData.startLocation = division ? division.name : 'Switzerland';
+          updateData.startLocation = division.name;
           console.log('Setting startLocation to:', updateData.startLocation);
         }
         if (hasErrorEndLocation) {
-          updateData.endLocation = division ? division.name : 'Switzerland';
+          updateData.endLocation = division.name;
           console.log('Setting endLocation to:', updateData.endLocation);
         }
         
