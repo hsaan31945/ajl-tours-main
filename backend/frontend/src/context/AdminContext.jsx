@@ -38,9 +38,12 @@ export function AdminProvider({ children }) {
 	 */
 	const login = async (password) => {
 		try {
-			const response = await axios.post('/api/admin/login', {
-				password
-			});
+			let response;
+			try {
+				response = await axios.post(apiUrl('/api/auth/admin/login'), { password });
+			} catch (error) {
+				response = await axios.post(apiUrl('/api/admin/login'), { password });
+			}
 			
 			if (response.data.success && response.data.token) {
 				const newToken = response.data.token;
@@ -66,7 +69,12 @@ export function AdminProvider({ children }) {
 	 */
 	const enableWithPasscode = async (code) => {
 		try {
-			const response = await axios.post(apiUrl('/api/admin/verify'), { passcode: code });
+			const trimmedCode = String(code || '').trim();
+			const response = await axios.post(
+				apiUrl('/api/admin/verify'),
+				{ passcode: trimmedCode },
+				{ headers: { 'X-Admin-Passcode': trimmedCode } }
+			);
 
 			if (response.data?.success) {
 			setIsAdmin(true);

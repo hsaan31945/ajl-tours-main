@@ -161,6 +161,15 @@ module.exports = async (req, res) => {
       });
     }
 
+    if (urlNormalized === '/api/admin/verify' && req.method === 'POST') {
+      const passcode = body.passcode || req.headers['x-admin-passcode'] || req.headers['X-Admin-Passcode'] || '';
+      const expected = process.env.ADMIN_PASSCODE || 'admin123';
+      if (String(passcode).trim() !== String(expected).trim()) {
+        return res.status(401).json({ success: false, error: 'Invalid passcode' });
+      }
+      return res.status(200).json({ success: true });
+    }
+
     // Divisions API
     if (url.startsWith('/api/divisions')) {
       if (req.method === 'GET') {

@@ -248,6 +248,8 @@ module.exports = async (req, res) => {
       }
 
       res.status(200).json({ success: true });
+    } else if (normalizedPath === '/admin/login' && method === 'POST') {
+      await asyncHandler(authController.adminLogin.bind(authController))(req, res);
     } else if (normalizedPath.startsWith('/auth')) {
       if (normalizedPath.includes('/admin/login') && method === 'POST') {
         await asyncHandler(authController.adminLogin.bind(authController))(req, res);
