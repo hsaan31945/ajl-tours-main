@@ -5,12 +5,14 @@ import { useCurrency } from "../context/CurrencyContext";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getTourId } from "../utils/tourId";
 import TourCard from "./TourCard";
+import TourCardSkeleton from "./TourCardSkeleton";
 
 const TopDealsSection = () => {
   const navigate = useNavigate();
   const { symbol, rate } = useCurrency();
   const [topSwissTours, setTopSwissTours] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [toursPerView, setToursPerView] = useState(3);
 
@@ -36,15 +38,18 @@ const TopDealsSection = () => {
     setCurrentIndex(0);
   }, [topSwissTours.length]);
 
-  useEffect(() => {
-    const loadTopSellingTours = async () => {
-      try {
-        const allTours = await fetchToursList({
-          limit: 12,
-          sort: 'popular',
-        }, { skipCache: true });
+  const loadTopSellingTours = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const allTours = await fetchToursList({
+        limit: 12,
+        sort: 'popular',
+      }, { skipCache: true });
 
-        const toursWithSales = allTours.map(tour => {
+      const toursWithSales = allTours
+        .filter(tour => tour?.isActive !== false)
+        .map(tour => {
           const tourId = getTourId(tour)?.toString();
           
           return {
@@ -63,30 +68,32 @@ const TopDealsSection = () => {
           };
         });
 
-        // Sort by reviews count, then by rating
-        const sortedTours = toursWithSales.sort((a, b) => {
-          // Sort by reviews count
-          if ((b.reviews || 0) !== (a.reviews || 0)) {
-            return (b.reviews || 0) - (a.reviews || 0);
-          }
-          // If reviews are equal, sort by rating
-          return (b.rating || 0) - (a.rating || 0);
-        });
+      // Sort by reviews count, then by rating
+      const sortedTours = toursWithSales.sort((a, b) => {
+        // Sort by reviews count
+        if ((b.reviews || 0) !== (a.reviews || 0)) {
+          return (b.reviews || 0) - (a.reviews || 0);
+        }
+        // If reviews are equal, sort by rating
+        return (b.rating || 0) - (a.rating || 0);
+      });
 
-        // MongoDB is the source of truth. Show tours even if an image has not been uploaded yet.
-        const topTours = sortedTours
-          .filter(t => t && t.name)
-          .slice(0, 5);
+      // MongoDB is the source of truth. Show tours even if an image has not been uploaded yet.
+      const topTours = sortedTours
+        .filter(t => t && t.name)
+        .slice(0, 5);
 
-        setTopSwissTours(topTours);
-      } catch (error) {
-        console.error('Error loading top selling tours:', error);
-        setTopSwissTours([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+      setTopSwissTours(topTours);
+    } catch (err) {
+      console.error('Error loading top selling tours:', err);
+      setTopSwissTours([]);
+      setError("We couldn't load top deals right now.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadTopSellingTours();
   }, []);
 
@@ -136,12 +143,23 @@ const TopDealsSection = () => {
 
         {/* Cards Carousel */}
         {loading ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600">Loading top deals...</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <TourCardSkeleton count={toursPerView} />
+          </div>
+        ) : error ? (
+          <div className="text-center py-12 bg-white rounded-xl border border-gray-100">
+            <p className="text-gray-700 font-semibold mb-4">{error}</p>
+            <button
+              type="button"
+              onClick={loadTopSellingTours}
+              className="px-5 py-2.5 rounded-lg bg-orange-600 text-white font-bold hover:bg-orange-700"
+            >
+              Retry
+            </button>
           </div>
         ) : topSwissTours.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600">No top deals available at the moment.</p>
+          <div className="text-center py-12 bg-white rounded-xl border border-gray-100">
+            <p className="text-gray-700 font-semibold">No top deals available at the moment.</p>
           </div>
         ) : (
           <div className="relative">

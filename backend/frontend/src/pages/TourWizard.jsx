@@ -71,6 +71,7 @@ const TourWizard = () => {
     description: "Enter tour description here...",
     price: 0,
     currency: "USD",
+    isActive: true,
     
     // Images
     images: [],
@@ -180,7 +181,8 @@ const TourWizard = () => {
               rating: data.rating || data.metadata?.rating || 4.9,
               reviews: data.reviews || data.metadata?.reviews || 0,
               topRated: data.topRated !== undefined ? data.topRated : true,
-              currency: data.currency || data.metadata?.currency || "USD"
+              currency: data.currency || data.metadata?.currency || "USD",
+              isActive: data.isActive !== undefined ? data.isActive : true
             };
             
             setTourData(normalizedTourData);
@@ -459,6 +461,7 @@ const TourWizard = () => {
         name: tourData.name,
         description: tourData.description,
         price: Number(tourData.price),
+        isActive: tourData.isActive !== false,
         startLocation: tourData.startLocation,
         endLocation: tourData.endLocation,
         startDate: finalStartDate,
@@ -681,6 +684,25 @@ const TourWizard = () => {
                 placeholder="0"
                 className="w-full border rounded-lg px-4 py-2"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Public Status</label>
+              <label className="flex items-center justify-between gap-4 border rounded-lg px-4 py-2 bg-white cursor-pointer">
+                <span>
+                  <span className="block font-semibold text-gray-900">
+                    {tourData.isActive !== false ? "Active" : "Draft"}
+                  </span>
+                  <span className="block text-xs text-gray-500">
+                    {tourData.isActive !== false ? "Visible to customers" : "Hidden from customers"}
+                  </span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={tourData.isActive !== false}
+                  onChange={(e) => setTourData(prev => ({ ...prev, isActive: e.target.checked }))}
+                  className="h-5 w-5 accent-orange-600"
+                />
+              </label>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Start Location *</label>

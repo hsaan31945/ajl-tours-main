@@ -13,6 +13,7 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
     duration: '',
     tourType: '',
     reviewText: '',
+    isActive: true,
     highlights: [],
     included: [],
     excluded: [],
@@ -69,6 +70,7 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
         duration: normalizedTour.duration || '',
         tourType: normalizedTour.type || '',
         reviewText: normalizedTour.reviewText || '',
+        isActive: normalizedTour.isActive !== false,
         highlights: normalizedTour.highlights || [],
         included: normalizedTour.included || [],
         excluded: normalizedTour.excluded || [],
@@ -210,6 +212,25 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
                 className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter price"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Public Status</label>
+              <label className="flex items-center justify-between gap-4 border rounded-lg px-3 py-2 bg-white cursor-pointer">
+                <span>
+                  <span className="block font-semibold text-gray-900">
+                    {formData.isActive !== false ? 'Active' : 'Draft'}
+                  </span>
+                  <span className="block text-xs text-gray-500">
+                    {formData.isActive !== false ? 'Visible to customers' : 'Hidden from customers'}
+                  </span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={formData.isActive !== false}
+                  onChange={(e) => handleInputChange('isActive', e.target.checked)}
+                  className="h-5 w-5 accent-orange-600"
+                />
+              </label>
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">Duration</label>

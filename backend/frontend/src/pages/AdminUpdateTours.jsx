@@ -42,15 +42,16 @@ const AdminUpdateTours = () => {
 
   const handleSaveTour = async (savedTour) => {
     try {
+      const savedRecord = savedTour?.tour || savedTour;
       // savedTour is already the response from the API (saved in database)
       // No need to make another API call - just update local state
-      console.log('Handling saved tour:', savedTour);
+      console.log('Handling saved tour:', savedRecord);
       
       // Update the tours list with the saved tour from database
       const updatedTours = tours.map(tour => {
         const tourId = getTourId(tour);
-        const savedTourId = getTourId(savedTour);
-        return (tourId === savedTourId || tourId?.toString() === savedTourId?.toString()) ? savedTour : tour;
+        const savedTourId = getTourId(savedRecord);
+        return (tourId === savedTourId || tourId?.toString() === savedTourId?.toString()) ? savedRecord : tour;
       });
       
       setTours(updatedTours);
@@ -174,8 +175,8 @@ const AdminUpdateTours = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                          ${tour.featured ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                          {tour.featured ? 'Featured' : 'Active'}
+                          ${tour.isActive === false ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
+                          {tour.isActive === false ? 'Draft' : 'Active'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

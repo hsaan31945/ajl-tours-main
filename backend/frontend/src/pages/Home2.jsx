@@ -2,6 +2,7 @@ import React, { Suspense, lazy, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminControlPanel from "../components/AdminControlPanel";
 import { useAdmin } from "../context/AdminContext";
+import SEO from "../components/SEO";
 import { Search, MapPin, Compass, Users, ChevronDown, CheckCircle, Star, Quote, Car, Map, Clock, ShieldCheck, HeartPulse } from "lucide-react";
 import hero4 from "../assets/images/optimized/hero4-1600.webp";
 import hero5 from "../assets/images/optimized/hero5-1600.webp";
@@ -214,6 +215,10 @@ const Home2 = () => {
 
   return (
     <div className="min-h-screen">
+      <SEO
+        title="AJL Tours | Private Switzerland Tours"
+        description="Book premium private Switzerland tours with AJL Tours, including luxury vehicles, flexible itineraries, local guides, and seamless pickup."
+      />
       {/* Admin Control Panel */}
       <AdminControlPanel />
 

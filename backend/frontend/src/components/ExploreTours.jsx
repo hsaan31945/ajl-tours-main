@@ -6,6 +6,7 @@ import { useAdmin } from "../context/AdminContext";
 import TourCard from "./TourCard";
 import { getTourId } from "../utils/tourId";
 import { fetchToursList } from "../services/toursApi";
+import TourCardSkeleton from "./TourCardSkeleton";
 
 const ExploreTours = () => {
   const navigate = useNavigate();
@@ -18,28 +19,43 @@ const ExploreTours = () => {
   const [touchEnd, setTouchEnd] = useState(null);
   const [visibleCards, setVisibleCards] = useState(3);
   const [isMobile, setIsMobile] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
 
   // Load tours from MongoDB only. No localStorage or hardcoded fallbacks.
   const loadTours = async () => {
-    try {
-      const data = await fetchToursList({ limit: 100, sort: 'newest' }, { skipCache: true });
-      if (data.length) {
-        return data.map(t => ({
-          id: t.id ?? t._id ?? t.id_str ?? t.name,
-          name: t.name,
-          price: Number(t.price ?? 0),
-          images: Array.isArray(t.images) && t.images.length ? t.images : (t.photo ? [t.photo] : []),
-          description: t.description,
-          destination: t.divisionName || 'switzerland',
-          address: t.startLocation || t.location || '',
-        })).filter(t => t && t.name && Number.isFinite(t.price));
-      }
-    } catch (error) {
-      console.error('Error loading tours:', error);
-    }
+    const data = await fetchToursList({ limit: 100, sort: 'newest' }, { skipCache: true });
+    if (!data.length) return [];
 
-    return [];
+    return data
+      .filter(t => t?.isActive !== false)
+      .map(t => ({
+        id: t.id ?? t._id ?? t.id_str ?? t.name,
+        name: t.name,
+        price: Number(t.price ?? 0),
+        images: Array.isArray(t.images) && t.images.length ? t.images : (t.photo ? [t.photo] : []),
+        description: t.description,
+        destination: t.divisionName || 'switzerland',
+        address: t.startLocation || t.location || '',
+        isActive: t.isActive !== false,
+      }))
+      .filter(t => t && t.name && Number.isFinite(t.price));
+  };
+
+  const fetchAndSetTours = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const tours = await loadTours();
+      setRandomTours(tours);
+    } catch (err) {
+      console.error('Error loading tours:', err);
+      setRandomTours([]);
+      setError("We couldn't load tours right now.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Load favorites on component mount
@@ -72,10 +88,7 @@ const ExploreTours = () => {
   }, [user]);
 
   useEffect(() => {
-    (async () => {
-      const tours = await loadTours();
-      setRandomTours(tours);
-    })();
+    fetchAndSetTours();
   }, []);
 
   // Auto-slide every 3 seconds (disabled on mobile for better UX)
@@ -254,8 +267,26 @@ const ExploreTours = () => {
           </p>
         </div>
         
-        {/* Mobile: Stacked cards, Desktop: Carousel */}
-        {isMobile ? (
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <TourCardSkeleton count={isMobile ? 1 : 3} />
+          </div>
+        ) : error ? (
+          <div className="text-center py-14 bg-white rounded-xl border border-gray-100">
+            <p className="text-gray-700 font-semibold mb-4">{error}</p>
+            <button
+              type="button"
+              onClick={fetchAndSetTours}
+              className="px-5 py-2.5 rounded-lg bg-orange-600 text-white font-bold hover:bg-orange-700"
+            >
+              Retry
+            </button>
+          </div>
+        ) : randomTours.length === 0 ? (
+          <div className="text-center py-14 bg-white rounded-xl border border-gray-100">
+            <p className="text-gray-700 font-semibold">No tours available at the moment.</p>
+          </div>
+        ) : isMobile ? (
           <div className="space-y-8">
             {randomTours.map((tour) => (
               <TourCard

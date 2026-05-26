@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Calendar, Clock, MapPin, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { blogs } from "../data/blogs";
+import SEO from "../components/SEO";
 
 const Blogs = () => {
   const navigate = useNavigate();
@@ -24,6 +25,10 @@ const Blogs = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <SEO
+        title="Switzerland Travel Blog | AJL Tours"
+        description="Read AJL Tours travel guides, Swiss destination inspiration, and private tour tips for premium Switzerland trips."
+      />
       {/* Hero Section */}
       <motion.div
         className="relative bg-gradient-to-r from-orange-500 to-red-600 text-white py-20"

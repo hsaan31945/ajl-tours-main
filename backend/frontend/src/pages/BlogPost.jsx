@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Calendar, Clock, MapPin, ArrowLeft, Share2, BookOpen } from "lucide-react";
 import { blogs } from "../data/blogs";
+import SEO from "../components/SEO";
 
 const BlogPost = () => {
   const { id } = useParams();
@@ -13,6 +14,7 @@ const BlogPost = () => {
   if (!blog) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <SEO title="Blog Not Found | AJL Tours" description="The requested AJL Tours blog post could not be found." />
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Blog Post Not Found</h1>
           <button
@@ -28,6 +30,11 @@ const BlogPost = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <SEO
+        title={`${blog.title} | AJL Tours`}
+        description={blog.subtitle}
+        image={blog.image}
+      />
       <div className="max-w-4xl mx-auto px-6 pt-8">
         <button
           onClick={() => navigate('/blogs')}
@@ -43,6 +50,8 @@ const BlogPost = () => {
           <img
             src={blog.image}
             alt={blog.title}
+            loading="eager"
+            decoding="async"
             className="w-full h-96 object-cover rounded-2xl shadow-lg"
           />
         </div>

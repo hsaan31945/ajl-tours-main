@@ -5,6 +5,7 @@ import { Route, Routes, useLocation, useParams } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Preloader from "./components/Preloader";
+import PlaneLoader from "./components/PlaneLoader";
 import AdminNavbar from "./components/AdminNavbar";
 import { useContext } from "react";
 import { AppContext } from "./context/AppContext";
@@ -61,6 +62,7 @@ const App = () => {
   const [showPasscodePrompt, setShowPasscodePrompt] = useState(false);
   const [passcode, setPasscode] = useState("");
   const [error, setError] = useState("");
+  const [routeLoading, setRouteLoading] = useState(true);
 
   // Global admin shortcut listener
   useEffect(() => {
@@ -76,6 +78,15 @@ const App = () => {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  useEffect(() => {
+    setRouteLoading(true);
+    const timer = window.setTimeout(() => {
+      setRouteLoading(false);
+    }, 420);
+
+    return () => window.clearTimeout(timer);
+  }, [location.pathname, location.search]);
 
   const ADMIN_PASSCODE = import.meta.env.VITE_ADMIN_PASSCODE || "admin123";
 
@@ -106,12 +117,13 @@ const App = () => {
           {loading && <Preloader />}
           {!loading && (
           <div className="flex flex-col min-h-screen bg-neutral-100">
+          {routeLoading && <PlaneLoader label="Opening page" />}
           <ToastContainer theme="dark" position="bottom-right" autoClose={1000} />
           {location.pathname.startsWith("/admin") && isAdmin
             ? <AdminNavbar />
             : <Navbar />}
           <main className="flex-1">
-            <Suspense fallback={<Preloader />}>
+            <Suspense fallback={<PlaneLoader label="Loading page" />}>
             <Routes>
               <Route path="/" element={<Home2 />} />
               <Route path="/tours" element={<Tour />} />

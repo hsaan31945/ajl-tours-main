@@ -109,6 +109,7 @@ class TourService {
       rating: tour.metadata?.rating ?? tour.rating ?? 0,
       reviews: tour.metadata?.reviews ?? tour.reviews ?? 0,
       maxTotalTickets: tour.maxTotalTickets,
+      isActive: tour.isActive !== false,
       metadata: tour.metadata || {},
       createdAt: tour.createdAt,
       updatedAt: tour.updatedAt,
@@ -123,6 +124,7 @@ class TourService {
       name: tour.name,
       startLocation: tour.startLocation,
       price: Number(tour.price) || 0,
+      isActive: tour.isActive !== false,
     };
   }
 
@@ -200,6 +202,7 @@ class TourService {
           rating: 1,
           reviews: 1,
           maxTotalTickets: 1,
+          isActive: 1,
           metadata: 1,
           createdAt: 1,
           updatedAt: 1,

@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Heart, MapPin, Star } from "lucide-react";
+import { Heart, MapPin, Plane, Star } from "lucide-react";
 import { useCurrency } from "../context/CurrencyContext";
 import { useAdmin } from "../context/AdminContext";
 import EditableField from "./EditableField";
@@ -12,6 +12,7 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
   const { symbol, rate } = useCurrency();
   const { isAdmin, passcodeHeader } = useAdmin();
   const navigate = useNavigate();
+  const [imageFailed, setImageFailed] = useState(false);
 
   const tourId = getTourId(tour);
   
@@ -60,23 +61,35 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
     tour.photo ||
     null;
 
+  useEffect(() => {
+    setImageFailed(false);
+  }, [displayImage]);
+
   return (
     <div 
       className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full cursor-pointer group"
       onClick={handleCardClick}
     >
       {/* Image Section */}
-      <div className="relative h-64 overflow-hidden bg-gray-200">
-        {displayImage ? (
+      <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
+        {displayImage && !imageFailed ? (
         <img 
           src={displayImage} 
           alt={tour.name} 
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           loading="lazy"
+          decoding="async"
+          width="800"
+          height="600"
+          onError={() => setImageFailed(true)}
         />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
-            No image
+          <div className="w-full h-full flex flex-col items-center justify-center bg-white text-gray-500 border-b border-gray-100">
+            <div className="w-14 h-14 rounded-full bg-black text-white flex items-center justify-center shadow-sm mb-3">
+              <Plane className="w-7 h-7" />
+            </div>
+            <span className="text-sm font-semibold text-gray-800">AJL Tour</span>
+            <span className="text-xs text-gray-500 mt-1">Image coming soon</span>
           </div>
         )}
         
