@@ -7,18 +7,18 @@ const config = {
   
   // Database
   mongodb: {
-    uri: process.env.MONGODB_URI || 'mongodb+srv://admin:salman1122@ajltours.ozyldk7.mongodb.net/AJLTours?appName=AJLTours'
+    uri: process.env.MONGODB_URI || ''
   },
   
   // Admin
   admin: {
-    passcode: process.env.ADMIN_PASSCODE || 'admin123'
+    passcode: process.env.ADMIN_PASSCODE || ''
   },
   
   // Stripe
   stripe: {
-    secretKey: process.env.STRIPE_SECRET_KEY || 'sk_test_your_stripe_secret_key_here',
-    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || 'whsec_your_webhook_secret_here'
+    secretKey: process.env.STRIPE_SECRET_KEY || '',
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || ''
   },
   
   // Frontend
@@ -34,8 +34,8 @@ const config = {
   
   // Security
   security: {
-    sessionSecret: process.env.SESSION_SECRET || 'your_session_secret_here_dev',
-    cookieSecret: process.env.COOKIE_SECRET || 'your_cookie_secret_here_dev'
+    sessionSecret: process.env.SESSION_SECRET || '',
+    cookieSecret: process.env.COOKIE_SECRET || ''
   },
   
   // Logging

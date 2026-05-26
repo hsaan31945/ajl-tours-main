@@ -108,7 +108,7 @@ Both backend and frontend have been successfully deployed with all fixes applied
 
 ### Backend (ajl-tours-backend):
 - [x] `MONGODB_URI` - MongoDB connection string
-- [x] `ADMIN_PASSCODE` - Admin passcode (default: admin123)
+- [x] `ADMIN_PASSCODE` - Admin passcode from environment
 - [x] `CORS_ORIGIN` - Should be: https://ajl-tours-frontend.vercel.app
 - [x] `FRONTEND_URL` - Should be: https://ajl-tours-frontend.vercel.app
 - [x] `STRIPE_SECRET_KEY` - Stripe secret key
@@ -195,7 +195,6 @@ Both backend and frontend have been successfully deployed with all fixes applied
 
 *Deployment completed: 2024*  
 *All fixes applied and deployed successfully*
-
 
 
 

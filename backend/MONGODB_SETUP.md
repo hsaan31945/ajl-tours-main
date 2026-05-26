@@ -35,7 +35,7 @@ PORT=5000
 HOST=localhost
 
 # Admin Configuration
-ADMIN_PASSCODE=admin123
+ADMIN_PASSCODE=<ADMIN_PASSCODE>
 
 # Stripe Configuration
 STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key_here
@@ -69,7 +69,7 @@ npm run setup
 ```
 
 This will:
-- Create the admin user (admin@tripgo.com / admin123)
+- Create the admin user (admin@tripgo.com / configured admin password)
 - Create sample divisions, tours, and trips
 - Set up initial homepage content settings
 
@@ -208,7 +208,7 @@ PORT=5000
 HOST=localhost
 
 # Admin Configuration
-ADMIN_PASSCODE=admin123
+ADMIN_PASSCODE=<ADMIN_PASSCODE>
 
 # Stripe Configuration
 STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key_here
@@ -242,7 +242,7 @@ npm run setup
 ```
 
 This will:
-- Create the admin user (admin@tripgo.com / admin123)
+- Create the admin user (admin@tripgo.com / configured admin password)
 - Create sample divisions, tours, and trips
 - Set up initial homepage content settings
 
@@ -344,5 +344,4 @@ If you encounter any issues during the MongoDB setup, check:
 1. MongoDB logs for connection errors
 2. Node.js console for application errors
 3. Ensure all environment variables are set correctly
-
 

@@ -12,6 +12,13 @@ const tourByIdCache = new Map();
 
 const cacheValid = (entry) => entry && entry.expiresAt > Date.now();
 
+const isValidAdminPasscode = (headerValue) => {
+  const expected = process.env.ADMIN_PASSCODE || '';
+  const headerTrimmed = headerValue ? String(headerValue).trim() : '';
+  const expectedTrimmed = expected ? String(expected).trim() : '';
+  return Boolean(expectedTrimmed && headerTrimmed && headerTrimmed === expectedTrimmed);
+};
+
 const normalizeDatePrices = (datePrices) => {
   if (!datePrices) return {};
   if (datePrices instanceof Map) return Object.fromEntries(datePrices);
@@ -163,8 +170,7 @@ module.exports = async (req, res) => {
 
     if (urlNormalized === '/api/admin/verify' && req.method === 'POST') {
       const passcode = body.passcode || req.headers['x-admin-passcode'] || req.headers['X-Admin-Passcode'] || '';
-      const expected = process.env.ADMIN_PASSCODE || 'admin123';
-      if (String(passcode).trim() !== String(expected).trim()) {
+      if (!isValidAdminPasscode(passcode)) {
         return res.status(401).json({ success: false, error: 'Invalid passcode' });
       }
       return res.status(200).json({ success: true });
@@ -184,10 +190,7 @@ module.exports = async (req, res) => {
       }
       if (req.method === 'POST') {
         const header = req.headers['x-admin-passcode'] || req.headers['X-Admin-Passcode'];
-        const expected = process.env.ADMIN_PASSCODE || 'admin123';
-        const headerTrimmed = header ? header.trim() : null;
-        const expectedTrimmed = expected ? expected.trim() : null;
-        if (!headerTrimmed || headerTrimmed !== expectedTrimmed) {
+        if (!isValidAdminPasscode(header)) {
           return res.status(401).json({ message: 'Invalid or missing admin passcode' });
         }
         const { name, description } = body;
@@ -341,10 +344,7 @@ module.exports = async (req, res) => {
           if (!tourId) { // Only for /api/tours (not /api/tours/:id)
             try {
               const header = req.headers['x-admin-passcode'] || req.headers['X-Admin-Passcode'];
-              const expected = process.env.ADMIN_PASSCODE || 'admin123';
-              const headerTrimmed = header ? header.trim() : null;
-              const expectedTrimmed = expected ? expected.trim() : null;
-              if (!headerTrimmed || headerTrimmed !== expectedTrimmed) {
+              if (!isValidAdminPasscode(header)) {
                 return res.status(401).json({ message: 'Invalid or missing admin passcode' });
               }
 
@@ -373,10 +373,7 @@ module.exports = async (req, res) => {
           // PUT update tour
           if (tourId) {
             const header = req.headers['x-admin-passcode'] || req.headers['X-Admin-Passcode'];
-            const expected = process.env.ADMIN_PASSCODE || 'admin123';
-            const headerTrimmed = header ? header.trim() : null;
-            const expectedTrimmed = expected ? expected.trim() : null;
-            if (!headerTrimmed || headerTrimmed !== expectedTrimmed) {
+            if (!isValidAdminPasscode(header)) {
               return res.status(401).json({ message: 'Invalid or missing admin passcode' });
             }
 
@@ -392,10 +389,7 @@ module.exports = async (req, res) => {
           // DELETE tour
           if (tourId) {
             const header = req.headers['x-admin-passcode'] || req.headers['X-Admin-Passcode'];
-            const expected = process.env.ADMIN_PASSCODE || 'admin123';
-            const headerTrimmed = header ? header.trim() : null;
-            const expectedTrimmed = expected ? expected.trim() : null;
-            if (!headerTrimmed || headerTrimmed !== expectedTrimmed) {
+            if (!isValidAdminPasscode(header)) {
               return res.status(401).json({ message: 'Invalid or missing admin passcode' });
             }
 
@@ -421,10 +415,7 @@ module.exports = async (req, res) => {
           const itineraryMatch = urlNormalized.match(/^\/api\/tours\/([^\/]+)\/itinerary$/);
           if (itineraryMatch) {
             const header = req.headers['x-admin-passcode'] || req.headers['X-Admin-Passcode'];
-            const expected = process.env.ADMIN_PASSCODE || 'admin123';
-            const headerTrimmed = header ? header.trim() : null;
-            const expectedTrimmed = expected ? expected.trim() : null;
-            if (!headerTrimmed || headerTrimmed !== expectedTrimmed) {
+            if (!isValidAdminPasscode(header)) {
               return res.status(401).json({ message: 'Invalid or missing admin passcode' });
             }
 
@@ -447,10 +438,7 @@ module.exports = async (req, res) => {
           const datePriceMatch = urlNormalized.match(/^\/api\/tours\/([^\/]+)\/date-price$/);
           if (datePriceMatch) {
             const header = req.headers['x-admin-passcode'] || req.headers['X-Admin-Passcode'];
-            const expected = process.env.ADMIN_PASSCODE || 'admin123';
-            const headerTrimmed = header ? header.trim() : null;
-            const expectedTrimmed = expected ? expected.trim() : null;
-            if (!headerTrimmed || headerTrimmed !== expectedTrimmed) {
+            if (!isValidAdminPasscode(header)) {
               return res.status(401).json({ message: 'Invalid or missing admin passcode' });
             }
 

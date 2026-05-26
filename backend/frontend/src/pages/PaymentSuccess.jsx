@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { CheckCircle, Download, Mail, Home } from "lucide-react";
 import { useContext } from "react";
@@ -13,9 +13,82 @@ const PaymentSuccess = () => {
   const [bookingData, setBookingData] = useState(null);
   const [bookingId, setBookingId] = useState("");
 
+  const saveBookingToHistory = useCallback(async (data, id, paymentIntentId) => {
+    try {
+      const userEmail = user?.email || 'guest';
+      const existingBookings = JSON.parse(localStorage.getItem(`bookings_${userEmail}`) || '[]');
+      const bookingPayload = {
+        name: data.userName || data.name || user?.name || "Guest User",
+        email: data.userEmail || userEmail,
+        phone: data.userPhone || data.phone || "",
+        tourId: data.tourId || "",
+        tickets: data.tickets || 1,
+        travelers: data.tickets || 1,
+        selectedDate: data.selectedDate || data.date || new Date().toISOString().split('T')[0],
+        tripDate: data.selectedDate || data.date || new Date().toISOString().split('T')[0],
+        specialRequests: data.specialRequests || "",
+        status: "confirmed",
+        paymentStatus: "paid",
+        stripePaymentId: paymentIntentId || undefined,
+        flexibility: data.flexibility || "standard"
+      };
+
+      if (!paymentIntentId) {
+        console.error('Payment intent ID is missing; not creating a booking without Stripe confirmation.');
+        return false;
+      }
+
+      const response = await fetch(apiUrl('/api/confirm-payment'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          paymentIntentId,
+          bookingData: bookingPayload,
+        })
+      });
+
+      if (!response.ok) {
+        const errorPayload = await response.json().catch(() => ({}));
+        console.error('Failed to confirm payment and save booking:', errorPayload.error || response.statusText);
+        return false;
+      }
+
+      const result = await response.json();
+      const databaseBooking = result?.booking?.data || result?.booking || result?.data || null;
+      
+      const newBooking = {
+        bookingId: id,
+        databaseId: databaseBooking?._id || databaseBooking?.id || "",
+        tourName: databaseBooking?.tourTitle || data.tourName || "Unknown Tour",
+        amount: Number(databaseBooking?.totalPrice ?? data.amount ?? 0),
+        tickets: Number(databaseBooking?.travelers ?? data.tickets ?? 1),
+        bookingDate: new Date().toISOString(),
+        tourId: data.tourId || "",
+        currency: databaseBooking?.paymentCurrency || data.tourCurrency || data.currency || "$",
+        selectedDate: data.selectedDate || data.date || new Date().toISOString().split('T')[0],
+        status: "Confirmed",
+        paymentMethod: "Credit Card",
+        flexibility: data.flexibility || "standard"
+      };
+      
+      const updatedBookings = [...existingBookings, newBooking];
+      localStorage.setItem(`bookings_${userEmail}`, JSON.stringify(updatedBookings));
+      
+      console.log('Booking saved to history:', newBooking);
+      console.log('All bookings for user:', updatedBookings);
+      return true;
+    } catch (error) {
+      console.error('Error saving booking to history:', error);
+      return false;
+    }
+  }, [user?.email, user?.name]);
+
   // Get tour data from localStorage (stored during checkout flow)
   useEffect(() => {
     const initializeBooking = async () => {
+      const paymentIntentId = new URLSearchParams(location.search).get('payment_intent');
       // Prefer data set at availability/visit checkout
       const currentTourRaw = localStorage.getItem('currentTourData');
       // Fallback to data saved at user details step
@@ -52,15 +125,20 @@ const PaymentSuccess = () => {
           tickets: pricing.tickets,
           tourId: d.tourId || 'unknown',
           currency: pricing.currency,
-          selectedDate: d.selectedDate || d.date || new Date().toLocaleDateString(),
+          selectedDate: d.selectedDate || d.date || new Date().toISOString().split('T')[0],
           time: d.time || '09:00',
-          flexibility: flexibility
+          flexibility,
+          minTicketsPerBooking: d.minTicketsPerBooking || 1,
+          userName: d.userName || d.name || '',
+          userEmail: d.userEmail || d.email || '',
+          userPhone: d.userPhone || d.phone || '',
+          specialRequests: d.specialRequests || '',
         };
       };
 
       const currentParsed = normalize(tryParse(currentTourRaw));
       const recentParsed = normalize(tryParse(recentTourRaw));
-      tourData = currentParsed || recentParsed;
+      tourData = recentParsed || currentParsed;
 
       if (tourData) {
         // Prevent duplicates if user refreshed
@@ -86,7 +164,7 @@ const PaymentSuccess = () => {
         tickets: 1,
         tourId: 'unknown',
         currency: '$',
-        selectedDate: new Date().toLocaleDateString(),
+        selectedDate: new Date().toISOString().split('T')[0],
         time: '09:00'
       };
     
@@ -96,85 +174,20 @@ const PaymentSuccess = () => {
       const id = `BK${Date.now()}${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
       setBookingId(id);
     
-      // Save booking to localStorage and database
-      await saveBookingToHistory(data, id);
+      // Save booking to localStorage only after the backend confirms the Stripe payment.
+      const saved = await saveBookingToHistory(data, id, paymentIntentId);
     
       // Clean up temp data
-      localStorage.removeItem('currentTourData');
-      localStorage.removeItem('recentTourData');
+      if (saved) {
+        localStorage.removeItem('currentTourData');
+        localStorage.removeItem('recentTourData');
+      }
     
       console.log('Payment success - saving booking:', data);
     };
 
     initializeBooking();
-  }, [user?.email]);
-
-  // Save successful booking to user's history and database
-  const saveBookingToHistory = async (data, id) => {
-    try {
-      const userEmail = user?.email || 'guest';
-      const existingBookings = JSON.parse(localStorage.getItem(`bookings_${userEmail}`) || '[]');
-      
-      const newBooking = {
-        bookingId: id,
-        tourName: data.tourName || "Unknown Tour",
-        amount: data.amount || 0, // Use the calculated total amount
-        tickets: data.tickets || 1,
-        bookingDate: new Date().toISOString(),
-        tourId: data.tourId || "",
-        currency: data.tourCurrency || data.currency || "$",
-        selectedDate: data.selectedDate || data.date || new Date().toLocaleDateString(),
-        status: "Confirmed",
-        paymentMethod: "Credit Card",
-        flexibility: data.flexibility || "standard"
-      };
-      
-      const updatedBookings = [...existingBookings, newBooking];
-      localStorage.setItem(`bookings_${userEmail}`, JSON.stringify(updatedBookings));
-      
-      console.log('Booking saved to history:', newBooking);
-      console.log('All bookings for user:', updatedBookings);
-
-      // Also save to database for admin panel. The backend re-validates tour, tickets, and total.
-      try {
-        const paymentIntentId = new URLSearchParams(location.search).get('payment_intent');
-        const bookingData = {
-          name: data.userName || data.name || user?.name || "Guest User",
-          email: data.userEmail || userEmail,
-          phone: data.userPhone || data.phone || "",
-          tourId: data.tourId || "",
-          tickets: data.tickets || 1,
-          travelers: data.tickets || 1,
-          selectedDate: data.selectedDate || data.date || new Date().toISOString().split('T')[0],
-          tripDate: data.selectedDate || data.date || new Date().toISOString().split('T')[0],
-          specialRequests: data.specialRequests || "",
-          paymentStatus: "paid",
-          stripePaymentId: paymentIntentId || undefined,
-          flexibility: data.flexibility || "standard"
-        };
-
-        const response = await fetch(apiUrl('/api/bookings'), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(bookingData)
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          console.log('Booking saved to database:', result);
-        } else {
-          console.error('Failed to save booking to database:', response.statusText);
-        }
-      } catch (dbError) {
-        console.error('Error saving booking to database:', dbError);
-        // Don't fail the whole process if database save fails
-      }
-    } catch (error) {
-      console.error('Error saving booking to history:', error);
-    }
-  };
+  }, [location.search, saveBookingToHistory, user?.email]);
 
   return (
     <div className="min-h-screen bg-neutral-100 py-8 px-2 flex flex-col items-center">

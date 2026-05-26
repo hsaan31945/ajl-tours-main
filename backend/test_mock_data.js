@@ -78,11 +78,15 @@ const tourPayload = {
     if (switz) tourPayload.division = switz.id;
 
     // 2. Post Tour
+    const adminPasscode = process.env.ADMIN_PASSCODE;
+    if (!adminPasscode) {
+      throw new Error('ADMIN_PASSCODE is required');
+    }
     const res = await fetch('https://ajl-tours-frontend.vercel.app/api/tours', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Admin-Passcode': 'admin123'
+        'X-Admin-Passcode': adminPasscode
       },
       body: JSON.stringify(tourPayload)
     });

@@ -43,7 +43,6 @@ const BlogPost = lazy(() => import("./pages/BlogPost"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const VerifyOTP = lazy(() => import("./pages/VerifyOTP"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
-const KeyTester = lazy(() => import("./pages/KeyTester"));
 const TourWizard = lazy(() => import("./pages/TourWizard"));
 
 
@@ -86,10 +85,14 @@ const App = () => {
     return () => window.clearTimeout(timer);
   }, [location.pathname, location.search]);
 
-  const ADMIN_PASSCODE = import.meta.env.VITE_ADMIN_PASSCODE || "admin123";
+  const ADMIN_PASSCODE = import.meta.env.VITE_ADMIN_PASSCODE || "";
 
   const handlePasscodeSubmit = (e) => {
     e.preventDefault();
+    if (!ADMIN_PASSCODE) {
+      setError("Admin passcode is not configured");
+      return;
+    }
     if (passcode === ADMIN_PASSCODE) {
       setError("");
       setShowPasscodePrompt(false);
@@ -148,7 +151,6 @@ const App = () => {
               <Route path="/payment" element={<Payment />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/payment-failure" element={<PaymentFailure />} />
-              <Route path="/key-test" element={<KeyTester />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/visit-checkout-2" element={<TestVisitCheckout />} />
               <Route path="/visit-checkout-2/:id" element={<TestVisitCheckout />} />

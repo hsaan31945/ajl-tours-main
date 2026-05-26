@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { ChevronDown, ChevronUp, Calendar, Clock, MapPin, User, Mail, Phone, CreditCard, DollarSign } from "lucide-react";
+import { ChevronDown, ChevronUp, Calendar, Clock, MapPin, User, Mail, Phone, DollarSign } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { apiUrl } from "../utils/api";
+
+const asArray = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
+
+const asStats = (payload) => payload?.data || payload || {};
+const getBookingId = (booking) => booking?._id || booking?.id;
 
 const AdminTravelRecords = () => {
   const [bookings, setBookings] = useState([]);
@@ -15,11 +25,9 @@ const AdminTravelRecords = () => {
 
   const fetchBookings = async () => {
     try {
-      const response = await fetch('/api/bookings');
+      const response = await fetch(apiUrl('/api/bookings'));
       const data = await response.json();
-      if (data.success) {
-        setBookings(data.data);
-      }
+      setBookings(asArray(data));
     } catch (error) {
       console.error('Error fetching bookings:', error);
     } finally {
@@ -29,11 +37,9 @@ const AdminTravelRecords = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/bookings/stats');
+      const response = await fetch(apiUrl('/api/bookings/stats'));
       const data = await response.json();
-      if (data.success) {
-        setStats(data.data);
-      }
+      setStats(asStats(data));
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
@@ -41,7 +47,7 @@ const AdminTravelRecords = () => {
 
   const updateBookingStatus = async (bookingId, newStatus) => {
     try {
-      const response = await fetch(`/api/bookings/${bookingId}/status`, {
+      const response = await fetch(apiUrl(`/api/bookings/${bookingId}/status`), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -200,9 +206,12 @@ const AdminTravelRecords = () => {
                 <p className="text-gray-500">No bookings found</p>
               </div>
             ) : (
-              bookings.map((booking) => (
+              bookings.map((booking) => {
+                const bookingId = getBookingId(booking);
+                const status = String(booking.status || 'pending').toLowerCase();
+                return (
                 <motion.div
-                  key={booking.id}
+                  key={bookingId}
                   className="p-6 hover:bg-gray-50 transition-colors"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -222,8 +231,8 @@ const AdminTravelRecords = () => {
                             <h3 className="text-lg font-semibold text-gray-900 truncate">
                               {booking.name || booking.user_name}
                             </h3>
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(booking.status)}`}>
-                              {booking.status}
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(status)}`}>
+                              {status}
                             </span>
                             <span className={`px-2 py-1 text-xs font-medium rounded-full ${getPaymentStatusColor(booking.paymentStatus)}`}>
                               {booking.paymentStatus}
@@ -259,10 +268,10 @@ const AdminTravelRecords = () => {
                       </div>
                       
                       <button
-                        onClick={() => setExpandedBooking(expandedBooking === booking.id ? null : booking.id)}
+                        onClick={() => setExpandedBooking(expandedBooking === bookingId ? null : bookingId)}
                         className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
                       >
-                        {expandedBooking === booking.id ? (
+                        {expandedBooking === bookingId ? (
                           <ChevronUp className="w-5 h-5" />
                         ) : (
                           <ChevronDown className="w-5 h-5" />
@@ -273,7 +282,7 @@ const AdminTravelRecords = () => {
 
                   {/* Expanded Details */}
                   <AnimatePresence>
-                    {expandedBooking === booking.id && (
+                    {expandedBooking === bookingId && (
                       <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
@@ -288,7 +297,7 @@ const AdminTravelRecords = () => {
                             <div className="space-y-2 text-sm">
                               <div className="flex justify-between">
                                 <span className="text-gray-500">Reference:</span>
-                                <span className="font-medium">#{booking.id}</span>
+                                <span className="font-medium">#{bookingId}</span>
                               </div>
                               <div className="flex justify-between">
                                 <span className="text-gray-500">Booking Date:</span>
@@ -335,13 +344,14 @@ const AdminTravelRecords = () => {
                             <h4 className="text-sm font-semibold text-gray-900 mb-3">Actions</h4>
                             <div className="space-y-2">
                               <select
-                                value={booking.status}
-                                onChange={(e) => updateBookingStatus(booking.id, e.target.value)}
+                                value={status}
+                                onChange={(e) => updateBookingStatus(bookingId, e.target.value)}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                               >
-                                <option value="Pending">Pending</option>
-                                <option value="Confirmed">Confirmed</option>
-                                <option value="Not Confirmed">Not Confirmed</option>
+                                <option value="pending">Pending</option>
+                                <option value="confirmed">Confirmed</option>
+                                <option value="cancelled">Cancelled</option>
+                                <option value="completed">Completed</option>
                               </select>
                             </div>
                           </div>
@@ -360,7 +370,8 @@ const AdminTravelRecords = () => {
                     )}
                   </AnimatePresence>
                 </motion.div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

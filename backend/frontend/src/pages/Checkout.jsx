@@ -321,7 +321,7 @@ const Checkout = () => {
     };
     
     fetchTour();
-  }, [id, location.pathname]); // Depend on id and pathname to catch route changes
+  }, [id, location.pathname, tour]); // Depend on id and pathname to catch route changes
 
   // Load booking history
   useEffect(() => {
@@ -996,7 +996,7 @@ const Checkout = () => {
           <hr className="my-8 border-gray-200" />
           <h2 className="text-2xl font-bold mb-6">Calendar & Prices</h2>
           {/* Only admins see the full calendar, others get a simple date picker */}
-          {useAdmin?.() && useAdmin().isAdmin ? (
+          {adminOn ? (
           <CalendarPrices
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}

@@ -253,14 +253,14 @@ console.log('==================================');
    ```bash
    # In your terminal or .env file
    MONGODB_URI=mongodb+srv://...
-   ADMIN_PASSCODE=admin123
+   ADMIN_PASSCODE=<ADMIN_PASSCODE>
    ```
 
 2. **Test with curl:**
    ```bash
    curl -X POST http://localhost:3000/api/tours \
      -H "Content-Type: application/json" \
-     -H "X-Admin-Passcode: admin123" \
+     -H "X-Admin-Passcode: <ADMIN_PASSCODE>" \
      -d '{
        "name": "Test Tour",
        "price": 100
@@ -283,7 +283,7 @@ console.log('==================================');
    ```bash
    curl -X POST http://localhost:3000/api/migrate-tours \
      -H "Content-Type: application/json" \
-     -H "X-Admin-Passcode: admin123" \
+     -H "X-Admin-Passcode: <ADMIN_PASSCODE>" \
      -d '{}'
    ```
 
@@ -353,7 +353,6 @@ console.log('==================================');
 ---
 
 *Quick reference guide - For detailed analysis see `ERROR_ANALYSIS_ADD_TOUR_AND_MIGRATION.md`*
-
 
 
 

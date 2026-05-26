@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { adminImageFormatMessage, isAllowedAdminImageFile } from "../utils/imageValidation";
 
 /**
@@ -61,8 +61,22 @@ const ImageCarousel = ({ images, alt, className = "", adminOn = false, onSaveIma
     });
   };
 
-  const items = Array.isArray(images) ? images.filter(Boolean) : images ? [images] : [];
+  const items = useMemo(() => (
+    Array.isArray(images) ? images.filter(Boolean) : images ? [images] : []
+  ), [images]);
   const total = items.length;
+
+  const scrollToIndex = useCallback((i) => {
+    if (!total) return;
+    const nextIndex = (i + total) % total;
+    indexRef.current = nextIndex;
+    setIndex(nextIndex);
+  }, [total]);
+
+  const resetTimer = useCallback(() => {
+    clearInterval(timerRef.current);
+    if (total > 1) timerRef.current = setInterval(() => scrollToIndex(indexRef.current + 1), 5000);
+  }, [scrollToIndex, total]);
 
   useEffect(() => {
     items.forEach((src) => {
@@ -80,19 +94,7 @@ const ImageCarousel = ({ images, alt, className = "", adminOn = false, onSaveIma
     if (total <= 1) return;
     timerRef.current = setInterval(() => scrollToIndex(indexRef.current + 1), 5000);
     return () => clearInterval(timerRef.current);
-  }, [total]);
-
-  const resetTimer = () => {
-    clearInterval(timerRef.current);
-    if (total > 1) timerRef.current = setInterval(() => scrollToIndex(indexRef.current + 1), 5000);
-  };
-
-  const scrollToIndex = (i, behavior = "smooth") => {
-    if (!total) return;
-    const nextIndex = (i + total) % total;
-    indexRef.current = nextIndex;
-    setIndex(nextIndex);
-  };
+  }, [scrollToIndex, total]);
 
   const goTo = (i) => { scrollToIndex(i); resetTimer(); };
   const prev = () => goTo(index - 1);

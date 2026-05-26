@@ -65,7 +65,7 @@ To test the new authentication:
 
 1. **JWT Login:**
    - Go to admin login page
-   - Use email/password (e.g., admin@ajltours.com / admin123)
+   - Use email/password (e.g., admin@ajltours.com / configured admin password)
    - Token will be stored and used for all requests
 
 2. **Legacy Passcode:**
@@ -93,7 +93,6 @@ To test the new authentication:
 **Day 4 Complete!** 🎉
 
 Next: Day 5 (if needed) - Final testing, cleanup, and optimization.
-
 
 
 

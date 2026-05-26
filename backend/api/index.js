@@ -156,8 +156,9 @@ module.exports = async (req, res) => {
         }
       }
     } else if (normalizedPath.startsWith('/bookings')) {
+      req.query = req.query || {};
+
       if (normalizedPath === '/bookings') {
-        req.query = req.query || {};
         if (method === 'GET') {
           await asyncHandler(bookingController.getAllBookings.bind(bookingController))(req, res);
         } else if (method === 'POST') {
@@ -165,8 +166,35 @@ module.exports = async (req, res) => {
         } else {
           res.status(405).json({ success: false, error: 'Method not allowed' });
         }
+      } else if (normalizedPath === '/bookings/stats' || normalizedPath === '/bookings/stats/summary') {
+        if (method === 'GET') {
+          await asyncHandler(bookingController.getBookingStats.bind(bookingController))(req, res);
+        } else {
+          res.status(405).json({ success: false, error: 'Method not allowed' });
+        }
       } else {
-        res.status(404).json({ success: false, error: 'Route not found' });
+        const statusMatch = normalizedPath.match(/^\/bookings\/([^/]+)\/status$/);
+        const idMatch = normalizedPath.match(/^\/bookings\/([^/]+)$/);
+
+        if (statusMatch) {
+          req.params = { id: statusMatch[1] };
+          if (method === 'PUT') {
+            await asyncHandler(bookingController.updateBookingStatus.bind(bookingController))(req, res);
+          } else {
+            res.status(405).json({ success: false, error: 'Method not allowed' });
+          }
+        } else if (idMatch) {
+          req.params = { id: idMatch[1] };
+          if (method === 'GET') {
+            await asyncHandler(bookingController.getBookingById.bind(bookingController))(req, res);
+          } else if (method === 'DELETE') {
+            await asyncHandler(bookingController.deleteBooking.bind(bookingController))(req, res);
+          } else {
+            res.status(405).json({ success: false, error: 'Method not allowed' });
+          }
+        } else {
+          res.status(404).json({ success: false, error: 'Route not found' });
+        }
       }
     } else if (normalizedPath.startsWith('/divisions')) {
       if (normalizedPath === '/divisions') {
@@ -181,8 +209,8 @@ module.exports = async (req, res) => {
           })));
         } else if (method === 'POST') {
           const header = req.headers['x-admin-passcode'] || req.headers['X-Admin-Passcode'];
-          const expected = process.env.ADMIN_PASSCODE || 'admin123';
-          if (!header || header.trim() !== expected.trim()) {
+          const expected = process.env.ADMIN_PASSCODE || '';
+          if (!expected || !header || header.trim() !== expected.trim()) {
             return res.status(401).json({ message: 'Invalid or missing admin passcode' });
           }
           const { name, description } = req.body;
@@ -241,9 +269,9 @@ module.exports = async (req, res) => {
         req.headers['x-admin-passcode'] ||
         req.headers['X-Admin-Passcode'] ||
         '';
-      const expected = process.env.ADMIN_PASSCODE || 'admin123';
+      const expected = process.env.ADMIN_PASSCODE || '';
 
-      if (String(passcode).trim() !== String(expected).trim()) {
+      if (!expected || String(passcode).trim() !== String(expected).trim()) {
         return res.status(401).json({ success: false, error: 'Invalid passcode' });
       }
 
@@ -330,7 +358,7 @@ module.exports = async (req, res) => {
         });
       }
       const stripe = require('stripe')(stripeSecretKey);
-      const { paymentIntentId, bookingData } = req.body;
+      const { paymentIntentId, bookingData = {} } = req.body || {};
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
       if (paymentIntent.status === 'succeeded') {
         const bookingService = require('../src/services/bookingService');
@@ -343,6 +371,7 @@ module.exports = async (req, res) => {
           flexibility: metadata.flexibility || bookingData.flexibility,
           selectedDate: metadata.selectedDate || bookingData.selectedDate || bookingData.tripDate,
           tripDate: metadata.selectedDate || bookingData.tripDate || bookingData.selectedDate || new Date(),
+          status: 'confirmed',
           paymentStatus: 'paid',
           stripePaymentId: paymentIntentId
         });

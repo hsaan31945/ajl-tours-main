@@ -49,7 +49,7 @@ const connectDB = async () => {
       return cached.conn;
     }
 
-    const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://admin:salman1122@ajltours.ozyldk7.mongodb.net/AJLTours?appName=AJLTours';
+    const mongoURI = process.env.MONGODB_URI;
     
     if (!mongoURI) {
       console.error('❌ MONGODB_URI not set');

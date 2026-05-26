@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { useAdmin } from "../context/AdminContext";
 import TourEditWizard from "../components/TourEditWizard";
 import { getTourId } from "../utils/tourId";
@@ -12,13 +12,7 @@ const AdminUpdateTours = () => {
   const [editingTour, setEditingTour] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  useEffect(() => {
-    if (isAdmin) {
-      fetchTours();
-    }
-  }, [isAdmin]);
-
-  const fetchTours = async () => {
+  const fetchTours = useCallback(async () => {
     try {
       const response = await fetch(apiUrl('/api/tours?full=true'), {
         headers: {
@@ -35,7 +29,13 @@ const AdminUpdateTours = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [passcodeHeader]);
+
+  useEffect(() => {
+    if (isAdmin) {
+      fetchTours();
+    }
+  }, [fetchTours, isAdmin]);
 
   const handleEditClick = (tour) => {
     setEditingTour(tour);

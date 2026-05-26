@@ -57,7 +57,7 @@ const UserDetails = () => {
 
   useEffect(() => {
     updateContact({ fullName, email, country, phone });
-  }, [fullName, email, country, phone]);
+  }, [fullName, email, country, phone, updateContact]);
 
   // Validation functions
   const validateForm = () => {
@@ -82,7 +82,7 @@ const UserDetails = () => {
     // Phone validation
     if (!phone.trim()) {
       newErrors.phone = "Phone number is required";
-    } else if (!/^[\+]?[0-9\s\-\(\)]{8,}$/.test(phone)) {
+    } else if (!/^[+]?[0-9\s\-()]{8,}$/.test(phone)) {
       newErrors.phone = "Please enter a valid phone number";
     }
     

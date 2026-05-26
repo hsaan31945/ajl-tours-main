@@ -32,12 +32,12 @@ mongodb+srv://salman:salman1122@cluster0.tatwtcz.mongodb.net/AJLTours?retryWrite
 
 **Headers Required:**
 ```
-X-Admin-Passcode: admin123
+X-Admin-Passcode: <ADMIN_PASSCODE>
 ```
 
 **What It Does:**
 - Creates Switzerland division
-- Creates admin user (admin@ajltours.com / admin123)
+- Creates admin user (admin@ajltours.com / configured admin password)
 - Creates homepage content settings
 - Verifies all collections exist
 
@@ -94,7 +94,7 @@ Verify:
 
 ### Step 3: Run Bootstrap
 ```powershell
-$headers = @{"X-Admin-Passcode" = "admin123"}
+$headers = @{"X-Admin-Passcode" = "<ADMIN_PASSCODE>"}
 Invoke-WebRequest -Uri "https://ajl-tours-backend.vercel.app/api/tours?bootstrap=true" -Method GET -Headers $headers
 ```
 
@@ -143,7 +143,6 @@ After successful bootstrap:
 
 *Status: Ready to bootstrap*  
 *Next: Check network access, then run bootstrap*
-
 
 
 

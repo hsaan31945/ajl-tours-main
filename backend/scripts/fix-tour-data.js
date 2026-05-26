@@ -11,7 +11,10 @@ async function fixTourData() {
       process.env.ADMIN_PASSCODE = process.env.AD;
     }
     
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://admin:salman1122@ajltours.ozyldk7.mongodb.net/AJLTours?appName=AJLTours');
+    if (!process.env.MONGODB_URI) {
+      throw new Error('MONGODB_URI is required');
+    }
+    await mongoose.connect(process.env.MONGODB_URI);
     
     console.log('Finding tours with error messages in name or location fields...');
     

@@ -11,7 +11,10 @@ if (process.env.AD) {
 async function fixSpecificTour() {
   try {
     console.log('Connecting to database...');
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://admin:salman1122@ajltours.ozyldk7.mongodb.net/AJLTours?appName=AJLTours');
+    if (!process.env.MONGODB_URI) {
+      throw new Error('MONGODB_URI is required');
+    }
+    await mongoose.connect(process.env.MONGODB_URI);
     
     console.log('Connected. Finding and fixing specific tour...');
     

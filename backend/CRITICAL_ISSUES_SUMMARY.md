@@ -31,7 +31,7 @@
 **Impact**: Security vulnerability, no real authentication
 
 **Problem:**
-- Hardcoded passcode `'admin123'` in frontend code
+- Hardcoded passcode in frontend code
 - Admin login is STUBBED (returns success without checking)
 - No session management
 - Passcode stored in localStorage (persistent)
@@ -214,4 +214,3 @@ if (!tour) throw new Error('Tour not found');
 ---
 
 *For detailed analysis, see `APPLICATION_ANALYSIS.md`*
-

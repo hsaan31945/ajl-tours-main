@@ -20,7 +20,7 @@ mongodb+srv://salman:salman1122@cluster0.tatwtcz.mongodb.net/AJLTours?retryWrite
 
 **Headers:**
 ```
-X-Admin-Passcode: admin123
+X-Admin-Passcode: <ADMIN_PASSCODE>
 ```
 
 ---
@@ -42,7 +42,7 @@ X-Admin-Passcode: admin123
 
 ### Initial Data:
 - ✅ Switzerland Division
-- ✅ Admin User (admin@ajltours.com / admin123)
+- ✅ Admin User (admin@ajltours.com / configured admin password)
 - ✅ Homepage Content Settings
 
 ---
@@ -51,7 +51,7 @@ X-Admin-Passcode: admin123
 
 ### Option 1: PowerShell
 ```powershell
-$headers = @{"X-Admin-Passcode" = "admin123"}
+$headers = @{"X-Admin-Passcode" = "<ADMIN_PASSCODE>"}
 Invoke-WebRequest -Uri "https://ajl-tours-backend.vercel.app/api/tours?bootstrap=true" -Method GET -Headers $headers
 ```
 
@@ -63,7 +63,7 @@ Visit: https://ajl-tours-backend.vercel.app/api/tours?bootstrap=true
 ### Option 3: curl
 ```bash
 curl -X GET "https://ajl-tours-backend.vercel.app/api/tours?bootstrap=true" \
-  -H "X-Admin-Passcode: admin123"
+  -H "X-Admin-Passcode: <ADMIN_PASSCODE>"
 ```
 
 ---
@@ -157,7 +157,6 @@ mongodb+srv://salman:salman1122@cluster0.tatwtcz.mongodb.net/AJLTours?retryWrite
 *Setup ready: 2024*  
 *Database: AJLTours*  
 *Bootstrap endpoint: /api/tours?bootstrap=true*
-
 
 
 

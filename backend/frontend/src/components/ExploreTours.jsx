@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useCallback, useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, ChevronLeft, ChevronRight } from "lucide-react";
 import { AppContext } from "../context/AppContext";
@@ -24,7 +24,7 @@ const ExploreTours = () => {
 
 
   // Load tours from MongoDB only. No localStorage or hardcoded fallbacks.
-  const loadTours = async () => {
+  const loadTours = useCallback(async () => {
     const data = await fetchToursList({ limit: 100, sort: 'newest' }, { skipCache: true });
     if (!data.length) return [];
 
@@ -41,9 +41,9 @@ const ExploreTours = () => {
         isActive: t.isActive !== false,
       }))
       .filter(t => t && t.name && Number.isFinite(t.price));
-  };
+  }, []);
 
-  const fetchAndSetTours = async () => {
+  const fetchAndSetTours = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -56,7 +56,7 @@ const ExploreTours = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [loadTours]);
 
   // Load favorites on component mount
   useEffect(() => {
@@ -89,7 +89,7 @@ const ExploreTours = () => {
 
   useEffect(() => {
     fetchAndSetTours();
-  }, []);
+  }, [fetchAndSetTours]);
 
   // Auto-slide every 3 seconds (disabled on mobile for better UX)
   useEffect(() => {

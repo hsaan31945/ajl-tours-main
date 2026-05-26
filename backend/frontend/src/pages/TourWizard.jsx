@@ -513,7 +513,7 @@ const TourWizard = () => {
         const res = await axios.put(apiUrl(`/api/tours/${tourId}`), tourPayload, { headers });
         if (res.data) {
           alert("Tour updated successfully!");
-          navigate('/admin/update-tours');
+          navigate('/admin/tours');
         }
       } else {
         // Create new tour

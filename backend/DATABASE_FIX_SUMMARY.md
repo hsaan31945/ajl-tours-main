@@ -6,7 +6,7 @@
 
 **New Connection String:**
 ```
-mongodb+srv://admin:salman1122@ajltours.ozyldk7.mongodb.net/AJLTours?appName=AJLTours
+mongodb+srv://USERNAME:PASSWORD@CLUSTER.mongodb.net/DATABASE_NAME?appName=APP_NAME
 ```
 
 **Files Updated:**
@@ -30,7 +30,7 @@ mongodb+srv://admin:salman1122@ajltours.ozyldk7.mongodb.net/AJLTours?appName=AJL
 - `mongodb://localhost:27017/tripgo` (local development fallback)
 
 **New Default:**
-- `mongodb+srv://admin:salman1122@ajltours.ozyldk7.mongodb.net/AJLTours?appName=AJLTours`
+- `mongodb+srv://USERNAME:PASSWORD@CLUSTER.mongodb.net/DATABASE_NAME?appName=APP_NAME`
 
 **Components:**
 - **Protocol**: `mongodb+srv://` (MongoDB Atlas SRV connection)
@@ -100,7 +100,7 @@ The application will use the connection string in this order:
 
 1. **Set Environment Variable in Vercel:**
    ```
-   MONGODB_URI=mongodb+srv://admin:salman1122@ajltours.ozyldk7.mongodb.net/AJLTours?appName=AJLTours
+   MONGODB_URI=mongodb+srv://USERNAME:PASSWORD@CLUSTER.mongodb.net/DATABASE_NAME?appName=APP_NAME
    ```
 
 2. **Verify MongoDB Atlas Network Access:**
@@ -189,12 +189,11 @@ The application will use the connection string in this order:
 **Database Configuration Fix: COMPLETED**
 
 All files have been updated to use the new MongoDB connection string:
-`mongodb+srv://admin:salman1122@ajltours.ozyldk7.mongodb.net/AJLTours?appName=AJLTours`
+`mongodb+srv://USERNAME:PASSWORD@CLUSTER.mongodb.net/DATABASE_NAME?appName=APP_NAME`
 
 **Next Action:** Set `MONGODB_URI` environment variable in your deployment platform (Vercel, etc.)
 
 ---
 
 *Last Updated: $(date)*
-
 

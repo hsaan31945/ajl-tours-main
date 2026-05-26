@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
 
 const BookingContext = createContext();
 
@@ -21,19 +21,47 @@ export function BookingProvider({ children }) {
     }
   });
 
-  // Helper functions to update each part
-  const updateFlexibility = (flex) => setBooking(prev => ({ ...prev, flexibility: flex }));
-  const updateContact = (contact) => setBooking(prev => ({ ...prev, contact: { ...prev.contact, ...contact } }));
-  const updateTickets = (tickets) => {
+  const updateFlexibility = useCallback((flex) => {
+    setBooking(prev => ({ ...prev, flexibility: flex }));
+  }, []);
+
+  const updateContact = useCallback((contact) => {
+    setBooking(prev => ({ ...prev, contact: { ...prev.contact, ...contact } }));
+  }, []);
+
+  const updateTickets = useCallback((tickets) => {
     const number = Number(tickets);
     if (!Number.isInteger(number) || number < 1) return;
     setBooking(prev => ({ ...prev, tickets: number }));
-  };
-  const updateDateTime = (date, time) => setBooking(prev => ({ ...prev, date, time }));
-  const updateTour = (tour) => setBooking(prev => ({ ...prev, tour }));
+  }, []);
+
+  const updateDateTime = useCallback((date, time) => {
+    setBooking(prev => ({ ...prev, date, time }));
+  }, []);
+
+  const updateTour = useCallback((tour) => {
+    setBooking(prev => {
+      const currentId = prev.tour?._id || prev.tour?.id || prev.tour?.staticId;
+      const nextId = tour?._id || tour?.id || tour?.staticId;
+      if (currentId && nextId && currentId === nextId) {
+        return prev;
+      }
+      return { ...prev, tour };
+    });
+  }, []);
+
+  const value = useMemo(() => ({
+    booking,
+    setBooking,
+    updateFlexibility,
+    updateContact,
+    updateTickets,
+    updateDateTime,
+    updateTour,
+  }), [booking, updateFlexibility, updateContact, updateTickets, updateDateTime, updateTour]);
 
   return (
-    <BookingContext.Provider value={{ booking, setBooking, updateFlexibility, updateContact, updateTickets, updateDateTime, updateTour }}>
+    <BookingContext.Provider value={value}>
       {children}
     </BookingContext.Provider>
   );

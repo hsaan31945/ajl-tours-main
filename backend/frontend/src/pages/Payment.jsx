@@ -274,7 +274,7 @@ const Payment = () => {
     } else {
       setIsLoading(false);
     }
-  }, [tourRefreshComplete, tour, currentTickets, minTickets, pricing.validTickets, pricing.currency, totalPrice, date, flexibility]);
+  }, [tourRefreshComplete, tour, currentTickets, minTickets, pricing.validTickets, pricing.currency, totalPrice, date, flexibility, error]);
 
   if (!publishableKey) {
     return (

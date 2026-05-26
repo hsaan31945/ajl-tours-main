@@ -88,7 +88,7 @@ Both critical errors have been fixed. The application should now work correctly.
 ```bash
 curl -X POST http://localhost:3000/api/tours \
   -H "Content-Type: application/json" \
-  -H "X-Admin-Passcode: admin123" \
+  -H "X-Admin-Passcode: <ADMIN_PASSCODE>" \
   -d '{
     "name": "Test Tour",
     "price": 100
@@ -101,7 +101,7 @@ curl -X POST http://localhost:3000/api/tours \
 ```bash
 curl -X POST http://localhost:3000/api/migrate-tours \
   -H "Content-Type: application/json" \
-  -H "X-Admin-Passcode: admin123" \
+  -H "X-Admin-Passcode: <ADMIN_PASSCODE>" \
   -d '{}'
 ```
 
@@ -114,7 +114,7 @@ curl -X POST http://localhost:3000/api/migrate-tours \
 ### Environment Variables:
 Make sure these are set:
 - `MONGODB_URI` - MongoDB connection string
-- `ADMIN_PASSCODE` - Admin passcode (default: 'admin123')
+- `ADMIN_PASSCODE` - Admin passcode from environment
 - `NODE_ENV` - Environment (development/production)
 
 ### Console Logs:
@@ -162,7 +162,6 @@ Now that these blocking errors are fixed, you can:
 
 *Fixes applied: 2024*  
 *Status: Ready for testing*
-
 
 
 

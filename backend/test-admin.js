@@ -5,7 +5,14 @@ require('dotenv').config();
 const testAdmin = async () => {
   try {
     // Connect to MongoDB
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://admin:salman1122@ajltours.ozyldk7.mongodb.net/AJLTours?appName=AJLTours');
+    if (!process.env.MONGODB_URI) {
+      throw new Error('MONGODB_URI is required');
+    }
+    const adminPassword = process.env.ADMIN_TEST_PASSWORD || process.env.ADMIN_BOOTSTRAP_PASSWORD || process.env.ADMIN_PASSCODE;
+    if (!adminPassword) {
+      throw new Error('ADMIN_TEST_PASSWORD, ADMIN_BOOTSTRAP_PASSWORD, or ADMIN_PASSCODE is required');
+    }
+    await mongoose.connect(process.env.MONGODB_URI);
     console.log('Connected to MongoDB');
 
     // Check if admin exists
@@ -22,7 +29,7 @@ const testAdmin = async () => {
       const newAdmin = new Admin({
         username: 'admin',
         email: 'admin@tripgo.com',
-        password: 'admin123',
+        password: adminPassword,
         role: 'admin',
         isActive: true
       });
@@ -30,12 +37,12 @@ const testAdmin = async () => {
       await newAdmin.save();
       console.log('Admin account created successfully!');
       console.log('Email: admin@tripgo.com');
-      console.log('Password: admin123');
+      console.log('Password: configured from environment');
     }
 
     // Test password comparison
     if (admin) {
-      const isValid = await admin.comparePassword('admin123');
+      const isValid = await admin.comparePassword(adminPassword);
       console.log('Password test result:', isValid);
     }
 
@@ -47,7 +54,6 @@ const testAdmin = async () => {
 };
 
 testAdmin();
-
 
 
 

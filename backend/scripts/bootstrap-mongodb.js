@@ -7,10 +7,19 @@ const User = require('../models/User');
 const Admin = require('../models/Admin');
 const Division = require('../models/Division');
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://admin:salman1122@ajltours.ozyldk7.mongodb.net/AJLTours?appName=AJLTours';
+const MONGODB_URI = process.env.MONGODB_URI;
 
 async function bootstrapMongoDB() {
   try {
+    if (!MONGODB_URI) {
+      throw new Error('MONGODB_URI is required');
+    }
+
+    const adminPassword = process.env.ADMIN_BOOTSTRAP_PASSWORD || process.env.ADMIN_PASSCODE;
+    if (!adminPassword) {
+      throw new Error('ADMIN_BOOTSTRAP_PASSWORD or ADMIN_PASSCODE is required');
+    }
+
     console.log('Connecting to MongoDB...');
     await mongoose.connect(MONGODB_URI, {
       useNewUrlParser: true,
@@ -21,7 +30,6 @@ async function bootstrapMongoDB() {
     // Create admin user
     console.log('Creating admin account...');
     const adminEmail = 'admin@tripgo.com';
-    const adminPassword = 'admin123';
     
     // Check if admin already exists
     let admin = await Admin.findOne({ email: adminEmail });
@@ -59,7 +67,7 @@ async function bootstrapMongoDB() {
     console.log('\n=== Bootstrap Complete ===');
     console.log('Admin Credentials:');
     console.log('  Email: admin@tripgo.com');
-    console.log('  Password: admin123');
+    console.log('  Password: configured from environment');
     console.log('\nNo sample tours, trips, prices, itineraries, or checkout defaults were created.');
     
     process.exit(0);
@@ -72,4 +80,3 @@ async function bootstrapMongoDB() {
 }
 
 bootstrapMongoDB();
-

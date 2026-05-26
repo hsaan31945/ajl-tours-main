@@ -4,9 +4,12 @@ require('dotenv').config();
 const testConnection = async () => {
   try {
     console.log('Attempting to connect to MongoDB...');
-    console.log('MongoDB URI:', process.env.MONGODB_URI || 'mongodb+srv://admin:salman1122@ajltours.ozyldk7.mongodb.net/AJLTours?appName=AJLTours');
+    if (!process.env.MONGODB_URI) {
+      throw new Error('MONGODB_URI is required');
+    }
+    console.log('MongoDB URI:', process.env.MONGODB_URI.replace(/\/\/[^:]+:[^@]+@/, '//***:***@'));
     
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://admin:salman1122@ajltours.ozyldk7.mongodb.net/AJLTours?appName=AJLTours');
+    await mongoose.connect(process.env.MONGODB_URI);
     console.log('✅ Successfully connected to MongoDB!');
     
     // List all collections
@@ -21,7 +24,6 @@ const testConnection = async () => {
 };
 
 testConnection();
-
 
 
 

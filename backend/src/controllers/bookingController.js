@@ -13,7 +13,10 @@ class BookingController {
       };
       
       const bookings = await bookingService.getAllBookings(filters);
-      res.json(bookings);
+      res.json({
+        success: true,
+        data: bookings
+      });
     } catch (error) {
       next(error);
     }
@@ -23,7 +26,10 @@ class BookingController {
     try {
       const { id } = req.params;
       const booking = await bookingService.getBookingById(id);
-      res.json(booking);
+      res.json({
+        success: true,
+        data: booking
+      });
     } catch (error) {
       if (error.message === 'Booking not found') {
         return next(new AppError('Booking not found', 404));
@@ -74,10 +80,27 @@ class BookingController {
     }
   }
 
+  async deleteBooking(req, res, next) {
+    try {
+      const { id } = req.params;
+      const result = await bookingService.deleteBooking(id);
+      res.json(result);
+    } catch (error) {
+      if (error.message === 'Booking not found') {
+        return next(new AppError('Booking not found', 404));
+      }
+      next(error);
+    }
+  }
+
   async getBookingStats(req, res, next) {
     try {
       const stats = await bookingService.getBookingStats();
-      res.json(stats);
+      res.json({
+        success: true,
+        data: stats,
+        ...stats
+      });
     } catch (error) {
       next(error);
     }
@@ -85,7 +108,6 @@ class BookingController {
 }
 
 module.exports = new BookingController();
-
 
 
 

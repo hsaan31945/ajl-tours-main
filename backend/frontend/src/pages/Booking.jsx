@@ -1,5 +1,5 @@
 import React, { useState, useContext, useCallback } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 import Button from "../components/Button";
@@ -9,51 +9,18 @@ import { useCurrency } from "../context/CurrencyContext";
 import { calculateBookingPricing, parseTicketCount } from "../utils/bookingPricing";
 import { getTourId } from "../utils/tourId";
 
-const GOOGLE_MAPS_API_KEY = "AIzaSyBIsqW3BgowXGN6qM4RTiPdMi2a-9MT-Xs";
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
+const googleLibraries = ["places"];
 const mapContainerStyle = { width: "100%", height: "300px" };
 const center = { lat: 28.6139, lng: 77.2090 }; // Default to Delhi
 
-const Booking = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { user, addBooking } = useContext(AppContext);
-  const tour = location.state?.tour;
-  const { symbol, rate } = useCurrency();
-
-  if (!tour || !user) {
-    return navigate("/login");
-  }
-
-  const { title, price } = tour;
-  const today = new Date().toISOString().split("T")[0];
-
-  const [formData, setFormData] = useState({
-    name: user.name || "",
-    email: user.email || "",
-    phone: user.phone || "",
-    travelers: 1,
-    specialRequests: "",
-    tripDate: today,
-    address: "",
-    lat: null,
-    lng: null,
-  });
-  const [totalPrice, setTotalPrice] = useState(price);
+const LocationPicker = ({ formData, onInputChange, setFormData }) => {
   const [autocomplete, setAutocomplete] = useState(null);
-  const pricing = calculateBookingPricing({ tour, tickets: formData.travelers, selectedDate: formData.tripDate, fallbackPrice: price });
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-    libraries: ["places"],
+    libraries: googleLibraries,
   });
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
-  };
 
   const onPlaceChanged = () => {
     if (autocomplete) {
@@ -76,7 +43,78 @@ const Booking = () => {
       lng: e.latLng.lng(),
       address: "", // Clear address if pin is moved manually
     }));
-  }, []);
+  }, [setFormData]);
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  return (
+    <>
+      <div>
+        <label className="block text-lg font-semibold">Address (Start Location)</label>
+        <Autocomplete
+          onLoad={setAutocomplete}
+          onPlaceChanged={onPlaceChanged}
+        >
+          <input
+            type="text"
+            name="address"
+            value={formData.address}
+            onChange={onInputChange}
+            className="w-full p-3 border rounded-lg bg-inherit"
+            placeholder="Type your address or select on map"
+          />
+        </Autocomplete>
+      </div>
+      <div>
+        <label className="block text-lg font-semibold">Or Pin Your Location on Map</label>
+        <GoogleMap
+          mapContainerStyle={mapContainerStyle}
+          center={formData.lat && formData.lng ? { lat: formData.lat, lng: formData.lng } : center}
+          zoom={formData.lat && formData.lng ? 14 : 5}
+          onClick={onMapClick}
+        >
+          {formData.lat && formData.lng && (
+            <Marker position={{ lat: formData.lat, lng: formData.lng }} />
+          )}
+        </GoogleMap>
+      </div>
+    </>
+  );
+};
+
+const Booking = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user, addBooking } = useContext(AppContext);
+  const tour = location.state?.tour || null;
+  const { symbol, rate } = useCurrency();
+
+  const { title = tour?.name || "Selected Tour", price = 0 } = tour || {};
+  const today = new Date().toISOString().split("T")[0];
+
+  const [formData, setFormData] = useState({
+    name: user?.name || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
+    travelers: 1,
+    specialRequests: "",
+    tripDate: today,
+    address: "",
+    lat: null,
+    lng: null,
+  });
+  const [totalPrice, setTotalPrice] = useState(price);
+  const pricing = calculateBookingPricing({ tour, tickets: formData.travelers, selectedDate: formData.tripDate, fallbackPrice: price });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -115,6 +153,10 @@ const Booking = () => {
     setTotalPrice((pricing.total * rate).toFixed(2));
   }, [pricing.total, rate]);
 
+  if (!tour || !user) {
+    return <Navigate to="/login" replace />;
+  }
+
   const formVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
@@ -133,39 +175,25 @@ const Booking = () => {
     >
       <h2 className="text-3xl font-bold mb-6">Book Your Tour: {title}</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-lg font-semibold">Address (Start Location)</label>
-          {isLoaded && (
-            <Autocomplete
-              onLoad={setAutocomplete}
-              onPlaceChanged={onPlaceChanged}
-            >
-              <input
-                type="text"
-                name="address"
-                value={formData.address}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg bg-inherit"
-                placeholder="Type your address or select on map"
-              />
-            </Autocomplete>
-          )}
-        </div>
-        <div>
-          <label className="block text-lg font-semibold">Or Pin Your Location on Map</label>
-          {isLoaded && (
-            <GoogleMap
-              mapContainerStyle={mapContainerStyle}
-              center={formData.lat && formData.lng ? { lat: formData.lat, lng: formData.lng } : center}
-              zoom={formData.lat && formData.lng ? 14 : 5}
-              onClick={onMapClick}
-            >
-              {formData.lat && formData.lng && (
-                <Marker position={{ lat: formData.lat, lng: formData.lng }} />
-              )}
-            </GoogleMap>
-          )}
-        </div>
+        {GOOGLE_MAPS_API_KEY ? (
+          <LocationPicker
+            formData={formData}
+            onInputChange={handleChange}
+            setFormData={setFormData}
+          />
+        ) : (
+          <div>
+            <label className="block text-lg font-semibold">Address (Start Location)</label>
+            <input
+              type="text"
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              className="w-full p-3 border rounded-lg bg-inherit"
+              placeholder="Type your address"
+            />
+          </div>
+        )}
         <div>
           <label className="block text-lg font-semibold">Name</label>
           <motion.input

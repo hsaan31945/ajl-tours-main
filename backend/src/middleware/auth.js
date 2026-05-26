@@ -61,7 +61,7 @@ const authenticateAdmin = async (req, res, next) => {
     const config = require('../config');
     const expected = config.admin.passcode;
     
-    if (header && header.trim() === expected.trim()) {
+    if (expected && header && header.trim() === expected.trim()) {
       req.isAuthenticated = true;
       req.authMethod = 'passcode';
       req.adminActor = 'passcode-admin';
@@ -87,5 +87,4 @@ module.exports = {
   authenticateAdmin,
   simplePasscodeAuth
 };
-
 

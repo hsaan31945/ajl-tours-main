@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Heart, MapPin, Clock, Users, Star } from 'lucide-react';
 import { normalizeTourData } from '../utils/tourDataMapper';
+import { getTourId } from '../utils/tourId';
 
 const TourDetails = () => {
   const { id } = useParams();
@@ -88,7 +89,7 @@ const TourDetails = () => {
     if (tour) {
       const tourId = getTourId(tour);
       if (tourId) {
-        navigate(`/checkout/${tourId}`);
+        navigate(`/switzerland/${tourId}/checkout-sw`);
       }
     }
   };

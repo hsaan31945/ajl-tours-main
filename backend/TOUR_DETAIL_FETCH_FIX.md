@@ -66,7 +66,7 @@ vercel --prod
 Make sure these are set in Vercel backend project:
 - `CORS_ORIGIN=https://ajl-tours-frontend.vercel.app`
 - `FRONTEND_URL=https://ajl-tours-frontend.vercel.app`
-- `MONGODB_URI=mongodb+srv://admin:salman1122@ajltours.ozyldk7.mongodb.net/AJLTours?appName=AJLTours`
+- `MONGODB_URI=mongodb+srv://USERNAME:PASSWORD@CLUSTER.mongodb.net/DATABASE_NAME?appName=APP_NAME`
 
 ### 3. Test the Flow
 1. **Add a new tour** via admin panel
@@ -136,4 +136,3 @@ Make sure these are set in Vercel backend project:
 ---
 
 *Last Updated: $(date)*
-

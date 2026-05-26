@@ -14,7 +14,7 @@ I've created an API endpoint that will create all required MongoDB collections a
 
 **Headers Required:**
 ```
-X-Admin-Passcode: admin123
+X-Admin-Passcode: <ADMIN_PASSCODE>
 ```
 
 ---
@@ -28,7 +28,7 @@ X-Admin-Passcode: admin123
 
 ### 2. **Admin User**
 - Email: `admin@ajltours.com`
-- Password: `admin123`
+- Password: configured admin password
 - Role: `admin`
 
 ### 3. **Homepage Content Settings**
@@ -65,7 +65,7 @@ Just visit: https://ajl-tours-backend.vercel.app/api/tours?bootstrap=true
 
 ```powershell
 $headers = @{
-    "X-Admin-Passcode" = "admin123"
+    "X-Admin-Passcode" = "<ADMIN_PASSCODE>"
 }
 
 Invoke-WebRequest -Uri "https://ajl-tours-backend.vercel.app/api/tours?bootstrap=true" -Method GET -Headers $headers
@@ -75,7 +75,7 @@ Invoke-WebRequest -Uri "https://ajl-tours-backend.vercel.app/api/tours?bootstrap
 
 ```bash
 curl -X GET "https://ajl-tours-backend.vercel.app/api/tours?bootstrap=true" \
-  -H "X-Admin-Passcode: admin123"
+  -H "X-Admin-Passcode: <ADMIN_PASSCODE>"
 ```
 
 ### Option 3: Using Browser (with extension)
@@ -181,7 +181,7 @@ mongodb+srv://salman:salman1122@cluster0.tatwtcz.mongodb.net/ajltours?retryWrite
 
 **Quick Method (PowerShell):**
 ```powershell
-$headers = @{"X-Admin-Passcode" = "admin123"}
+$headers = @{"X-Admin-Passcode" = "<ADMIN_PASSCODE>"}
 Invoke-WebRequest -Uri "https://ajl-tours-backend.vercel.app/api/tours?bootstrap=true" -Method GET -Headers $headers
 ```
 
@@ -212,7 +212,7 @@ After bootstrap, check:
 
 ### Initial Data:
 - ✅ 1 Division (Switzerland)
-- ✅ 1 Admin user (admin@ajltours.com / admin123)
+- ✅ 1 Admin user (admin@ajltours.com / configured admin password)
 - ✅ 1 Homepage content setting
 
 ---
@@ -241,7 +241,7 @@ After fixing MONGODB_URI, run this in PowerShell:
 
 ```powershell
 $headers = @{
-    "X-Admin-Passcode" = "admin123"
+    "X-Admin-Passcode" = "<ADMIN_PASSCODE>"
     "Content-Type" = "application/json"
 }
 
@@ -281,4 +281,3 @@ After running bootstrap, you should see:
 *Bootstrap endpoint created: 2024*  
 *Status: Ready to use*  
 *Remember: Fix MONGODB_URI first!*
-

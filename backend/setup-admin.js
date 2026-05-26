@@ -6,14 +6,21 @@ require('dotenv').config();
 const setupAdmin = async () => {
   try {
     // Connect to MongoDB
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://admin:salman1122@ajltours.ozyldk7.mongodb.net/AJLTours?appName=AJLTours');
+    if (!process.env.MONGODB_URI) {
+      throw new Error('MONGODB_URI is required');
+    }
+    const adminPassword = process.env.ADMIN_BOOTSTRAP_PASSWORD || process.env.ADMIN_PASSCODE;
+    if (!adminPassword) {
+      throw new Error('ADMIN_BOOTSTRAP_PASSWORD or ADMIN_PASSCODE is required');
+    }
+    await mongoose.connect(process.env.MONGODB_URI);
     console.log('Connected to MongoDB');
 
     // Create admin account
     const adminData = {
       username: 'admin',
       email: 'admin@tripgo.com',
-      password: 'admin123',
+      password: adminPassword,
       role: 'admin',
       isActive: true
     };
@@ -27,7 +34,7 @@ const setupAdmin = async () => {
       await admin.save();
       console.log('Admin account created successfully');
       console.log('Username: admin');
-      console.log('Password: admin123');
+      console.log('Password: configured from environment');
     }
 
     // Initialize homepage content
@@ -74,7 +81,6 @@ const setupAdmin = async () => {
 };
 
 setupAdmin();
-
 
 
 

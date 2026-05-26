@@ -108,8 +108,8 @@ export function AdminProvider({ children }) {
 			return { 'Authorization': `Bearer ${token}` };
 		}
 		// Fallback to passcode for backward compatibility
-		const PASSCODE = localStorage.getItem('adminPasscode') || import.meta.env.VITE_ADMIN_PASSCODE || 'admin123';
-		return { 'X-Admin-Passcode': PASSCODE };
+		const PASSCODE = localStorage.getItem('adminPasscode') || import.meta.env.VITE_ADMIN_PASSCODE || '';
+		return PASSCODE ? { 'X-Admin-Passcode': PASSCODE } : {};
 	};
 
 	/**
@@ -120,8 +120,8 @@ export function AdminProvider({ children }) {
 		if (token) {
 			return null; // Prefer JWT
 		}
-		const PASSCODE = localStorage.getItem('adminPasscode') || import.meta.env.VITE_ADMIN_PASSCODE || 'admin123';
-		return PASSCODE;
+		const PASSCODE = localStorage.getItem('adminPasscode') || import.meta.env.VITE_ADMIN_PASSCODE || '';
+		return PASSCODE || null;
 	};
 
 	const value = {

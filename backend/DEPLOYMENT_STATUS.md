@@ -49,7 +49,7 @@
 Make sure these are set in Vercel backend project:
 - ✅ `CORS_ORIGIN=https://ajl-tours-frontend.vercel.app`
 - ✅ `FRONTEND_URL=https://ajl-tours-frontend.vercel.app`
-- ✅ `MONGODB_URI=mongodb+srv://admin:salman1122@ajltours.ozyldk7.mongodb.net/AJLTours?appName=AJLTours`
+- ✅ `MONGODB_URI=mongodb+srv://USERNAME:PASSWORD@CLUSTER.mongodb.net/DATABASE_NAME?appName=APP_NAME`
 
 ### 2. Test the Fix
 1. Go to: https://ajl-tours-frontend.vercel.app
@@ -81,4 +81,3 @@ After deployment:
 ---
 
 *Deployment completed: $(date)*
-

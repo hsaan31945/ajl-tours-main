@@ -26,7 +26,7 @@
 - ✅ `CORS_ORIGIN` - CORS origin (needs update)
 - ✅ `STRIPE_SECRET_KEY` - Stripe secret key
 - ✅ `STRIPE_WEBHOOK_SECRET` - Stripe webhook secret
-- ✅ `ADMIN_PASSCODE` - **JUST ADDED** (set to: admin123)
+- ✅ `ADMIN_PASSCODE` - set in environment
 
 **⚠️ Action Required:**
 Update these environment variables in Vercel Dashboard:
@@ -128,7 +128,7 @@ vercel --prod --yes
 1. **Environment Variables**: Update `CORS_ORIGIN` and `FRONTEND_URL` in Vercel Dashboard
 2. **Redeploy**: After updating env vars, redeploy backend for changes to take effect
 3. **Database**: Ensure `MONGODB_URI` is correctly set and database is accessible
-4. **Admin Passcode**: Default is `admin123` - change in production if needed
+4. **Admin Passcode**: Must be configured in production environment variables
 
 ---
 
@@ -145,7 +145,6 @@ vercel --prod --yes
 *Deployment completed: 2024*  
 *Status: Both projects deployed successfully*  
 *Action Required: Update CORS_ORIGIN and FRONTEND_URL in Vercel Dashboard*
-
 
 
 

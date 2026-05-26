@@ -1,14 +1,18 @@
 import React, { createContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { apiUrl } from "../utils/api";
 // socket.io disabled
 
 export const AppContext = createContext();
 
-// Use environment variables for production compatibility
-// Use relative URLs so a single frontend link works (Vite dev proxy handles backend)
-const API_URL = '/api';
 const SOCKET_URL = '';
+
+const getCollection = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
 
 const AppContextProvider = (props) => {
   const navigate = useNavigate();
@@ -33,12 +37,8 @@ const AppContextProvider = (props) => {
       // }
       
       try {
-        const bookingsRes = await axios.get(`${API_URL}/bookings`);
-        if (bookingsRes.data.success) {
-          setBookings(bookingsRes.data.data);
-        } else {
-          setBookings([]);
-        }
+        const bookingsRes = await axios.get(apiUrl('/api/bookings'));
+        setBookings(getCollection(bookingsRes.data));
       } catch (e) {
         console.error('Failed to load bookings:', e?.response?.data || e.message);
         setBookings([]);
@@ -51,7 +51,7 @@ const AppContextProvider = (props) => {
 
   // Register a new user
   const addUser = async (newUser) => {
-    const res = await axios.post(`${API_URL}/users`, newUser);
+    const res = await axios.post(apiUrl('/api/users'), newUser);
     setUsers((prev) => [...prev, res.data]);
     setUser(res.data);
   };
@@ -59,7 +59,7 @@ const AppContextProvider = (props) => {
   // Login user
   const loginUser = async (email, password) => {
     try {
-      const response = await axios.post(`${API_URL}/users/login`, { email, password });
+      const response = await axios.post(apiUrl('/api/users/login'), { email, password });
       const userData = response.data;
       setUser(userData);
       localStorage.setItem("currentUser", JSON.stringify(userData));
@@ -79,9 +79,11 @@ const AppContextProvider = (props) => {
 
   // Add a booking
   const addBooking = async (booking) => {
-    const res = await axios.post(`${API_URL}/bookings`, booking);
+    const res = await axios.post(apiUrl('/api/bookings'), booking);
     if (res.data.success) {
       setBookings((prev) => [...prev, res.data.data]);
+    } else if (res.data) {
+      setBookings((prev) => [...prev, res.data]);
     }
   };
 

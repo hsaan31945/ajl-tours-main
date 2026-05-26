@@ -23,7 +23,7 @@ const UserDetails = () => {
 
   useEffect(() => {
     updateContact({ fullName, email, country, phone });
-  }, [fullName, email, country, phone]);
+  }, [fullName, email, country, phone, updateContact]);
 
   useEffect(() => {
     if (!bookingTourId) return;
@@ -54,6 +54,51 @@ const UserDetails = () => {
       cancelled = true;
     };
   }, [bookingTourId, updateTour]);
+
+  const handleGoToPayment = () => {
+    if (!fullName.trim() || !email.trim() || !phone.trim()) {
+      alert("Please fill in your name, email, and phone number before continuing.");
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      alert("Please enter a valid email address before continuing.");
+      return;
+    }
+
+    if (currentTickets < minTickets) {
+      alert(`Minimum ${minTickets} tickets are required for this tour.`);
+      navigate("/flexibility");
+      return;
+    }
+
+    const tourId = getTourId(tour);
+    if (!tourId) {
+      alert("Could not verify this tour. Please go back and select the tour again.");
+      return;
+    }
+
+    localStorage.setItem('recentTourData', JSON.stringify({
+      tourName: tour?.title || tour?.name || "Tour",
+      tourTitle: tour?.title || tour?.name || "Tour",
+      tourPrice: pricing.baseUnitPrice,
+      amount: pricing.total,
+      tickets: currentTickets,
+      tourId,
+      currency: pricing.currency,
+      selectedDate: date || new Date().toISOString().split('T')[0],
+      date: date || new Date().toISOString().split('T')[0],
+      time: time || "09:00",
+      flexibility: flexibility || "standard",
+      minTicketsPerBooking: minTickets,
+      userName: fullName.trim(),
+      userEmail: email.trim(),
+      userPhone: phone.trim(),
+      country,
+    }));
+
+    navigate("/payment");
+  };
 
   if (!tour) {
     return <div className="text-center mt-20 text-xl text-red-600">No tour selected for contact. Please go back and try again.</div>;
@@ -112,14 +157,7 @@ const UserDetails = () => {
             <button
               type="button"
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl mt-4 transition"
-              onClick={() => {
-                if (currentTickets < minTickets) {
-                  alert(`Minimum ${minTickets} tickets are required for this tour.`);
-                  navigate("/flexibility");
-                  return;
-                }
-                navigate("/payment");
-              }}
+              onClick={handleGoToPayment}
             >
               Go to payment
             </button>

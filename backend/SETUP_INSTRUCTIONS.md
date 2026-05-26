@@ -58,18 +58,18 @@ mongodb+srv://salman:salman1122@cluster0.tatwtcz.mongodb.net/?appName=Cluster0
 
 **Headers:**
 ```
-X-Admin-Passcode: admin123
+X-Admin-Passcode: <ADMIN_PASSCODE>
 ```
 
 ### Quick Test (PowerShell):
 ```powershell
-$headers = @{"X-Admin-Passcode" = "admin123"}
+$headers = @{"X-Admin-Passcode" = "<ADMIN_PASSCODE>"}
 Invoke-WebRequest -Uri "https://ajl-tours-backend.vercel.app/api/tours?bootstrap=true" -Method GET -Headers $headers
 ```
 
 ### What It Creates:
 1. ✅ **Switzerland Division** - Required for tours
-2. ✅ **Admin User** - admin@ajltours.com / admin123
+2. ✅ **Admin User** - admin@ajltours.com / configured admin password
 3. ✅ **Homepage Content Settings** - Checkout settings
 4. ✅ **All Collections** - Creates all 11 required collections
 
@@ -175,7 +175,6 @@ https://ajl-tours-backend.vercel.app/api/tours?test=db-insert
 
 *Setup guide created: 2024*  
 *Next step: Fix MONGODB_URI, then run bootstrap*
-
 
 
 

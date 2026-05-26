@@ -355,7 +355,7 @@ Vercel Routing
 ```javascript
 // Required for both endpoints:
 MONGODB_URI=mongodb://...
-ADMIN_PASSCODE=admin123 (or custom)
+ADMIN_PASSCODE=<ADMIN_PASSCODE>
 NODE_ENV=development/production
 ```
 
@@ -637,7 +637,7 @@ try {
 ```bash
 curl -X POST http://localhost:3000/api/tours \
   -H "Content-Type: application/json" \
-  -H "X-Admin-Passcode: admin123" \
+  -H "X-Admin-Passcode: <ADMIN_PASSCODE>" \
   -d '{
     "name": "Test Tour",
     "price": 100,
@@ -666,7 +666,7 @@ curl -X POST http://localhost:3000/api/tours \
 ```bash
 curl -X POST http://localhost:3000/api/migrate-tours \
   -H "Content-Type: application/json" \
-  -H "X-Admin-Passcode: admin123" \
+  -H "X-Admin-Passcode: <ADMIN_PASSCODE>" \
   -d '{}'
 ```
 
@@ -772,7 +772,6 @@ node test-db-connection.js
 
 *Document created: 2024*  
 *Last updated: Complete error analysis for Add Tour and Migration endpoints*
-
 
 
 
