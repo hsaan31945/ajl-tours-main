@@ -4,7 +4,7 @@
  */
 
 // Wrap all imports in try-catch to identify which module is failing
-let connectDB, setCORSHeaders, errorHandler, tourController, bookingController, authController, Division, Tour, Booking, User;
+let connectDB, setCORSHeaders, errorHandler, tourController, bookingController, authController, emailController, Division, Tour, Booking, User;
 
 try {
   connectDB = require('../src/config/database').connectDB;
@@ -13,6 +13,7 @@ try {
   tourController = require('../src/controllers/tourController');
   bookingController = require('../src/controllers/bookingController');
   authController = require('../src/controllers/authController');
+  emailController = require('../src/controllers/emailController');
   Division = require('../models/Division');
   Tour = require('../models/Tour');
   Booking = require('../models/Booking');
@@ -279,7 +280,9 @@ module.exports = async (req, res) => {
     } else if (normalizedPath === '/admin/login' && method === 'POST') {
       await asyncHandler(authController.adminLogin.bind(authController))(req, res);
     } else if (normalizedPath.startsWith('/auth')) {
-      if (normalizedPath.includes('/admin/login') && method === 'POST') {
+      if (normalizedPath === '/auth/send-reset-otp' && method === 'POST') {
+        await asyncHandler(emailController.sendResetOtp.bind(emailController))(req, res);
+      } else if (normalizedPath.includes('/admin/login') && method === 'POST') {
         await asyncHandler(authController.adminLogin.bind(authController))(req, res);
       } else if (normalizedPath.includes('/admin/create') && method === 'POST') {
         await asyncHandler(authController.createAdmin.bind(authController))(req, res);

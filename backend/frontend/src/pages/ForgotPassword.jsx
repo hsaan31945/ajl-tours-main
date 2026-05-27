@@ -2,11 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Mail, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import emailjs from '@emailjs/browser';
-import { EMAILJS_CONFIG } from '../config/emailjs';
-
-// Initialize EmailJS with public key once
-try { emailjs.init(EMAILJS_CONFIG.PUBLIC_KEY); } catch (_) {}
+import { apiUrl } from '../utils/api';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -38,36 +34,28 @@ const ForgotPassword = () => {
       const otp = generateOTP();
       const expiryTime = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
       
-      // Store OTP in localStorage temporarily (in production, use backend)
+      const response = await fetch(apiUrl('/api/auth/send-reset-otp'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: trimmed,
+          otp,
+          expiresAt: expiryTime.toLocaleString(),
+        }),
+      });
+
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Please try again.');
+      }
+
+      // Store OTP in localStorage temporarily (current verification page reads it here)
       localStorage.setItem('resetOTP', JSON.stringify({
         otp,
         email: trimmed,
         expiry: expiryTime.getTime(),
         attempts: 0
       }));
-
-      // Email template parameters
-      const templateParams = {
-        // recipient and meta
-        to_email: trimmed,
-        email: trimmed,
-        to_name: trimmed,
-        from_name: 'AJL Tours',
-        reply_to: 'bajointerns@gmail.com',
-        subject: 'Reset Your AJL Tours Password (Code Inside)',
-        // template variables
-        passcode: otp,
-        time: expiryTime.toLocaleString(),
-        company_name: 'AJL Tours'
-      };
-
-      // Send email using EmailJS
-      await emailjs.send(
-        EMAILJS_CONFIG.SERVICE_ID, 
-        EMAILJS_CONFIG.TEMPLATE_ID, 
-        templateParams, 
-        EMAILJS_CONFIG.PUBLIC_KEY
-      );
       
       setEmailSent(true);
       setMessage('OTP sent successfully! Check your email.');
@@ -78,9 +66,8 @@ const ForgotPassword = () => {
       }, 2000);
 
     } catch (error) {
-      // Log more details to help diagnose 422 errors
-      console.error('Error sending OTP:', error?.text || error);
-      setError(`Failed to send OTP. ${error?.text || 'Please try again.'}`);
+      console.error('Error sending OTP:', error);
+      setError(error?.message || 'Failed to send OTP. Please try again.');
     } finally {
       setLoading(false);
     }

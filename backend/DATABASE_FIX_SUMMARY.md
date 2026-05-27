@@ -34,19 +34,19 @@ mongodb+srv://USERNAME:PASSWORD@CLUSTER.mongodb.net/DATABASE_NAME?appName=APP_NA
 
 **Components:**
 - **Protocol**: `mongodb+srv://` (MongoDB Atlas SRV connection)
-- **Username**: set in `MONGODB_URI`
-- **Password**: set in `MONGODB_URI`
-- **Cluster**: set in `MONGODB_URI`
-- **Database**: set in `MONGODB_URI`
-- **App Name**: set in `MONGODB_URI`
+- **Username**: `admin`
+- **Password**: `salman1122`
+- **Cluster**: `ajltours.ozyldk7.mongodb.net`
+- **Database**: `AJLTours`
+- **App Name**: `AJLTours`
 
 ### 3. Environment Variable Priority
 
 The application will use the connection string in this order:
 1. **First Priority**: `process.env.MONGODB_URI` (environment variable)
-2. **Fallback**: Non-secret local development connection string, if configured
+2. **Fallback**: Hardcoded connection string in code
 
-**Recommendation**: Always set `MONGODB_URI` as an environment variable in production. Do not commit production credentials, hosts, or full connection strings.
+**Recommendation**: Always set `MONGODB_URI` as an environment variable in production rather than relying on the hardcoded fallback.
 
 ---
 
@@ -98,20 +98,16 @@ The application will use the connection string in this order:
 
 ### Immediate Actions Required
 
-1. **Rotate Exposed Credentials:**
-   - Rotate or delete any MongoDB Atlas database user whose credentials were committed.
-   - Treat previously committed credentials as compromised.
-
-2. **Set Environment Variable in Vercel:**
+1. **Set Environment Variable in Vercel:**
    ```
    MONGODB_URI=mongodb+srv://USERNAME:PASSWORD@CLUSTER.mongodb.net/DATABASE_NAME?appName=APP_NAME
    ```
 
-3. **Verify MongoDB Atlas Network Access:**
-   - Ensure MongoDB Atlas allows only the network access your deployment requires.
+2. **Verify MongoDB Atlas Network Access:**
+   - Ensure MongoDB Atlas allows connections from `0.0.0.0/0` (all IPs) or specific Vercel IPs
    - Go to: MongoDB Atlas → Network Access → Add IP Address
 
-4. **Test Connection:**
+3. **Test Connection:**
    - Use `/api/test` endpoint to verify database connection
    - Check `/api/health` endpoint for database status
 
@@ -200,3 +196,4 @@ All files have been updated to use the new MongoDB connection string:
 ---
 
 *Last Updated: $(date)*
+

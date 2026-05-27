@@ -2,8 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Shield, CheckCircle, AlertCircle } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import emailjs from '@emailjs/browser';
-import { EMAILJS_CONFIG } from '../config/emailjs';
+import { apiUrl } from '../utils/api';
 
 const VerifyOTP = () => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -133,24 +132,25 @@ const VerifyOTP = () => {
     try {
       const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
       const expiryTime = new Date(Date.now() + 15 * 60 * 1000);
+      const response = await fetch(apiUrl('/api/auth/send-reset-otp'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          otp: newOtp,
+          expiresAt: expiryTime.toLocaleString(),
+        }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Please try again.');
+      }
       localStorage.setItem('resetOTP', JSON.stringify({
         otp: newOtp,
         email,
         expiry: expiryTime.getTime(),
         attempts: 0,
       }));
-      const templateParams = {
-        to_email: email,
-        passcode: newOtp,
-        time: expiryTime.toLocaleString(),
-        company_name: 'AJL Tours',
-      };
-      await emailjs.send(
-        EMAILJS_CONFIG.SERVICE_ID,
-        EMAILJS_CONFIG.TEMPLATE_ID,
-        templateParams,
-        EMAILJS_CONFIG.PUBLIC_KEY,
-      );
       setMessage('New OTP sent successfully!');
       setTimeLeft(900);
       setCanResend(false);
@@ -158,7 +158,7 @@ const VerifyOTP = () => {
       inputRefs.current[0]?.focus();
     } catch (err) {
       console.error('Error resending OTP:', err);
-      setError('Failed to resend OTP. Please try again.');
+      setError(err?.message || 'Failed to resend OTP. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -277,5 +277,3 @@ const VerifyOTP = () => {
 };
 
 export default VerifyOTP;
-
-
