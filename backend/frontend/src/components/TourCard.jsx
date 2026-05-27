@@ -7,6 +7,7 @@ import EditableField from "./EditableField";
 import { getTourId } from "../utils/tourId";
 import { apiUrl } from "../utils/api";
 import { clearToursCache } from "../services/toursApi";
+import { cleanDisplayName } from "../utils/textFormatting";
 
 const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
   const { symbol, rate } = useCurrency();
@@ -15,6 +16,7 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
   const [imageFailed, setImageFailed] = useState(false);
 
   const tourId = getTourId(tour);
+  const tourName = cleanDisplayName(tour?.name || tour?.title || "Tour");
   
   const handleSaveField = async (field, value) => {
     if (!tourId) return false;
@@ -75,7 +77,7 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
         {displayImage && !imageFailed ? (
         <img 
           src={displayImage} 
-          alt={tour.name} 
+          alt={tourName} 
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           loading="lazy"
           decoding="async"
@@ -119,9 +121,9 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
       <div className="p-6 flex-1 flex flex-col">
         {/* Title */}
         <div onClick={(e) => e.stopPropagation()}>
-          <EditableField
-            tag="h3"
-            value={tour.name || tour.title}
+              <EditableField
+                tag="h3"
+                value={tourName}
             className="text-xl font-bold text-gray-900 mb-2 line-clamp-2 min-h-[3.5rem] leading-tight"
             onSave={(val) => handleSaveField("name", val)}
             showEditIcon={isAdmin}

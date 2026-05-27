@@ -6,6 +6,7 @@ import { useBooking } from "../context/BookingContext";
 import { apiUrl } from "../utils/api";
 import { getTourId } from "../utils/tourId";
 import { calculateBookingPricing, parseTicketCount } from "../utils/bookingPricing";
+import { cleanDisplayName } from "../utils/textFormatting";
 
 const Flexibility = () => {
   const navigate = useNavigate();
@@ -82,6 +83,7 @@ const Flexibility = () => {
   const pricePerTicket = pricing.baseUnitPrice;
   const upgradePrice = calculateBookingPricing({ tour, tickets: 1, selectedDate: date, flexibility: "upgrade" }).unitPrice;
   const totalPrice = pricing.total;
+  const tourName = cleanDisplayName(tour?.title || tour?.name || "Tour");
 
   // Ensure tickets reflect what was set on VisitCheckout2 via localStorage
   useEffect(() => {
@@ -153,10 +155,10 @@ const Flexibility = () => {
         <div className="flex-1 bg-white rounded-xl shadow p-6 mb-8 md:mb-0">
           <div className="mb-4 flex items-center gap-4">
             {tour?.images && tour.images[0] && (
-              <img src={tour.images[0]} alt={tour.title || tour.name} className="w-16 h-16 object-cover rounded" />
+              <img src={tour.images[0]} alt={tourName} className="w-16 h-16 object-cover rounded" />
             )}
             <div>
-              <div className="font-bold text-lg">{tour.title || tour.name}</div>
+              <div className="font-bold text-lg">{tourName}</div>
             </div>
           </div>
           <div className="mb-6">
@@ -230,10 +232,10 @@ const Flexibility = () => {
         <div className="w-full md:w-[400px] bg-white rounded-xl shadow p-6 flex flex-col gap-4">
           <div className="flex items-center gap-4 mb-4">
             {tour?.images && tour.images[0] && (
-              <img src={tour.images[0]} alt={tour.title || tour.name} className="w-16 h-16 object-cover rounded" />
+              <img src={tour.images[0]} alt={tourName} className="w-16 h-16 object-cover rounded" />
             )}
             <div>
-              <div className="font-bold text-lg">{tour.title || tour.name}</div>
+              <div className="font-bold text-lg">{tourName}</div>
             </div>
           </div>
           <div className="border-b pb-2 mb-2">

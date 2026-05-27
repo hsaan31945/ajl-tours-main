@@ -88,7 +88,7 @@ const EditableField = ({
 
   if (isEditing) {
     return multiline ? (
-      <div className="relative">
+      <div className="relative" onClick={(e) => e.stopPropagation()}>
         <textarea
           ref={inputRef}
           value={text}
@@ -135,7 +135,7 @@ const EditableField = ({
         </div>
       </div>
     ) : (
-      <div className="relative inline-block">
+      <div className="relative inline-block" onClick={(e) => e.stopPropagation()}>
         <input
           ref={inputRef}
           type="text"
@@ -192,7 +192,11 @@ const EditableField = ({
       </Tag>
       {showEditIcon && (forceEditMode || isAdmin) && (
         <button
-          onClick={() => setIsEditing(true)}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsEditing(true);
+          }}
           className="ml-2 opacity-100 text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 p-1 rounded transition-all"
           title="Click to edit"
         >

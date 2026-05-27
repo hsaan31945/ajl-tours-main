@@ -11,24 +11,45 @@ import { normalizeTourData } from '../utils/tourDataMapper';
 import { normalizeTourId, isValidObjectId, getTourId } from '../utils/tourId';
 import { apiUrl, getBackendUrl } from '../utils/api';
 import { clearToursCache } from '../services/toursApi';
-import { stripHtmlToText } from '../utils/textFormatting';
+import { cleanDisplayName, stripHtmlToText } from '../utils/textFormatting';
 import ImageCarousel from "../components/ImageCarousel";
 import { motion, AnimatePresence } from "framer-motion";
 import PaymentSection from "../components/PaymentSection";
 import { calculateBookingPricing } from "../utils/bookingPricing";
 
 function ItineraryAccordion({ itinerary = [], adminOn = false, onSave, onAddDraft }) {
-  const [open, setOpen] = useState(itinerary.map(() => false));
+  const itineraryList = Array.isArray(itinerary) ? itinerary : [];
+  const itineraryLength = itineraryList.length;
+  const [open, setOpen] = useState(itineraryList.map(() => false));
   const { isAdmin } = useAdmin();
   const effectiveEditMode = adminOn || isAdmin;
 
+  useEffect(() => {
+    setOpen((current) => Array.from({ length: itineraryLength }, (_, index) => current[index] || false));
+  }, [itineraryLength]);
+
+  const getItemLabel = (item, index) => (
+    item?.title ||
+    item?.location ||
+    item?.type ||
+    item?.description ||
+    `Itinerary item ${index + 1}`
+  );
+
   const saveItineraryItem = async (index, field, value) => {
-    const updated = [...itinerary];
-    if (field === 'title') {
-      updated[index] = { ...updated[index], title: value };
-    } else if (field === 'description') {
-      updated[index] = { ...updated[index], description: value };
+    const updated = itineraryList.map((item, itemIndex) => (
+      itemIndex === index ? { ...item, [field]: value } : item
+    ));
+    if (onSave) {
+      return await onSave(updated);
     }
+    return false;
+  };
+
+  const saveActivities = async (index, activities) => {
+    const updated = itineraryList.map((item, itemIndex) => (
+      itemIndex === index ? { ...item, activities } : item
+    ));
     if (onSave) {
       return await onSave(updated);
     }
@@ -37,7 +58,7 @@ function ItineraryAccordion({ itinerary = [], adminOn = false, onSave, onAddDraf
 
   return (
     <div className="flex flex-col gap-6">
-      {itinerary.map((item, idx) => (
+      {itineraryList.map((item, idx) => (
         <div key={idx} className="group">
           <div
             className="flex items-center justify-between bg-gray-100 rounded px-6 py-4 cursor-pointer select-none"
@@ -46,12 +67,13 @@ function ItineraryAccordion({ itinerary = [], adminOn = false, onSave, onAddDraf
             <span className="font-bold text-red-800 flex items-center flex-1">
               <svg className="inline-block mr-2 text-red-600" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 21c-4.418 0-8-5.373-8-10a8 8 0 1116 0c0 4.627-3.582 10-8 10z" /><circle cx="12" cy="11" r="3" stroke="currentColor" strokeWidth={2} fill="white" /></svg>
               <EditableField
-                value={item.title || item.location || ''}
+                value={getItemLabel(item, idx)}
+                placeholder="Add itinerary title"
                 forceEditMode={effectiveEditMode}
                 onSave={async (value) => await saveItineraryItem(idx, 'title', value)}
                 className="flex-1"
                 tag="span"
-                showEditIcon={false}
+                showEditIcon={effectiveEditMode}
               />
             </span>
             <div className="flex items-center gap-2">
@@ -84,24 +106,91 @@ function ItineraryAccordion({ itinerary = [], adminOn = false, onSave, onAddDraf
                 className="overflow-hidden"
               >
                 <div className="px-6 py-2 text-gray-700">
-                  <EditableField
-                    value={item.description || ''}
-                    forceEditMode={effectiveEditMode}
-                    onSave={async (value) => await saveItineraryItem(idx, 'description', value)}
-                    className="block"
-                    tag="div"
-                    multiline={true}
-                  />
-                  {item.duration && <div className="italic mt-2">{item.duration}</div>}
-                  {item.location && <div className="text-sm text-gray-500">Location: {item.location}</div>}
-                  {item.activities && item.activities.length > 0 && (
+                  {(effectiveEditMode || item.description) && (
+                    <EditableField
+                      value={item.description || ''}
+                      placeholder="Add itinerary details"
+                      forceEditMode={effectiveEditMode}
+                      onSave={async (value) => await saveItineraryItem(idx, 'description', value)}
+                      className="block"
+                      tag="div"
+                      multiline={true}
+                    />
+                  )}
+                  {(effectiveEditMode || item.duration) && (
+                    <div className="italic mt-2">
+                      <EditableField
+                        value={item.duration || ''}
+                        placeholder="Add duration"
+                        forceEditMode={effectiveEditMode}
+                        onSave={async (value) => await saveItineraryItem(idx, 'duration', value)}
+                        tag="span"
+                        showEditIcon={effectiveEditMode}
+                      />
+                    </div>
+                  )}
+                  {(effectiveEditMode || item.location) && (
+                    <div className="text-sm text-gray-500 mt-1">
+                      <span className="font-medium">Location: </span>
+                      <EditableField
+                        value={item.location || ''}
+                        placeholder="Add location"
+                        forceEditMode={effectiveEditMode}
+                        onSave={async (value) => await saveItineraryItem(idx, 'location', value)}
+                        tag="span"
+                        showEditIcon={effectiveEditMode}
+                      />
+                    </div>
+                  )}
+                  {(effectiveEditMode || (item.activities && item.activities.length > 0)) && (
                     <div className="mt-2">
                       <div className="font-semibold">Activities:</div>
                       <ul className="list-disc pl-5">
-                        {item.activities.map((activity, activityIdx) => (
-                          <li key={activityIdx}>{activity}</li>
+                        {(Array.isArray(item.activities) ? item.activities : []).map((activity, activityIdx) => (
+                          <li key={activityIdx} className="group/activity">
+                            <EditableField
+                              value={activity}
+                              placeholder="Add activity"
+                              forceEditMode={effectiveEditMode}
+                              onSave={async (value) => {
+                                const activities = [...(Array.isArray(item.activities) ? item.activities : [])];
+                                activities[activityIdx] = value;
+                                return await saveActivities(idx, activities);
+                              }}
+                              tag="span"
+                              showEditIcon={effectiveEditMode}
+                            />
+                            {adminOn && (
+                              <button
+                                type="button"
+                                onClick={async (e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  const activities = (Array.isArray(item.activities) ? item.activities : []).filter((_, i) => i !== activityIdx);
+                                  await saveActivities(idx, activities);
+                                }}
+                                className="ml-2 text-red-500 hover:text-red-700 opacity-0 group-hover/activity:opacity-100"
+                                title="Remove activity"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </li>
                         ))}
                       </ul>
+                      {adminOn && (
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            await saveActivities(idx, [...(Array.isArray(item.activities) ? item.activities : []), 'New activity']);
+                          }}
+                          className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+                        >
+                          + Add Activity
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -110,7 +199,7 @@ function ItineraryAccordion({ itinerary = [], adminOn = false, onSave, onAddDraf
           </AnimatePresence>
         </div>
       ))}
-      {itinerary.length === 0 && (
+      {itineraryLength === 0 && (
         <div className="text-gray-500 italic py-4 text-center">No itinerary details available for this tour.</div>
       )}
       {adminOn && (
@@ -121,6 +210,7 @@ function ItineraryAccordion({ itinerary = [], adminOn = false, onSave, onAddDraf
             e.stopPropagation();
             const newItem = { title: '', description: '', duration: '', location: '', activities: [] };
             if (onAddDraft) onAddDraft(newItem);
+            setOpen((current) => [...current, true]);
           }}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
         >
@@ -416,7 +506,7 @@ const Checkout = () => {
     );
   }
 
-  const tourName = tour?.title || tour?.name || "Tour";
+  const tourName = cleanDisplayName(tour?.title || tour?.name || "Tour");
   const pricing = calculateBookingPricing({ tour, tickets, selectedDate });
   const pricePerTicket = pricing.baseUnitPrice;
   const totalPrice = pricing.total;

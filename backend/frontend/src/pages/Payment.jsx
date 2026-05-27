@@ -8,6 +8,7 @@ import axios from "axios";
 import { apiUrl } from "../utils/api";
 import { getTourId } from "../utils/tourId";
 import { calculateBookingPricing } from "../utils/bookingPricing";
+import { cleanDisplayName } from "../utils/textFormatting";
 
 const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
 if (!publishableKey) {
@@ -29,6 +30,7 @@ const PaymentForm = ({ clientSecret, paymentSummary }) => {
   const totalPrice = Number(displayPricing.total || displayPricing.amount || 0);
   const displayTickets = Number(displayPricing.tickets || tickets || 1);
   const displayCurrency = displayPricing.currency || tour?.currency || "CHF";
+  const tourName = cleanDisplayName(tour?.title || tour?.name || "Tour");
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -106,7 +108,7 @@ const PaymentForm = ({ clientSecret, paymentSummary }) => {
             
             {/* Tour Info */}
             <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-              <h3 className="font-bold">{tour.title || tour.name}</h3>
+              <h3 className="font-bold">{tourName}</h3>
               <p className="text-gray-600">{date} • {time}</p>
               <p className="text-gray-600">{displayTickets} ticket(s) • {displayCurrency}{totalPrice.toFixed(2)}</p>
               </div>

@@ -15,3 +15,12 @@ export const stripHtmlToText = (value = '') => {
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 };
+
+export const cleanDisplayName = (value = '') => {
+  if (value === null || value === undefined) return '';
+
+  return String(value)
+    .replace(/^[\s,،;:]+/, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+};

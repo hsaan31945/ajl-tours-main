@@ -57,6 +57,13 @@ const normalizeImages = (images) => {
   return list.map(normalizeImageValue).filter(Boolean);
 };
 
+const cleanTourName = (value) => (
+  String(value || '')
+    .replace(/^[\s,،;:]+/, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+);
+
 const normalizeItinerary = (items) => (
   Array.isArray(items)
     ? items
@@ -122,6 +129,8 @@ class TourService {
 
     if (payload.title && !payload.name) payload.name = payload.title;
     if (payload.desc && !payload.description) payload.description = payload.desc;
+    if (payload.name !== undefined) payload.name = cleanTourName(payload.name);
+    if (payload.title !== undefined) payload.title = cleanTourName(payload.title);
     if (payload.price !== undefined) payload.price = Number(payload.price);
     if (payload.currency !== undefined) payload.currency = String(payload.currency || 'CHF').trim().toUpperCase() || 'CHF';
     if (payload.minTicketsPerBooking !== undefined) {
@@ -516,7 +525,7 @@ class TourService {
       // Prepare tour payload. MongoDB receives only admin-provided tour details.
       const tourPayload = {
         division: division._id,
-        name: String(tourData.name).trim(),
+        name: cleanTourName(tourData.name),
         description: optionalText(tourData.description) || null,
         overview: optionalText(tourData.overview) || null,
         price: Number(tourData.price),

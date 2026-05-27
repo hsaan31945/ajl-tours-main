@@ -1,4 +1,5 @@
 import { apiUrl } from "../utils/api";
+import { cleanDisplayName } from "../utils/textFormatting";
 
 const cache = new Map();
 const CACHE_MS = 0;
@@ -37,7 +38,13 @@ export async function fetchToursList(params = {}, options = {}) {
     });
     if (!res.ok) throw new Error(`Failed to load tours (${res.status})`);
     const data = await res.json();
-    const list = Array.isArray(data) ? data : [];
+    const list = Array.isArray(data)
+      ? data.map((tour) => ({
+          ...tour,
+          name: cleanDisplayName(tour?.name || tour?.title || ''),
+          title: cleanDisplayName(tour?.title || tour?.name || ''),
+        }))
+      : [];
     cache.set(key, { data: list, expires: Date.now() + CACHE_MS });
     return list;
   } finally {

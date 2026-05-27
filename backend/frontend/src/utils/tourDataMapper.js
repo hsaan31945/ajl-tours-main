@@ -2,6 +2,7 @@
  * Shared data mapper for tour data to ensure consistency across all pages
  */
 import { getTourId } from './tourId';
+import { cleanDisplayName } from './textFormatting';
 
 export const mapTourResponse = (tour) => {
   if (!tour) return null;
@@ -11,8 +12,8 @@ export const mapTourResponse = (tour) => {
   return {
     // Basic Info
     id: tourId,
-    name: tour.name || tour.title || '',
-    title: tour.title || tour.name || '',
+    name: cleanDisplayName(tour.name || tour.title || ''),
+    title: cleanDisplayName(tour.title || tour.name || ''),
     description: tour.description || tour.desc || '',
     overview: tour.overview || '',
     
@@ -163,8 +164,8 @@ export const normalizeTourData = (tour) => {
   return {
     ...mappedTour,
     // Ensure consistent formatting
-    name: mappedTour.name?.toString().trim() || '',
-    title: mappedTour.title?.toString().trim() || '',
+    name: cleanDisplayName(mappedTour.name),
+    title: cleanDisplayName(mappedTour.title),
     price: Number(mappedTour.price) || 0,
     duration: mappedTour.duration?.toString().trim() || '',
     type: mappedTour.type?.toString().trim() || '',

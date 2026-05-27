@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { CheckCircle, Lock } from "lucide-react";
 import { useBooking } from "../context/BookingContext";
 import { apiUrl } from "../utils/api";
 import { getTourId } from "../utils/tourId";
 import { calculateBookingPricing } from "../utils/bookingPricing";
+import { cleanDisplayName } from "../utils/textFormatting";
 
 const UserDetails = () => {
   const navigate = useNavigate();
@@ -16,6 +18,7 @@ const UserDetails = () => {
   const minTickets = pricing.minTickets;
   const currentTickets = pricing.tickets;
   const ticketsMeetMinimum = pricing.validTickets;
+  const tourName = cleanDisplayName(tour?.title || tour?.name || "Tour");
   const [fullName, setFullName] = useState(contact?.fullName || "");
   const [email, setEmail] = useState(contact?.email || "");
   const [country, setCountry] = useState(contact?.country || "Pakistan (+92)");
@@ -79,8 +82,8 @@ const UserDetails = () => {
     }
 
     localStorage.setItem('recentTourData', JSON.stringify({
-      tourName: tour?.title || tour?.name || "Tour",
-      tourTitle: tour?.title || tour?.name || "Tour",
+      tourName,
+      tourTitle: tourName,
       tourPrice: pricing.baseUnitPrice,
       amount: pricing.total,
       tickets: currentTickets,
@@ -129,7 +132,7 @@ const UserDetails = () => {
         {/* Left: Personal Details Form */}
         <div className="flex-1 bg-white rounded-xl shadow p-6 mb-8 md:mb-0">
           <div className="mb-4 text-lg font-bold">Enter your personal details</div>
-          <div className="mb-2 text-green-700 flex items-center gap-2"><span className="material-icons text-green-700">lock</span> Checkout is fast and secure</div>
+          <div className="mb-2 text-green-700 flex items-center gap-2"><Lock className="w-5 h-5" aria-hidden="true" /> Checkout is fast and secure</div>
           <form className="flex flex-col gap-4 mt-4">
             <div>
               <label className="block text-sm font-semibold mb-1">Full name*</label>
@@ -162,17 +165,17 @@ const UserDetails = () => {
               Go to payment
             </button>
           </form>
-          <div className="mt-6 text-green-700 flex items-center gap-2"><span className="material-icons text-green-700">check_circle</span> Free cancellation <span className="text-gray-700">Until 10:00 AM on August 11</span></div>
+          <div className="mt-6 text-green-700 flex items-center gap-2"><CheckCircle className="w-5 h-5" aria-hidden="true" /> Free cancellation <span className="text-gray-700">Until 10:00 AM on August 11</span></div>
         </div>
 
         {/* Right: Order Summary */}
         <div className="w-full md:w-[400px] bg-white rounded-xl shadow p-6 flex flex-col gap-4">
           <div className="flex items-center gap-4 mb-4">
             {tour?.images && tour.images[0] && (
-              <img src={tour.images[0]} alt={tour.title || tour.name} className="w-16 h-16 object-cover rounded" />
+              <img src={tour.images[0]} alt={tourName} className="w-16 h-16 object-cover rounded" />
             )}
             <div>
-              <div className="font-bold text-lg">{tour.title || tour.name}</div>
+              <div className="font-bold text-lg">{tourName}</div>
             </div>
           </div>
           <div className="border-b pb-2 mb-2">
