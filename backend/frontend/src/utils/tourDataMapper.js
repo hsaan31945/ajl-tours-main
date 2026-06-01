@@ -26,6 +26,11 @@ export const mapTourResponse = (tour) => {
     type: tour.tourType || tour.type || '',
     tourType: tour.tourType || tour.type || '',
     reviewText: tour.reviewText || '',
+    reviews: Array.isArray(tour.reviews) ? tour.reviews : [],
+    reviewCount: Number(tour.reviewCount ?? (Array.isArray(tour.reviews) ? tour.reviews.length : 0)) || 0,
+    reviewAverage: Number(tour.reviewAverage ?? tour.avgRating ?? tour.rating ?? 0) || 0,
+    avgRating: Number(tour.avgRating ?? tour.reviewAverage ?? tour.rating ?? 0) || 0,
+    rating: Number(tour.rating ?? tour.reviewAverage ?? tour.avgRating ?? 0) || 0,
     
     // Content Sections
     highlights: Array.isArray(tour.highlights) ? tour.highlights : [],

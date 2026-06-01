@@ -110,7 +110,7 @@ const PaymentForm = ({ clientSecret, paymentSummary }) => {
             <div className="mb-6 p-4 bg-gray-50 rounded-lg">
               <h3 className="font-bold">{tourName}</h3>
               <p className="text-gray-600">{date} • {time}</p>
-              <p className="text-gray-600">{displayTickets} ticket(s) • {displayCurrency}{totalPrice.toFixed(2)}</p>
+              <p className="text-gray-600">{displayTickets} adult{displayTickets > 1 ? "s" : ""} • {displayCurrency}{totalPrice.toFixed(2)}</p>
               </div>
 
             {/* Payment Form */}

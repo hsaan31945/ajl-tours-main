@@ -32,9 +32,14 @@ const Footer = () => {
         <div>
           <h3 className="text-lg font-semibold mb-2 text-black">Follow Us</h3>
           <div className="flex gap-3 mt-2">
-            <img src={assets.facebook_icon} alt="Facebook" width={32} height={32} loading="lazy" decoding="async" className="hover:scale-110 transition-transform" />
-            <img src={assets.twitter_icon} alt="Twitter" width={32} height={32} loading="lazy" decoding="async" className="hover:scale-110 transition-transform" />
-            <img src={assets.instagram_icon} alt="Instagram" width={32} height={32} loading="lazy" decoding="async" className="hover:scale-110 transition-transform" />
+            <a
+              href="https://www.instagram.com/ajltransfer?igsh=MXdheGhmcTc3MGxkZA=="
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="AJL Transfer on Instagram"
+            >
+              <img src={assets.instagram_icon} alt="Instagram" width={32} height={32} loading="lazy" decoding="async" className="hover:scale-110 transition-transform" />
+            </a>
           </div>
         </div>
       </div>

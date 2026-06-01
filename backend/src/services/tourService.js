@@ -4,6 +4,7 @@
  */
 const Tour = require('../../models/Tour');
 const Division = require('../../models/Division');
+const User = require('../../models/User');
 const { getTourId, normalizeTourId, isValidObjectId } = require('../utils/tourId');
 const mongoose = require('mongoose');
 
@@ -90,6 +91,48 @@ const normalizeItinerary = (items) => (
         .filter(Boolean)
     : []
 );
+
+const formatReview = (review) => {
+  if (!review) return null;
+  const rating = Number(review.rating);
+  if (!Number.isFinite(rating)) return null;
+  const userId = review.user?._id?.toString?.() || review.user?.toString?.() || String(review.user || '');
+  return {
+    id: review._id?.toString?.() || userId,
+    userId,
+    userName: review.userName || 'AJL Tour guest',
+    rating,
+    description: review.description || '',
+    createdAt: review.createdAt,
+    updatedAt: review.updatedAt,
+  };
+};
+
+const getReviewSummary = (tour = {}) => {
+  const reviews = Array.isArray(tour.reviews)
+    ? tour.reviews.map(formatReview).filter(Boolean)
+    : [];
+  const count = reviews.length;
+  const average = count
+    ? Math.round((reviews.reduce((sum, review) => sum + review.rating, 0) / count) * 10) / 10
+    : 0;
+
+  return {
+    reviews,
+    reviewCount: count,
+    reviewAverage: average,
+  };
+};
+
+const applyReviewSummary = (tour = {}) => {
+  const summary = getReviewSummary(tour);
+  tour.reviews = summary.reviews;
+  tour.reviewCount = summary.reviewCount;
+  tour.reviewAverage = summary.reviewAverage;
+  tour.avgRating = summary.reviewAverage || tour.metadata?.rating || 0;
+  tour.rating = summary.reviewAverage || tour.metadata?.rating || 0;
+  return tour;
+};
 
 class TourService {
   /** First usable tour image for card views. */
@@ -210,6 +253,10 @@ class TourService {
         ? tour.description.slice(0, 280)
         : '';
 
+    const reviewSummary = getReviewSummary(tour);
+    const legacyReviewCount = Number(tour.metadata?.reviews);
+    const legacyRating = Number(tour.metadata?.rating);
+
     return {
       id,
       _id: id,
@@ -224,8 +271,11 @@ class TourService {
       tourType: tour.tourType,
       division: tour.division,
       divisionName,
-      rating: tour.metadata?.rating ?? tour.rating ?? 0,
-      reviews: tour.metadata?.reviews ?? tour.reviews ?? 0,
+      rating: reviewSummary.reviewAverage || (Number.isFinite(legacyRating) ? legacyRating : 0),
+      avgRating: reviewSummary.reviewAverage || (Number.isFinite(legacyRating) ? legacyRating : 0),
+      reviews: reviewSummary.reviewCount || (Number.isFinite(legacyReviewCount) ? legacyReviewCount : 0),
+      reviewCount: reviewSummary.reviewCount || (Number.isFinite(legacyReviewCount) ? legacyReviewCount : 0),
+      reviewAverage: reviewSummary.reviewAverage || (Number.isFinite(legacyRating) ? legacyRating : 0),
       maxTotalTickets: tour.maxTotalTickets,
       isActive: tour.isActive !== false,
       metadata: tour.metadata || {},
@@ -457,7 +507,7 @@ class TourService {
       tour.images = Array.isArray(tour.images) ? tour.images : [];
       tour.pickupLocations = Array.isArray(tour.pickupLocations) ? tour.pickupLocations : [];
 
-      return tour;
+      return applyReviewSummary(tour);
     }
     
     const tour = await Tour.findById(tourId)
@@ -481,7 +531,62 @@ class TourService {
     tour.images = Array.isArray(tour.images) ? tour.images : [];
     tour.pickupLocations = Array.isArray(tour.pickupLocations) ? tour.pickupLocations : [];
     
-    return tour;
+    return applyReviewSummary(tour);
+  }
+
+  async addTourReview(id, reviewData = {}) {
+    const tourId = normalizeTourId(id);
+    if (!tourId) {
+      throw new Error('Tour ID is required');
+    }
+
+    const rating = Number(reviewData.rating);
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      throw new Error('A star rating between 1 and 5 is required');
+    }
+
+    const userId = String(reviewData.userId || '').trim();
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      throw new Error('Login is required to write a review');
+    }
+
+    const user = await User.findOne({ _id: userId, isActive: true }).select('name email').lean();
+    if (!user) {
+      throw new Error('Login is required to write a review');
+    }
+
+    const tour = isValidObjectId(tourId)
+      ? await Tour.findById(tourId)
+      : await Tour.findOne({ 'metadata.staticId': tourId });
+
+    if (!tour) {
+      throw new Error('Tour not found');
+    }
+
+    const description = String(reviewData.description || '').trim().slice(0, 1000);
+    const reviewPayload = {
+      user: user._id,
+      userName: user.name || user.email,
+      rating,
+      description,
+    };
+
+    const existingReview = tour.reviews.find((review) => (
+      review.user?.toString?.() === user._id.toString()
+    ));
+
+    if (existingReview) {
+      existingReview.userName = reviewPayload.userName;
+      existingReview.rating = reviewPayload.rating;
+      existingReview.description = reviewPayload.description;
+      existingReview.updatedAt = new Date();
+    } else {
+      tour.reviews.push(reviewPayload);
+    }
+
+    await tour.save();
+    clearTourListCache();
+    return this.getTourById(tour._id);
   }
 
   /**

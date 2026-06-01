@@ -69,7 +69,7 @@ function PaymentSection({
       <p className="text-gray-700 mb-4 text-center">{description}</p>
       <div className="flex flex-col gap-2 w-full mb-4">
         <div className="flex justify-between items-center">
-          <span className="font-semibold">Price per person:</span>
+          <span className="font-semibold">Per Person:</span>
           <div className="font-bold text-orange-600">
             <PriceWithEdit
               price={Number(price)}
@@ -127,7 +127,7 @@ function PaymentSection({
         )}
         
         <div className="flex justify-between items-center">
-          <span className="font-semibold">Tickets:</span>
+          <span className="font-semibold">Adults:</span>
             <input
               type="number"
               min={minTickets}
@@ -138,11 +138,11 @@ function PaymentSection({
             />
         </div>
         {minTickets > 1 && (
-          <p className="text-xs text-gray-500 text-right">Minimum {minTickets} tickets required</p>
+          <p className="text-xs text-gray-500 text-right">Minimum {minTickets} adults required</p>
         )}
         {!ticketsMeetMinimum && (
           <p className="text-xs text-red-600 text-right font-semibold">
-            Increase tickets to continue.
+            Increase adults to continue.
           </p>
         )}
         <div className="flex justify-between mt-2">

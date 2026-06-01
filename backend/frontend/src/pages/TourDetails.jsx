@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Heart, MapPin, Clock, Users, Star } from 'lucide-react';
 import { normalizeTourData } from '../utils/tourDataMapper';
 import { getTourId } from '../utils/tourId';
+import { apiUrl } from '../utils/api';
+import TourReviews, { getTourReviewSummary } from '../components/TourReviews';
 
 const TourDetails = () => {
   const { id } = useParams();
@@ -15,7 +17,7 @@ const TourDetails = () => {
   useEffect(() => {
     const fetchTour = async () => {
       try {
-        const response = await fetch(`/api/tours/${id}`);
+        const response = await fetch(apiUrl(`/api/tours/${id}`));
         if (!response.ok) {
           throw new Error('Tour not found');
         }
@@ -94,6 +96,11 @@ const TourDetails = () => {
     }
   };
 
+  const reviewSummary = getTourReviewSummary(tour);
+  const reviewLabel = reviewSummary.reviewCount
+    ? `${reviewSummary.reviewAverage.toFixed(1)} / 5`
+    : 'No ratings yet';
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -153,7 +160,9 @@ const TourDetails = () => {
                 <div className="flex items-center mb-4">
                   <div className="flex items-center">
                     <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                    <span className="ml-1 text-sm text-gray-600">{tour.avgRating || '4.8'} ({tour.reviews || '128'}</span>
+                    <span className="ml-1 text-sm text-gray-600">
+                      {reviewLabel} ({reviewSummary.reviewCount} review{reviewSummary.reviewCount === 1 ? '' : 's'})
+                    </span>
                   </div>
                 </div>
               </div>
@@ -181,7 +190,7 @@ const TourDetails = () => {
               </div>
               <div className="flex items-center">
                 <Star className="w-5 h-5 text-yellow-400 mr-2" />
-                <span className="text-gray-600">{tour.reviewText || 'Excellent'}</span>
+                <span className="text-gray-600">{reviewLabel}</span>
               </div>
             </div>
 
@@ -287,6 +296,10 @@ const TourDetails = () => {
             </div>
           )}
         </div>
+        <TourReviews
+          tour={tour}
+          onTourUpdated={(updatedTour) => setTour(normalizeTourData(updatedTour))}
+        />
       </div>
     </div>
   );

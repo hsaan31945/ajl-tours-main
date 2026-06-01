@@ -119,6 +119,33 @@ class TourController {
   }
 
   /**
+   * POST /api/tours/:id/reviews - Add or update a user review
+   */
+  async addTourReview(req, res, next) {
+    try {
+      const { id } = req.params;
+      const tour = await tourService.addTourReview(id, req.body);
+      res.setHeader('Cache-Control', 'no-store');
+      res.status(201).json({
+        success: true,
+        message: 'Review saved successfully',
+        tour
+      });
+    } catch (error) {
+      if (error.message === 'Tour not found') {
+        return next(new AppError('Tour not found', 404));
+      }
+      if (
+        error.message.includes('rating') ||
+        error.message.includes('Login is required')
+      ) {
+        return next(new AppError(error.message, 400));
+      }
+      next(error);
+    }
+  }
+
+  /**
    * DELETE /api/tours/:id - Delete tour
    */
   async deleteTour(req, res, next) {

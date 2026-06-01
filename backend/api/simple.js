@@ -1,5 +1,6 @@
 const { connectDB, models } = require('../lib/db');
 const Tour = require('../models/Tour');
+const User = require('../models/User');
 const Division = require('../models/Division');
 const config = require('../lib/config');
 const tourService = require('../src/services/tourService');
@@ -46,6 +47,27 @@ const normalizeTour = (tour) => {
   const divisionName = typeof division === 'object' ? division?.name : null;
   const datePrices = normalizeDatePrices(tour.datePrices);
   const id = tour._id?.toString?.() || tour._id;
+  const normalizedReviews = Array.isArray(tour.reviews)
+    ? tour.reviews
+        .map((review) => {
+          const rating = Number(review.rating);
+          if (!Number.isFinite(rating)) return null;
+          const userId = review.user?._id?.toString?.() || review.user?.toString?.() || String(review.user || '');
+          return {
+            id: review._id?.toString?.() || userId,
+            userId,
+            userName: review.userName || 'AJL Tour guest',
+            rating,
+            description: review.description || '',
+            createdAt: review.createdAt,
+            updatedAt: review.updatedAt,
+          };
+        })
+        .filter(Boolean)
+    : [];
+  const reviewAverage = normalizedReviews.length
+    ? Math.round((normalizedReviews.reduce((sum, review) => sum + review.rating, 0) / normalizedReviews.length) * 10) / 10
+    : 0;
 
   return {
     id,
@@ -69,6 +91,11 @@ const normalizeTour = (tour) => {
     duration: tour.duration || '',
     tourType: tour.tourType || '',
     reviewText: tour.reviewText || '',
+    reviews: normalizedReviews,
+    reviewCount: normalizedReviews.length,
+    reviewAverage,
+    avgRating: reviewAverage || tour.metadata?.rating || 0,
+    rating: reviewAverage || tour.metadata?.rating || 0,
     datePrices,
     startDate: tour.startDate,
     endDate: tour.endDate,
@@ -216,6 +243,7 @@ module.exports = async (req, res) => {
       // Extract tour ID if present
       let tourId = null;
       const tourIdMatch = urlNormalized.match(/^\/api\/tours\/([^\/]+)$/);
+      const reviewMatch = urlNormalized.match(/^\/api\/tours\/([^\/]+)\/reviews$/);
       if (tourIdMatch) {
         tourId = tourIdMatch[1];
       }
@@ -232,7 +260,7 @@ module.exports = async (req, res) => {
             }
 
             const tour = await Tour.findById(tourId)
-              .select('name description price currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt')
+              .select('name description price currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt reviews')
               .populate({ path: 'division', select: 'name', options: { lean: true } })
               .lean({ virtuals: true });
             if (!tour) {
@@ -292,7 +320,7 @@ module.exports = async (req, res) => {
                   };
               
               const tours = await Tour.find(query)
-                .select('name description price currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt destination')
+                .select('name description price currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt destination reviews')
                 .populate({ path: 'division', select: 'name', options: { lean: true } })
                 .sort({ createdAt: -1 })
                 .limit(6) // Only fetch what we need
@@ -321,7 +349,7 @@ module.exports = async (req, res) => {
               console.log('Fetching all tours from database...');
               const nowTs = Date.now();
               const tours = await Tour.find({ isActive: true })
-                .select('name description price currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt')
+                .select('name description price currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt reviews')
                 .populate({ path: 'division', select: 'name', options: { lean: true } })
                 .sort({ createdAt: -1 })
                 .lean({ virtuals: true });
@@ -337,9 +365,51 @@ module.exports = async (req, res) => {
               return res.json(transformedTours);
             }
           }
-          break;
-          
         case 'POST':
+          if (reviewMatch) {
+            const reviewTourId = reviewMatch[1];
+            const rating = Number(body.rating);
+            const userId = String(body.userId || '').trim();
+            if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+              return res.status(400).json({ success: false, error: 'A star rating between 1 and 5 is required' });
+            }
+            if (!userId) {
+              return res.status(400).json({ success: false, error: 'Login is required to write a review' });
+            }
+            if (!/^[0-9a-f]{24}$/i.test(userId)) {
+              return res.status(400).json({ success: false, error: 'Login is required to write a review' });
+            }
+            const user = await User.findOne({ _id: userId, isActive: true }).select('name email').lean();
+            if (!user) {
+              return res.status(400).json({ success: false, error: 'Login is required to write a review' });
+            }
+            const tour = await Tour.findById(reviewTourId);
+            if (!tour) return res.status(404).json({ success: false, error: 'Tour not found' });
+            const existingReview = tour.reviews.find((review) => review.user?.toString?.() === user._id.toString());
+            const reviewPayload = {
+              user: user._id,
+              userName: user.name || user.email,
+              rating,
+              description: String(body.description || '').trim().slice(0, 1000),
+            };
+            if (existingReview) {
+              existingReview.userName = reviewPayload.userName;
+              existingReview.rating = reviewPayload.rating;
+              existingReview.description = reviewPayload.description;
+              existingReview.updatedAt = new Date();
+            } else {
+              tour.reviews.push(reviewPayload);
+            }
+            await tour.save();
+            const updatedTour = await Tour.findById(reviewTourId)
+              .select('name description price currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt reviews')
+              .populate({ path: 'division', select: 'name', options: { lean: true } })
+              .lean({ virtuals: true });
+            tourByIdCache.delete(reviewTourId);
+            toursCache = { data: null, expiresAt: 0 };
+            return res.status(201).json({ success: true, message: 'Review saved successfully', tour: normalizeTour(updatedTour) });
+          }
+
           // POST create tour
           if (!tourId) { // Only for /api/tours (not /api/tours/:id)
             try {

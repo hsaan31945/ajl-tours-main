@@ -124,8 +124,16 @@ module.exports = async (req, res) => {
         }
       } else {
         // Tour by ID
+        const reviewMatch = normalizedPath.match(/\/tours\/([^\/\?]+)\/reviews$/);
         const idMatch = normalizedPath.match(/\/tours\/([^\/\?]+)/);
-        if (idMatch) {
+        if (reviewMatch) {
+          req.params = { id: reviewMatch[1] };
+          if (method === 'POST') {
+            await asyncHandler(tourController.addTourReview.bind(tourController))(req, res);
+          } else {
+            res.status(405).json({ success: false, error: 'Method not allowed' });
+          }
+        } else if (idMatch) {
           req.params = { id: idMatch[1] };
           if (method === 'GET') {
             await asyncHandler(tourController.getTourById.bind(tourController))(req, res);

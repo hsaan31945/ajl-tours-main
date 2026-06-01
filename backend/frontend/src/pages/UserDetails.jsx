@@ -284,7 +284,7 @@ const UserDetails = () => {
             <div className="text-sm">{date || "Date not selected"}</div>
             <div className="text-sm">{currentTickets} adult{currentTickets > 1 ? "s" : ""}</div>
             {!ticketsMeetMinimum && (
-              <div className="text-sm text-red-600 font-semibold">Minimum {minTickets} tickets required</div>
+              <div className="text-sm text-red-600 font-semibold">Minimum {minTickets} adults required</div>
             )}
             {/* Removed Change date or participants button */}
           </div>

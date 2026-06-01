@@ -195,7 +195,7 @@ const Flexibility = () => {
             </label>
           </div>
           <div className="flex justify-between items-center mt-4 mb-2">
-            <span className="font-semibold">Tickets:</span>
+            <span className="font-semibold">Adults:</span>
             <input
               type="number"
               min={minTickets}
@@ -206,10 +206,10 @@ const Flexibility = () => {
             />
           </div>
           {minTickets > 1 && (
-            <p className="text-xs text-gray-500 text-right">Minimum {minTickets} tickets required</p>
+            <p className="text-xs text-gray-500 text-right">Minimum {minTickets} adults required</p>
           )}
           {!ticketsMeetMinimum && (
-            <p className="text-xs text-red-600 text-right font-semibold">Increase tickets to continue.</p>
+            <p className="text-xs text-red-600 text-right font-semibold">Increase adults to continue.</p>
           )}
           <div className="flex justify-between items-center mt-2 font-bold text-lg">
             <span>Total</span>

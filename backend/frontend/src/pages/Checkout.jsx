@@ -16,6 +16,7 @@ import ImageCarousel from "../components/ImageCarousel";
 import { motion, AnimatePresence } from "framer-motion";
 import PaymentSection from "../components/PaymentSection";
 import { calculateBookingPricing } from "../utils/bookingPricing";
+import TourReviews, { getTourReviewSummary } from "../components/TourReviews";
 
 function ItineraryAccordion({ itinerary = [], adminOn = false, onSave, onAddDraft }) {
   const itineraryList = Array.isArray(itinerary) ? itinerary : [];
@@ -510,6 +511,11 @@ const Checkout = () => {
   const pricing = calculateBookingPricing({ tour, tickets, selectedDate });
   const pricePerTicket = pricing.baseUnitPrice;
   const totalPrice = pricing.total;
+  const reviewSummary = getTourReviewSummary(tour);
+  const reviewLabel = reviewSummary.reviewCount
+    ? `${reviewSummary.reviewAverage.toFixed(1)} / 5`
+    : "No ratings yet";
+  const reviewCountLabel = `${reviewSummary.reviewCount} review${reviewSummary.reviewCount === 1 ? "" : "s"}`;
   // Only admins can edit - no toggle needed
   const effectiveEditMode = adminOn;
 
@@ -686,13 +692,8 @@ const Checkout = () => {
         </div>
         <div className="flex flex-col items-start">
           <span className="text-xs text-gray-500">Reviews</span>
-          <EditableField
-            value={tour?.reviewText || "Not specified"}
-            tag="span"
-            className="text-lg font-bold"
-            forceEditMode={effectiveEditMode}
-            onSave={(value) => saveSingleField('reviewText', value)}
-          />
+          <span className="text-lg font-bold">{reviewLabel}</span>
+          <span className="text-sm text-gray-500">{reviewCountLabel}</span>
         </div>
       </div>
       {/* Booking History moved to separate page */}
@@ -1156,6 +1157,13 @@ const Checkout = () => {
           />
         </div>
       </div>
+      <TourReviews
+        tour={tour}
+        onTourUpdated={(updatedTour) => {
+          clearToursCache();
+          syncTourState(updatedTour);
+        }}
+      />
     </div>
   );
 };
