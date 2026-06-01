@@ -85,6 +85,13 @@ const Flexibility = () => {
   const totalPrice = pricing.total;
   const tourName = cleanDisplayName(tour?.title || tour?.name || "Tour");
 
+  useEffect(() => {
+    if (Number(localTickets) < minTickets) {
+      setLocalTickets(minTickets);
+      updateTickets(minTickets);
+    }
+  }, [localTickets, minTickets, updateTickets]);
+
   // Ensure tickets reflect what was set on VisitCheckout2 via localStorage
   useEffect(() => {
     try {
@@ -128,8 +135,9 @@ const Flexibility = () => {
   const handleTicketsChange = (val) => {
     const nextTickets = parseTicketCount(val);
     if (!nextTickets) return;
-    setLocalTickets(nextTickets);
-    updateTickets(nextTickets);
+    const clampedTickets = Math.max(nextTickets, minTickets);
+    setLocalTickets(clampedTickets);
+    updateTickets(clampedTickets);
   };
 
   return (
@@ -190,7 +198,7 @@ const Flexibility = () => {
             <span className="font-semibold">Tickets:</span>
             <input
               type="number"
-              min="1"
+              min={minTickets}
               step="1"
               value={localTicketCount}
               onChange={e => handleTicketsChange(Number(e.target.value))}
@@ -241,7 +249,7 @@ const Flexibility = () => {
           <div className="border-b pb-2 mb-2">
             <div className="text-sm">{tour.address || tour.location || ""}</div>
             <div className="text-sm">{date || "Date not selected"} • {time || "Time not selected"}</div>
-            <div className="text-sm">{localTicketCount} adult{localTicketCount > 1 ? "s" : ""} (Age 13 - 99)</div>
+            <div className="text-sm">{localTicketCount} adult{localTicketCount > 1 ? "s" : ""}</div>
             <button className="text-blue-600 underline text-xs mt-1">Change date or participants</button>
           </div>
           <div className="flex flex-col gap-1 text-sm">

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBooking } from "../context/BookingContext";
 import PriceWithEdit from "./PriceWithEdit";
@@ -38,12 +38,18 @@ function PaymentSection({
     }
     return pricing.total;
   }, [pricing.total, totalPrice]);
+
+  useEffect(() => {
+    if (Number(tickets) < minTickets) {
+      setTickets(minTickets);
+    }
+  }, [minTickets, setTickets, tickets]);
   
   // Enforce minimum tickets
   const handleTicketsChange = (value) => {
     const numValue = Number(value);
     if (Number.isInteger(numValue) && numValue > 0) {
-      setTickets(numValue);
+      setTickets(Math.max(numValue, minTickets));
     }
   };
   
@@ -63,7 +69,7 @@ function PaymentSection({
       <p className="text-gray-700 mb-4 text-center">{description}</p>
       <div className="flex flex-col gap-2 w-full mb-4">
         <div className="flex justify-between items-center">
-          <span className="font-semibold">Price per ticket:</span>
+          <span className="font-semibold">Price per person:</span>
           <div className="font-bold text-orange-600">
             <PriceWithEdit
               price={Number(price)}
@@ -124,7 +130,7 @@ function PaymentSection({
           <span className="font-semibold">Tickets:</span>
             <input
               type="number"
-              min="1"
+              min={minTickets}
               step="1"
               value={currentTickets}
               onChange={e => handleTicketsChange(e.target.value)}

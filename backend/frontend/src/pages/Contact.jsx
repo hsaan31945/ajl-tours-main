@@ -5,6 +5,7 @@ import { useBooking } from "../context/BookingContext";
 import { apiUrl } from "../utils/api";
 import { getTourId } from "../utils/tourId";
 import { calculateBookingPricing } from "../utils/bookingPricing";
+import { COUNTRY_CODES } from "../utils/countryCodes";
 import { cleanDisplayName } from "../utils/textFormatting";
 
 const UserDetails = () => {
@@ -145,11 +146,11 @@ const UserDetails = () => {
             <div>
               <label className="block text-sm font-semibold mb-1">Country*</label>
               <select className="w-full border rounded px-3 py-2" value={country} onChange={e => setCountry(e.target.value)}>
-                <option>Pakistan (+92)</option>
-                <option>India (+91)</option>
-                <option>USA (+1)</option>
-                <option>UK (+44)</option>
-                {/* Add more countries as needed */}
+                {COUNTRY_CODES.map((countryOption) => (
+                  <option key={countryOption.value} value={countryOption.value}>
+                    {countryOption.label}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
@@ -181,7 +182,7 @@ const UserDetails = () => {
           <div className="border-b pb-2 mb-2">
             <div className="text-sm">Language: English</div>
             <div className="text-sm">{date || "Date not selected"}</div>
-            <div className="text-sm">{currentTickets} adult{currentTickets > 1 ? "s" : ""} (Age 13 - 99)</div>
+            <div className="text-sm">{currentTickets} adult{currentTickets > 1 ? "s" : ""}</div>
             {!ticketsMeetMinimum && (
               <div className="text-sm text-red-600 font-semibold">Minimum {minTickets} tickets required</div>
             )}

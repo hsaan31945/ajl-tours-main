@@ -34,8 +34,8 @@ export const calculateBookingPricing = ({
   fallbackPrice = 0,
 }) => {
   const parsedTickets = parseTicketCount(tickets);
-  const currentTickets = parsedTickets || 1;
   const minTickets = getMinTickets(tour);
+  const currentTickets = Math.max(parsedTickets || minTickets, minTickets);
   const baseUnitPrice = roundMoney(getDatePrice(tour, selectedDate) ?? tour?.price ?? fallbackPrice);
   const unitPrice = flexibility === "upgrade"
     ? roundMoney(baseUnitPrice * FLEXIBILITY_MULTIPLIER)
@@ -44,7 +44,7 @@ export const calculateBookingPricing = ({
 
   return {
     tickets: currentTickets,
-    validTickets: parsedTickets !== null && currentTickets >= minTickets,
+    validTickets: currentTickets >= minTickets,
     minTickets,
     baseUnitPrice,
     unitPrice,
