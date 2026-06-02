@@ -217,10 +217,10 @@ class TourService {
       }
     });
 
-    ['description', 'overview', 'routeDetails', 'duration', 'tourType', 'reviewText'].forEach((field) => {
+    ['description', 'overview', 'bookingSummary', 'routeDetails', 'duration', 'tourType', 'reviewText'].forEach((field) => {
       if (payload[field] !== undefined) {
         const value = String(payload[field]).trim();
-        payload[field] = value || null;
+        payload[field] = field === 'bookingSummary' ? value.slice(0, 400) || null : value || null;
       }
     });
 
@@ -260,9 +260,10 @@ class TourService {
     return {
       id,
       _id: id,
-      name: tour.name,
-      description,
-      price: Number(tour.price) || 0,
+        name: tour.name,
+        description,
+        bookingSummary: tour.bookingSummary || '',
+        price: Number(tour.price) || 0,
       currency: tour.currency || 'CHF',
       images: thumbnail ? [thumbnail] : [],
       startLocation: tour.startLocation,
@@ -633,6 +634,7 @@ class TourService {
         name: cleanTourName(tourData.name),
         description: optionalText(tourData.description) || null,
         overview: optionalText(tourData.overview) || null,
+        bookingSummary: optionalText(tourData.bookingSummary)?.slice(0, 400) || null,
         price: Number(tourData.price),
         startLocation: String(tourData.startLocation).trim(),
         endLocation: String(tourData.endLocation).trim(),

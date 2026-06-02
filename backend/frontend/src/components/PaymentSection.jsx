@@ -5,6 +5,7 @@ import PriceWithEdit from "./PriceWithEdit";
 import { useAdmin } from "../context/AdminContext";
 import { calculateBookingPricing } from "../utils/bookingPricing";
 import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Users } from "lucide-react";
+import EditableField from "./EditableField";
 
 const monthLabel = (date) => date.toLocaleString("default", { month: "long", year: "numeric" });
 
@@ -170,7 +171,7 @@ function DateDropdown({ date, setDate, minDate }) {
 function PaymentSection({
   tourName,
   location,
-  description,
+  bookingSummary,
   price,
   tickets,
   setTickets,
@@ -183,6 +184,7 @@ function PaymentSection({
   time,
   onPriceUpdated,
   onSavePrice,
+  onSaveBookingSummary,
   onSaveMinTickets // callback to save minTickets to database
 }) {
   const navigate = useNavigate();
@@ -230,7 +232,18 @@ function PaymentSection({
     <div className="bg-white rounded-2xl shadow-lg p-6 flex flex-col items-center border-t-4 border-orange-600 w-full max-w-md mx-auto">
       <h2 className="text-2xl font-bold mb-2 text-center">{tourName}</h2>
       <p className="text-gray-600 mb-2 text-center">{location}</p>
-      <p className="text-gray-700 mb-4 text-center">{description}</p>
+      {(isAdmin || bookingSummary) && (
+        <EditableField
+          tag="span"
+          value={bookingSummary || ""}
+          placeholder="Add a short booking card summary"
+          multiline={true}
+          maxLength={400}
+          showEditIcon={isAdmin}
+          onSave={(value) => onSaveBookingSummary ? onSaveBookingSummary(value.slice(0, 400)) : false}
+          className="block text-gray-700 mb-4 text-center leading-relaxed"
+        />
+      )}
       <div className="flex flex-col gap-2 w-full mb-4">
         <div className="flex justify-between items-center">
           <span className="font-semibold">Per Person:</span>

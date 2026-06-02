@@ -531,6 +531,7 @@ const Checkout = () => {
   const pricing = calculateBookingPricing({ tour, tickets, selectedDate });
   const pricePerTicket = pricing.baseUnitPrice;
   const totalPrice = pricing.total;
+  const bookingSummary = stripHtmlToText(tour?.bookingSummary || '').slice(0, 400);
   const reviewSummary = getTourReviewSummary(tour);
   const reviewLabel = reviewSummary.reviewCount
     ? `${reviewSummary.reviewAverage.toFixed(1)}/5`
@@ -1129,7 +1130,7 @@ const Checkout = () => {
             tour={tour}
             tourName={tourName}
             location={tour?.address || tour?.location || ""}
-            description={tour?.desc || tour?.description || ""}
+            bookingSummary={bookingSummary}
             price={pricePerTicket}
             tickets={tickets}
             setTickets={setTickets}
@@ -1146,6 +1147,7 @@ const Checkout = () => {
               }));
             }}
             onSavePrice={(newPrice) => saveSingleField('price', newPrice)}
+            onSaveBookingSummary={(value) => saveSingleField('bookingSummary', stripHtmlToText(value).slice(0, 400))}
             onSaveMinTickets={async (minValue) => {
               const tourId = getTourId(tour);
               if (!tourId) return false;

@@ -74,6 +74,7 @@ const normalizeTour = (tour) => {
     _id: id,
     name: tour.name,
     description: tour.description,
+    bookingSummary: tour.bookingSummary || '',
     overview: tour.overview || '',
     price: tour.price,
     currency: tour.currency || 'CHF',
@@ -260,7 +261,7 @@ module.exports = async (req, res) => {
             }
 
             const tour = await Tour.findById(tourId)
-              .select('name description price currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt reviews')
+              .select('name description bookingSummary price currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt reviews')
               .populate({ path: 'division', select: 'name', options: { lean: true } })
               .lean({ virtuals: true });
             if (!tour) {
@@ -320,7 +321,7 @@ module.exports = async (req, res) => {
                   };
               
               const tours = await Tour.find(query)
-                .select('name description price currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt destination reviews')
+                .select('name description bookingSummary price currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt destination reviews')
                 .populate({ path: 'division', select: 'name', options: { lean: true } })
                 .sort({ createdAt: -1 })
                 .limit(6) // Only fetch what we need
@@ -349,7 +350,7 @@ module.exports = async (req, res) => {
               console.log('Fetching all tours from database...');
               const nowTs = Date.now();
               const tours = await Tour.find({ isActive: true })
-                .select('name description price currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt reviews')
+                .select('name description bookingSummary price currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt reviews')
                 .populate({ path: 'division', select: 'name', options: { lean: true } })
                 .sort({ createdAt: -1 })
                 .lean({ virtuals: true });
@@ -402,7 +403,7 @@ module.exports = async (req, res) => {
             }
             await tour.save();
             const updatedTour = await Tour.findById(reviewTourId)
-              .select('name description price currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt reviews')
+              .select('name description bookingSummary price currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt reviews')
               .populate({ path: 'division', select: 'name', options: { lean: true } })
               .lean({ virtuals: true });
             tourByIdCache.delete(reviewTourId);

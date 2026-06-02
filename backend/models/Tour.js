@@ -15,6 +15,11 @@ const tourSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  bookingSummary: {
+    type: String,
+    trim: true,
+    maxlength: 400
+  },
   price: {
     type: Number,
     required: true,

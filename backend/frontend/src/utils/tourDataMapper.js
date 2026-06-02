@@ -16,6 +16,7 @@ export const mapTourResponse = (tour) => {
     title: cleanDisplayName(tour.title || tour.name || ''),
     description: tour.description || tour.desc || '',
     overview: tour.overview || '',
+    bookingSummary: tour.bookingSummary || '',
     
     // Pricing
     price: tour.price || 0,
