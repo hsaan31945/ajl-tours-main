@@ -25,7 +25,7 @@ const Footer = () => {
           <h3 className="text-lg font-semibold mb-2 text-black">Contact Info</h3>
           <ul className="text-gray-600 text-sm space-y-1">
             <li>Email: contact@ajltransfer.com</li>
-            <li>Phone: +41 76 702 10 01</li>
+            <li>Phone: +41 76 391 30 02</li>
             <li>Address: Plattenstrasse 7, 8152 Opfikon, Switzerland</li>
           </ul>
         </div>

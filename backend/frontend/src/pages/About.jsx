@@ -231,7 +231,7 @@ const About = () => {
               {
                 icon: <Phone className="w-8 h-8 mb-4" />,
                 title: "Phone",
-                content: "+41 76 702 10 01",
+                content: "+41 76 391 30 02",
               },
               {
                 icon: <MapPin className="w-8 h-8 mb-4" />,
