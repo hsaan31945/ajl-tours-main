@@ -8,7 +8,7 @@ const User = require('../../models/User');
 const { getTourId, normalizeTourId, isValidObjectId } = require('../utils/tourId');
 const mongoose = require('mongoose');
 
-const LIST_CACHE_TTL_MS = 0;
+const LIST_CACHE_TTL_MS = 2 * 60 * 1000;
 const listCache = new Map();
 
 const clearTourListCache = () => {

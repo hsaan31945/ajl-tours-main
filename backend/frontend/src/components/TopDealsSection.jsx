@@ -45,7 +45,7 @@ const TopDealsSection = () => {
       const allTours = await fetchToursList({
         limit: 12,
         sort: 'popular',
-      }, { skipCache: true });
+      });
 
       const toursWithSales = allTours
         .filter(tour => tour?.isActive !== false)

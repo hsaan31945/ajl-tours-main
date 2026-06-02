@@ -2,7 +2,9 @@ import { apiUrl } from "../utils/api";
 import { cleanDisplayName } from "../utils/textFormatting";
 
 const cache = new Map();
-const CACHE_MS = 0;
+const inFlightRequests = new Map();
+const CACHE_MS = 5 * 60 * 1000;
+const STALE_CACHE_MS = 30 * 60 * 1000;
 
 function buildQuery(params = {}) {
   const qs = new URLSearchParams();
@@ -21,19 +23,21 @@ export async function fetchToursList(params = {}, options = {}) {
     return hit.data;
   }
 
+  if (!options.skipCache && inFlightRequests.has(key)) {
+    return inFlightRequests.get(key);
+  }
+
   const controller = options.signal ? null : new AbortController();
   const signal = options.signal || controller?.signal;
   const timeoutId = controller
-    ? setTimeout(() => controller.abort(), options.timeoutMs || 15000)
+    ? setTimeout(() => controller.abort(), options.timeoutMs || 30000)
     : null;
 
-  try {
+  const request = (async () => {
     const res = await fetch(apiUrl(`/api/tours?${key}`), {
       signal,
-      cache: 'no-store',
       headers: {
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache',
+        'Cache-Control': options.skipCache ? 'no-cache' : 'public, max-age=300',
       },
     });
     if (!res.ok) throw new Error(`Failed to load tours (${res.status})`);
@@ -45,9 +49,27 @@ export async function fetchToursList(params = {}, options = {}) {
           title: cleanDisplayName(tour?.title || tour?.name || ''),
         }))
       : [];
-    cache.set(key, { data: list, expires: Date.now() + CACHE_MS });
+    cache.set(key, {
+      data: list,
+      expires: Date.now() + CACHE_MS,
+      staleUntil: Date.now() + STALE_CACHE_MS,
+    });
     return list;
+  })();
+
+  if (!options.skipCache) {
+    inFlightRequests.set(key, request);
+  }
+
+  try {
+    return await request;
+  } catch (error) {
+    if (!options.skipCache && hit && hit.staleUntil > Date.now()) {
+      return hit.data;
+    }
+    throw error;
   } finally {
+    inFlightRequests.delete(key);
     if (timeoutId) clearTimeout(timeoutId);
   }
 }

@@ -25,7 +25,7 @@ const ExploreTours = () => {
 
   // Load tours from MongoDB only. No localStorage or hardcoded fallbacks.
   const loadTours = useCallback(async () => {
-    const data = await fetchToursList({ limit: 100, sort: 'newest' }, { skipCache: true });
+    const data = await fetchToursList({ limit: 100, sort: 'newest' });
     if (!data.length) return [];
 
     return data
@@ -52,7 +52,7 @@ const ExploreTours = () => {
     } catch (err) {
       console.error('Error loading tours:', err);
       setRandomTours([]);
-      setError("We couldn't load tours right now.");
+      setError("We couldn't load your tours right now.");
     } finally {
       setLoading(false);
     }

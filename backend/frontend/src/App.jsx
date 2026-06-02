@@ -7,6 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Preloader from "./components/Preloader";
 import PlaneLoader from "./components/PlaneLoader";
 import AdminNavbar from "./components/AdminNavbar";
+import FloatingWhatsApp from "./components/FloatingWhatsApp";
 import { useContext } from "react";
 import { AppContext } from "./context/AppContext";
 import { CurrencyProvider } from "./context/CurrencyContext";
@@ -171,6 +172,7 @@ const App = () => {
             </Suspense>
           </main>
           <Footer />
+          <FloatingWhatsApp />
           
           {/* Global Admin Passcode Prompt */}
           {showPasscodePrompt && (
