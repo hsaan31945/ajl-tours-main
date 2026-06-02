@@ -8,7 +8,6 @@ const tourService = require('../src/services/tourService');
 // Do not keep tour data in serverless memory; MongoDB is the source of truth.
 const CACHE_TTL_MS = 2 * 60 * 1000;
 const SINGLE_CACHE_TTL_MS = 2 * 60 * 1000;
-const MAX_LIST_IMAGE_CHARS = 250000;
 let toursCache = { data: null, expiresAt: 0 };
 const tourByIdCache = new Map();
 
@@ -120,11 +119,7 @@ const normalizeTour = (tour) => {
 const normalizeListTour = (tour) => {
   const normalized = normalizeTour(tour);
   const firstImage = Array.isArray(normalized.images)
-    ? normalized.images.find((image) => {
-        if (!image || typeof image !== 'string') return false;
-        const value = image.trim();
-        return !/^data:image\//i.test(value) || value.length <= MAX_LIST_IMAGE_CHARS;
-      })
+    ? normalized.images.find((image) => image && String(image).trim())
     : null;
 
   return {

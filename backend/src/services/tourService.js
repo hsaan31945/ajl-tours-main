@@ -9,7 +9,6 @@ const { getTourId, normalizeTourId, isValidObjectId } = require('../utils/tourId
 const mongoose = require('mongoose');
 
 const LIST_CACHE_TTL_MS = 2 * 60 * 1000;
-const MAX_LIST_IMAGE_CHARS = 250000;
 const listCache = new Map();
 
 const clearTourListCache = () => {
@@ -143,9 +142,6 @@ class TourService {
       if (!image || typeof image !== 'string') continue;
       const value = image.trim();
       if (!value) continue;
-      if (/^data:image\//i.test(value) && value.length > MAX_LIST_IMAGE_CHARS) {
-        continue;
-      }
       if (/^(https?:\/\/|\/|\.\/|data:image\/(webp|avif);base64,)/i.test(value)) {
         return value;
       }
@@ -380,35 +376,7 @@ class TourService {
           createdAt: 1,
           updatedAt: 1,
           images: {
-            $cond: [
-              {
-                $and: [
-                  { $ne: ['$firstImage', null] },
-                  {
-                    $or: [
-                      {
-                        $not: [
-                          {
-                            $regexMatch: {
-                              input: { $ifNull: ['$firstImage', ''] },
-                              regex: /^data:image/i,
-                            },
-                          },
-                        ],
-                      },
-                      {
-                        $lte: [
-                          { $strLenBytes: { $ifNull: ['$firstImage', ''] } },
-                          MAX_LIST_IMAGE_CHARS,
-                        ],
-                      },
-                    ],
-                  },
-                ],
-              },
-              ['$firstImage'],
-              [],
-            ],
+            $cond: [{ $ne: ['$firstImage', null] }, ['$firstImage'], []],
           },
         },
       },
