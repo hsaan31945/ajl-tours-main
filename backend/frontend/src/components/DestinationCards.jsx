@@ -17,7 +17,7 @@ const DestinationCards = () => {
   useEffect(() => {
     const fetchTours = async () => {
       try {
-        const data = await fetchToursList({ division: 'switzerland', limit: 100 }, { skipCache: true });
+        const data = await fetchToursList({ division: 'switzerland', limit: 12 });
         if (data.length) {
           const swissTours = data.map(tour => {
               const tourId = getTourId(tour);

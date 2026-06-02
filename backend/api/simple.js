@@ -6,8 +6,9 @@ const config = require('../lib/config');
 const tourService = require('../src/services/tourService');
 
 // Do not keep tour data in serverless memory; MongoDB is the source of truth.
-const CACHE_TTL_MS = 0;
-const SINGLE_CACHE_TTL_MS = 0;
+const CACHE_TTL_MS = 2 * 60 * 1000;
+const SINGLE_CACHE_TTL_MS = 2 * 60 * 1000;
+const MAX_LIST_IMAGE_CHARS = 250000;
 let toursCache = { data: null, expiresAt: 0 };
 const tourByIdCache = new Map();
 
@@ -116,10 +117,24 @@ const normalizeTour = (tour) => {
   };
 };
 
+const normalizeListTour = (tour) => {
+  const normalized = normalizeTour(tour);
+  const firstImage = Array.isArray(normalized.images)
+    ? normalized.images.find((image) => {
+        if (!image || typeof image !== 'string') return false;
+        const value = image.trim();
+        return !/^data:image\//i.test(value) || value.length <= MAX_LIST_IMAGE_CHARS;
+      })
+    : null;
+
+  return {
+    ...normalized,
+    images: firstImage ? [firstImage] : [],
+  };
+};
+
 const setCacheHeaders = (res) => {
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
+  res.setHeader('Cache-Control', 'public, max-age=120, s-maxage=300, stale-while-revalidate=600');
 };
 
 const invalidateTourCache = (id) => {
@@ -322,6 +337,7 @@ module.exports = async (req, res) => {
               
               const tours = await Tour.find(query)
                 .select('name description bookingSummary price currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt destination reviews')
+                .slice('images', 1)
                 .populate({ path: 'division', select: 'name', options: { lean: true } })
                 .sort({ createdAt: -1 })
                 .limit(6) // Only fetch what we need
@@ -329,7 +345,7 @@ module.exports = async (req, res) => {
               
               console.log('Found Switzerland tours:', tours.length);
 
-              const transformedTours = tours.map(normalizeTour);
+              const transformedTours = tours.map(normalizeListTour);
               
               // Update cache with these tours
               toursCache = { data: transformedTours, expiresAt: nowTs + CACHE_TTL_MS };
@@ -351,12 +367,13 @@ module.exports = async (req, res) => {
               const nowTs = Date.now();
               const tours = await Tour.find({ isActive: true })
                 .select('name description bookingSummary price currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt reviews')
+                .slice('images', 1)
                 .populate({ path: 'division', select: 'name', options: { lean: true } })
                 .sort({ createdAt: -1 })
                 .lean({ virtuals: true });
               console.log('Found tours:', tours.length);
 
-              const transformedTours = tours.map(normalizeTour);
+              const transformedTours = tours.map(normalizeListTour);
               toursCache = { data: transformedTours, expiresAt: nowTs + CACHE_TTL_MS };
               transformedTours.forEach((tour) => {
                 tourByIdCache.set(tour.id, { data: tour, expiresAt: nowTs + SINGLE_CACHE_TTL_MS });

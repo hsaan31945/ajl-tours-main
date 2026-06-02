@@ -55,7 +55,7 @@ const Navbar = () => {
     if (allTours.length > 0) return allTours;
     if (toursRequestRef.current) return toursRequestRef.current;
 
-    const request = fetchToursList({ view: 'search', limit: 100 }, { skipCache: true });
+    const request = fetchToursList({ view: 'search', limit: 100 });
     toursRequestRef.current = request;
     try {
       const tours = await request;

@@ -14,7 +14,7 @@ const Tour = () => {
     setLoading(true);
     setError("");
     try {
-      const data = await fetchToursList({ division: 'switzerland', limit: 100 }, { skipCache: true });
+      const data = await fetchToursList({ division: 'switzerland', limit: 100 });
       setTours(data.filter((tour) => tour?.isActive !== false));
     } catch (err) {
       console.error('Error fetching tours:', err);

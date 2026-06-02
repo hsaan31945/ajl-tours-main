@@ -15,8 +15,9 @@ const SwitzerlandLocations = () => {
     setError("");
     try {
       const tours = await fetchToursList({
+        division: 'switzerland',
         limit: 100,
-      }, { skipCache: true });
+      });
       setDbTours(tours.filter((tour) => getTourId(tour) && tour?.isActive !== false));
     } catch (err) {
       console.error('Error fetching Switzerland tours:', err);

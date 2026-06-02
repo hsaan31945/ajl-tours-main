@@ -11,7 +11,7 @@ const TestVisitCheckout = () => {
   useEffect(() => {
     (async () => {
       try {
-        const data = await fetchToursList({ division: "switzerland", limit: 100 }, { skipCache: true });
+        const data = await fetchToursList({ division: "switzerland", limit: 100 });
         setTours(data.filter((tour) => tour?.isActive !== false));
       } catch (error) {
         console.error("Could not load tours:", error);

@@ -101,9 +101,6 @@ module.exports = async (req, res) => {
     if (normalizedPath.startsWith('/tours')) {
       if (normalizedPath === '/tours') {
         if (method === 'GET') {
-          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-          res.setHeader('Pragma', 'no-cache');
-          res.setHeader('Expires', '0');
           await asyncHandler(tourController.getAllTours.bind(tourController))(req, res);
         } else if (method === 'POST') {
           const { authenticateAdmin } = require('../src/middleware/auth');

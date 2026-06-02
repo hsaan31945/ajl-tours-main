@@ -15,7 +15,7 @@ const TourList = () => {
   useEffect(() => {
     const fetchTours = async () => {
       try {
-        const data = await fetchToursList({ full: true }, { skipCache: true });
+        const data = await fetchToursList({ full: true });
         setTours(data);
       } catch (error) {
         console.error('Error fetching tours:', error);
