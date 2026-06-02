@@ -7,6 +7,7 @@ import { apiUrl } from "../utils/api";
 import { getTourId } from "../utils/tourId";
 import { calculateBookingPricing, parseTicketCount } from "../utils/bookingPricing";
 import { cleanDisplayName } from "../utils/textFormatting";
+import ParticipantStepper from "../components/ParticipantStepper";
 
 const Flexibility = () => {
   const navigate = useNavigate();
@@ -196,13 +197,10 @@ const Flexibility = () => {
           </div>
           <div className="flex justify-between items-center mt-4 mb-2">
             <span className="font-semibold">Adults:</span>
-            <input
-              type="number"
-              min={minTickets}
-              step="1"
+            <ParticipantStepper
               value={localTicketCount}
-              onChange={e => handleTicketsChange(Number(e.target.value))}
-              className="w-16 border rounded px-2 py-1 text-center"
+              min={minTickets}
+              onChange={handleTicketsChange}
             />
           </div>
           {minTickets > 1 && (

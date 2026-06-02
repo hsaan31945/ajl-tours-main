@@ -6,6 +6,7 @@ import { useAdmin } from "../context/AdminContext";
 import { calculateBookingPricing } from "../utils/bookingPricing";
 import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Users } from "lucide-react";
 import EditableField from "./EditableField";
+import ParticipantStepper from "./ParticipantStepper";
 
 const monthLabel = (date) => date.toLocaleString("default", { month: "long", year: "numeric" });
 
@@ -308,14 +309,11 @@ function PaymentSection({
             <Users size={20} className="text-gray-600" />
             Adult x
           </span>
-            <input
-              type="number"
-              min={minTickets}
-              step="1"
-              value={currentTickets}
-              onChange={e => handleTicketsChange(e.target.value)}
-              className="w-16 rounded-full border border-gray-200 bg-white px-2 py-1 text-center font-semibold"
-            />
+          <ParticipantStepper
+            value={currentTickets}
+            min={minTickets}
+            onChange={handleTicketsChange}
+          />
         </div>
         {setDate && (
           <DateDropdown

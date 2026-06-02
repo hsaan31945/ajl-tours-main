@@ -718,19 +718,6 @@ const Checkout = () => {
       </div>
       {/* Booking History moved to separate page */}
 
-      {/* Current Booking Section */}
-      <div className="w-full max-w-6xl px-4 mb-8">
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-          <h2 className="text-2xl font-bold mb-4 text-blue-800">Current Booking</h2>
-          <div>
-            <div>
-              <h3 className="font-semibold text-lg text-blue-800">{tourName}</h3>
-              <p className="text-blue-600">Select your date and time below to continue</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Two-column layout */}
       <div className="w-full max-w-6xl flex flex-col md:flex-row gap-8 mb-16 px-4">
         {/* Left: Overview/Details */}
