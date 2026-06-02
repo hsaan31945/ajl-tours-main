@@ -17,6 +17,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import PaymentSection from "../components/PaymentSection";
 import { calculateBookingPricing } from "../utils/bookingPricing";
 import TourReviews, { getTourReviewSummary } from "../components/TourReviews";
+import { Star } from "lucide-react";
 
 function ItineraryAccordion({ itinerary = [], adminOn = false, onSave, onAddDraft }) {
   const itineraryList = Array.isArray(itinerary) ? itinerary : [];
@@ -218,6 +219,25 @@ function ItineraryAccordion({ itinerary = [], adminOn = false, onSave, onAddDraf
           + Add Itinerary Item
         </button>
       )}
+    </div>
+  );
+}
+
+function RatingStars({ rating = 0 }) {
+  return (
+    <div className="flex items-center gap-1" aria-label={`${rating.toFixed(1)} out of 5 stars`}>
+      {[1, 2, 3, 4, 5].map((starValue) => {
+        const fillPercent = Math.max(0, Math.min(100, (rating - (starValue - 1)) * 100));
+
+        return (
+          <span key={starValue} className="relative inline-flex h-4 w-4">
+            <Star className="h-4 w-4 text-gray-300 fill-current" aria-hidden="true" />
+            <span className="absolute inset-0 overflow-hidden" style={{ width: `${fillPercent}%` }}>
+              <Star className="h-4 w-4 text-[#102341] fill-current" aria-hidden="true" />
+            </span>
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -513,9 +533,8 @@ const Checkout = () => {
   const totalPrice = pricing.total;
   const reviewSummary = getTourReviewSummary(tour);
   const reviewLabel = reviewSummary.reviewCount
-    ? `${reviewSummary.reviewAverage.toFixed(1)} / 5`
+    ? `${reviewSummary.reviewAverage.toFixed(1)}/5`
     : "No ratings yet";
-  const reviewCountLabel = `${reviewSummary.reviewCount} review${reviewSummary.reviewCount === 1 ? "" : "s"}`;
   // Only admins can edit - no toggle needed
   const effectiveEditMode = adminOn;
 
@@ -693,7 +712,7 @@ const Checkout = () => {
         <div className="flex flex-col items-start">
           <span className="text-xs text-gray-500">Reviews</span>
           <span className="text-lg font-bold">{reviewLabel}</span>
-          <span className="text-sm text-gray-500">{reviewCountLabel}</span>
+          {reviewSummary.reviewCount > 0 && <RatingStars rating={reviewSummary.reviewAverage} />}
         </div>
       </div>
       {/* Booking History moved to separate page */}
@@ -702,14 +721,10 @@ const Checkout = () => {
       <div className="w-full max-w-6xl px-4 mb-8">
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
           <h2 className="text-2xl font-bold mb-4 text-blue-800">Current Booking</h2>
-          <div className="flex items-center justify-between">
+          <div>
             <div>
               <h3 className="font-semibold text-lg text-blue-800">{tourName}</h3>
               <p className="text-blue-600">Select your date and time below to continue</p>
-            </div>
-            <div className="text-right">
-              <div className="text-sm text-blue-600">Total Price</div>
-              <div className="text-2xl font-bold text-blue-800">{pricing.currency}{totalPrice.toFixed(2)}</div>
             </div>
           </div>
         </div>
@@ -1121,6 +1136,8 @@ const Checkout = () => {
             totalPrice={totalPrice}
             currency={pricing.currency}
             date={selectedDate}
+            setDate={setSelectedDate}
+            minDate={todayStr}
             time={selectedTime}
             onPriceUpdated={(newPrice) => {
               setTour((currentTour) => ({

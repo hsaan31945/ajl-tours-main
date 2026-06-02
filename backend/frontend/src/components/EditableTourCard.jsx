@@ -49,6 +49,18 @@ const EditableTourCard = ({ tour, onUpdate, onTourClick }) => {
     setError("");
   };
 
+  const handleCardClick = () => {
+    if (isEditing || editingField) return;
+    if (onTourClick) onTourClick(editedTour);
+  };
+
+  const handleCardKeyDown = (event) => {
+    if ((event.key === "Enter" || event.key === " ") && !isEditing && !editingField) {
+      event.preventDefault();
+      if (onTourClick) onTourClick(editedTour);
+    }
+  };
+
   const EditableField = ({ field, label, value, type = "text", multiline = false }) => {
     const isFieldEditing = editingField === field;
     
@@ -120,7 +132,14 @@ const EditableTourCard = ({ tour, onUpdate, onTourClick }) => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 h-full flex flex-col">
+    <div
+      className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 h-full flex flex-col cursor-pointer"
+      onClick={handleCardClick}
+      onKeyDown={handleCardKeyDown}
+      role="button"
+      tabIndex={0}
+      aria-label={`View details for ${editedTour.name || "tour"}`}
+    >
       <div className="relative h-48 sm:h-56 md:h-64 overflow-hidden">
         <img src={editedTour.images?.[0] || tour.images?.[0]} alt={editedTour.name} className="w-full h-full object-cover" />
         {isAdmin && (

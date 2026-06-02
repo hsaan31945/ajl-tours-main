@@ -55,7 +55,21 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
   };
 
   const handleCardClick = () => {
+    if (!tourId) return;
     navigate(`/switzerland/${tourId}/checkout-sw`, { state: { tour } });
+  };
+
+  const handleCardKeyDown = (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleCardClick();
+    }
+  };
+
+  const stopAdminFieldClick = (event) => {
+    if (isAdmin) {
+      event.stopPropagation();
+    }
   };
 
   const displayImage =
@@ -71,6 +85,10 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
     <div 
       className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full cursor-pointer group"
       onClick={handleCardClick}
+      onKeyDown={handleCardKeyDown}
+      role="button"
+      tabIndex={0}
+      aria-label={`View details for ${tourName}`}
     >
       {/* Image Section */}
       <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
@@ -120,7 +138,7 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
       {/* Content Section */}
       <div className="p-6 flex-1 flex flex-col">
         {/* Title */}
-        <div onClick={(e) => e.stopPropagation()}>
+        <div onClick={stopAdminFieldClick}>
               <EditableField
                 tag="h3"
                 value={tourName}
@@ -151,7 +169,7 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
 
         {/* Bottom Row: Price and Button */}
         <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
-          <div className="flex flex-col" onClick={(e) => e.stopPropagation()}>
+          <div className="flex flex-col" onClick={stopAdminFieldClick}>
             <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">From</span>
             <div className="flex items-baseline">
               <span className="text-2xl font-black text-red-600">

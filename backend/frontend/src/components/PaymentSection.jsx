@@ -1,9 +1,171 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBooking } from "../context/BookingContext";
 import PriceWithEdit from "./PriceWithEdit";
 import { useAdmin } from "../context/AdminContext";
 import { calculateBookingPricing } from "../utils/bookingPricing";
+import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Users } from "lucide-react";
+
+const monthLabel = (date) => date.toLocaleString("default", { month: "long", year: "numeric" });
+
+const toLocalDateString = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const parseLocalDate = (value) => {
+  if (!value) return new Date();
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) return new Date();
+  return new Date(year, month - 1, day);
+};
+
+const formatDisplayDate = (value) => {
+  if (!value) return "Select date";
+  return parseLocalDate(value).toLocaleDateString("default", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
+function MonthGrid({ monthDate, selectedDate, minDate, onSelect }) {
+  const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const leadingBlankCount = (firstDay.getDay() + 6) % 7;
+  const cells = [
+    ...Array.from({ length: leadingBlankCount }, () => null),
+    ...Array.from({ length: daysInMonth }, (_, index) => index + 1),
+  ];
+  const minDateValue = parseLocalDate(minDate);
+  minDateValue.setHours(0, 0, 0, 0);
+
+  return (
+    <div className="min-w-0">
+      <h4 className="text-center text-lg font-bold text-gray-900 mb-6">{monthLabel(monthDate)}</h4>
+      <div className="grid grid-cols-7 gap-y-3 text-center">
+        {daysOfWeek.map((day) => (
+          <div key={day} className="text-xs font-semibold text-gray-500">{day}</div>
+        ))}
+        {cells.map((day, index) => {
+          if (!day) return <div key={`blank-${index}`} className="h-10" />;
+
+          const cellDate = new Date(year, month, day);
+          const dateString = toLocalDateString(cellDate);
+          const isSelected = selectedDate === dateString;
+          const isDisabled = cellDate < minDateValue;
+
+          return (
+            <button
+              key={dateString}
+              type="button"
+              disabled={isDisabled}
+              onClick={() => onSelect(dateString)}
+              className={`mx-auto flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold transition ${
+                isSelected
+                  ? "bg-orange-600 text-white shadow-sm"
+                  : isDisabled
+                    ? "text-gray-300 cursor-not-allowed"
+                    : "text-gray-700 hover:bg-orange-50 hover:text-orange-700"
+              }`}
+            >
+              {day}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function DateDropdown({ date, setDate, minDate }) {
+  const [open, setOpen] = useState(false);
+  const [visibleMonth, setVisibleMonth] = useState(() => {
+    const base = parseLocalDate(date || minDate);
+    return new Date(base.getFullYear(), base.getMonth(), 1);
+  });
+  const wrapperRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const nextMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1);
+
+  const moveMonth = (amount) => {
+    setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + amount, 1));
+  };
+
+  const handleSelect = (value) => {
+    setDate(value);
+    setOpen(false);
+  };
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        className={`flex w-full items-center justify-between rounded-full bg-gray-100 px-4 py-3 text-left transition hover:bg-gray-200 ${
+          open ? "ring-2 ring-orange-200" : ""
+        }`}
+      >
+        <span className="flex items-center gap-3 font-semibold text-gray-800">
+          <CalendarDays size={20} className="text-gray-600" />
+          {formatDisplayDate(date)}
+        </span>
+        <ChevronDown size={20} className={`text-gray-500 transition ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 z-40 mt-3 w-[min(720px,calc(100vw-2rem))] rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl">
+          <button
+            type="button"
+            onClick={() => moveMonth(-1)}
+            className="absolute left-5 top-7 flex h-9 w-9 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
+            aria-label="Previous month"
+          >
+            <ChevronLeft size={22} />
+          </button>
+          <button
+            type="button"
+            onClick={() => moveMonth(1)}
+            className="absolute right-5 top-7 flex h-9 w-9 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100"
+            aria-label="Next month"
+          >
+            <ChevronRight size={22} />
+          </button>
+          <div className="grid gap-8 md:grid-cols-2">
+            <MonthGrid
+              monthDate={visibleMonth}
+              selectedDate={date}
+              minDate={minDate}
+              onSelect={handleSelect}
+            />
+            <MonthGrid
+              monthDate={nextMonth}
+              selectedDate={date}
+              minDate={minDate}
+              onSelect={handleSelect}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function PaymentSection({
   tourName,
@@ -16,6 +178,8 @@ function PaymentSection({
   currency,
   tour,
   date,
+  setDate,
+  minDate,
   time,
   onPriceUpdated,
   onSavePrice,
@@ -126,17 +290,27 @@ function PaymentSection({
           </div>
         )}
         
-        <div className="flex justify-between items-center">
-          <span className="font-semibold">Adults:</span>
+        <div className="flex items-center justify-between rounded-full bg-gray-100 px-4 py-3">
+          <span className="flex items-center gap-3 font-semibold text-gray-800">
+            <Users size={20} className="text-gray-600" />
+            Adult x
+          </span>
             <input
               type="number"
               min={minTickets}
               step="1"
               value={currentTickets}
               onChange={e => handleTicketsChange(e.target.value)}
-              className="w-16 border rounded px-2 py-1 text-center"
+              className="w-16 rounded-full border border-gray-200 bg-white px-2 py-1 text-center font-semibold"
             />
         </div>
+        {setDate && (
+          <DateDropdown
+            date={date}
+            setDate={setDate}
+            minDate={minDate || toLocalDateString(new Date())}
+          />
+        )}
         {minTickets > 1 && (
           <p className="text-xs text-gray-500 text-right">Minimum {minTickets} adults required</p>
         )}
