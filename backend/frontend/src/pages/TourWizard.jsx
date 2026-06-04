@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAdmin } from "../context/AdminContext";
 import { adminImageFormatMessage, isAllowedAdminImageFile } from "../utils/imageValidation";
 import axios from "axios";
@@ -111,6 +111,8 @@ const cleanObjectArray = (items, keys) => (
 const TourWizard = () => {
   const navigate = useNavigate();
   const { tourId } = useParams(); // Get tour ID from URL params
+  const [searchParams] = useSearchParams();
+  const requestedDivision = searchParams.get("division") || "";
   const { isAdmin, passcodeHeader, getAuthHeader } = useAdmin();
   const [currentStep, setCurrentStep] = useState(1); // 1 = wizard, 2 = country selection
   const [isEditing, setIsEditing] = useState(!!tourId); // Check if we're editing an existing tour
@@ -386,7 +388,7 @@ const TourWizard = () => {
 
   // Country selection and final save
   const [divisions, setDivisions] = useState([]);
-  const [selectedDivision, setSelectedDivision] = useState(tourData.division || "");
+  const [selectedDivision, setSelectedDivision] = useState(tourData.division || requestedDivision || "");
   const [isAddingNewDivision, setIsAddingNewDivision] = useState(false);
   const [newDivisionName, setNewDivisionName] = useState("");
   const [isSubmittingNewDivision, setIsSubmittingNewDivision] = useState(false);

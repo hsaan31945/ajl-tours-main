@@ -1,12 +1,15 @@
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { AppContext } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
 import { useAdmin } from "../context/AdminContext";
+import { apiUrl } from "../utils/api";
 
 const AdminDashboard = () => {
   const { users, bookings, loading: appLoading } = useContext(AppContext);
   const { isAdmin, loading: adminLoading } = useAdmin();
   const navigate = useNavigate();
+  const [divisions, setDivisions] = useState([]);
+  const [selectedDivision, setSelectedDivision] = useState("");
   
   const loading = appLoading || adminLoading;
   
@@ -15,6 +18,39 @@ const AdminDashboard = () => {
       navigate("/admin");
     }
   }, [isAdmin, navigate, adminLoading]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    const fetchDivisions = async () => {
+      try {
+        const response = await fetch(apiUrl("/api/divisions"));
+        if (!response.ok) return;
+
+        const data = await response.json();
+        const divisionList = Array.isArray(data) ? data : [];
+        setDivisions(divisionList);
+
+        if (!selectedDivision) {
+          const switzerland = divisionList.find((division) => division.name === "Switzerland");
+          const fallback = switzerland || divisionList[0];
+          if (fallback) {
+            setSelectedDivision(fallback._id || fallback.id);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching divisions:", error);
+        setDivisions([]);
+      }
+    };
+
+    fetchDivisions();
+  }, [isAdmin, selectedDivision]);
+
+  const handleCreateTour = () => {
+    const params = selectedDivision ? `?division=${encodeURIComponent(selectedDivision)}` : "";
+    navigate(`/tour-wizard${params}`);
+  };
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center text-2xl">Loading...</div>;
@@ -33,11 +69,33 @@ const AdminDashboard = () => {
         <section className="bg-white p-6 rounded-lg shadow">
           <h2 className="text-2xl font-semibold mb-4">Trip Management</h2>
           <div className="flex flex-col gap-3">
+            <label className="text-sm font-semibold text-gray-700" htmlFor="tour-location">
+              Add tour to location
+            </label>
+            <select
+              id="tour-location"
+              value={selectedDivision}
+              onChange={(event) => setSelectedDivision(event.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100"
+            >
+              <option value="">Select location...</option>
+              {divisions.map((division) => (
+                <option key={division._id || division.id} value={division._id || division.id}>
+                  {division.name}
+                </option>
+              ))}
+            </select>
             <button
-              onClick={() => navigate("/tour-wizard")}
+              onClick={handleCreateTour}
               className="px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700"
             >
               Create New Tour
+            </button>
+            <button
+              onClick={() => navigate("/admin/divisions")}
+              className="px-6 py-3 bg-gray-800 text-white rounded-lg font-bold hover:bg-gray-900"
+            >
+              Manage Locations
             </button>
             <button
               onClick={() => navigate("/admin/tours")}
