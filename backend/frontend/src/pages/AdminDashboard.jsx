@@ -6,12 +6,20 @@ import { apiUrl } from "../utils/api";
 
 const AdminDashboard = () => {
   const { users, bookings, loading: appLoading } = useContext(AppContext);
-  const { isAdmin, loading: adminLoading } = useAdmin();
+  const { isAdmin, loading: adminLoading, getAuthHeader, passcodeHeader } = useAdmin();
   const navigate = useNavigate();
   const [divisions, setDivisions] = useState([]);
-  const [selectedDivision, setSelectedDivision] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState("switzerland");
+  const [creatingTour, setCreatingTour] = useState(false);
   
   const loading = appLoading || adminLoading;
+
+  const pageLocations = [
+    { slug: "switzerland", name: "Switzerland" },
+    { slug: "srilanka", name: "Srilanka" },
+  ];
+
+  const normalizeLocation = (value) => String(value || "").toLowerCase().replace(/[^a-z]/g, "");
   
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
@@ -30,14 +38,6 @@ const AdminDashboard = () => {
         const data = await response.json();
         const divisionList = Array.isArray(data) ? data : [];
         setDivisions(divisionList);
-
-        if (!selectedDivision) {
-          const switzerland = divisionList.find((division) => division.name === "Switzerland");
-          const fallback = switzerland || divisionList[0];
-          if (fallback) {
-            setSelectedDivision(fallback._id || fallback.id);
-          }
-        }
       } catch (error) {
         console.error("Error fetching divisions:", error);
         setDivisions([]);
@@ -45,11 +45,52 @@ const AdminDashboard = () => {
     };
 
     fetchDivisions();
-  }, [isAdmin, selectedDivision]);
+  }, [isAdmin]);
 
-  const handleCreateTour = () => {
-    const params = selectedDivision ? `?division=${encodeURIComponent(selectedDivision)}` : "";
-    navigate(`/tour-wizard${params}`);
+  const findDivisionForLocation = (location) => {
+    const target = normalizeLocation(location.name);
+    return divisions.find((division) => normalizeLocation(division.name) === target);
+  };
+
+  const handleCreateTour = async () => {
+    const location = pageLocations.find((item) => item.slug === selectedLocation) || pageLocations[0];
+    let division = findDivisionForLocation(location);
+
+    setCreatingTour(true);
+    try {
+      if (!division) {
+        const headers = getAuthHeader
+          ? getAuthHeader()
+          : (passcodeHeader ? { "X-Admin-Passcode": passcodeHeader } : {});
+        const response = await fetch(apiUrl("/api/divisions"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...headers,
+          },
+          body: JSON.stringify({
+            name: location.name,
+            description: `Tours in ${location.name}`,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({}));
+          throw new Error(error.message || "Could not create location");
+        }
+
+        division = await response.json();
+        setDivisions((current) => [...current, division]);
+      }
+
+      const divisionId = division?._id || division?.id;
+      const params = divisionId ? `?division=${encodeURIComponent(divisionId)}` : "";
+      navigate(`/tour-wizard${params}`);
+    } catch (error) {
+      alert(`Could not prepare ${location.name}. Please add it from Manage Locations first.\n\n${error.message}`);
+    } finally {
+      setCreatingTour(false);
+    }
   };
 
   if (loading) {
@@ -74,22 +115,22 @@ const AdminDashboard = () => {
             </label>
             <select
               id="tour-location"
-              value={selectedDivision}
-              onChange={(event) => setSelectedDivision(event.target.value)}
+              value={selectedLocation}
+              onChange={(event) => setSelectedLocation(event.target.value)}
               className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100"
             >
-              <option value="">Select location...</option>
-              {divisions.map((division) => (
-                <option key={division._id || division.id} value={division._id || division.id}>
-                  {division.name}
+              {pageLocations.map((location) => (
+                <option key={location.slug} value={location.slug}>
+                  {location.name}
                 </option>
               ))}
             </select>
             <button
               onClick={handleCreateTour}
-              className="px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700"
+              disabled={creatingTour}
+              className="px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              Create New Tour
+              {creatingTour ? "Preparing..." : "Create New Tour"}
             </button>
             <button
               onClick={() => navigate("/admin/divisions")}
