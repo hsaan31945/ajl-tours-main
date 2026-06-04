@@ -483,21 +483,35 @@ const Navbar = () => {
               <div className="flex-1 overflow-y-auto">
                 <div className="py-2">
                   <DrawerLink
-                    to="/switzerland"
-                    icon={<MapPin className="w-5 h-5" />}
-                    label="Places to see"
-                    onClick={() => setMenuOpen(false)}
-                  />
-                  <DrawerLink
                     to="/"
                     icon={<Home className="w-5 h-5" />}
-                    label="Things to do"
+                    label="Home"
+                    onClick={() => setMenuOpen(false)}
+                  />
+
+                  <h3 className="px-6 pt-5 pb-2 text-xs font-bold uppercase tracking-wide text-gray-400">
+                    Destinations
+                  </h3>
+                  <DrawerLink
+                    to="/switzerland"
+                    icon={<MapPin className="w-5 h-5" />}
+                    label="Switzerland"
                     onClick={() => setMenuOpen(false)}
                   />
                   <DrawerLink
-                    to="/about"
-                    icon={<Info className="w-5 h-5" />}
-                    label="About Us"
+                    to="/sirilanka"
+                    icon={<MapPin className="w-5 h-5" />}
+                    label="Sirilanka"
+                    onClick={() => setMenuOpen(false)}
+                  />
+
+                  <h3 className="px-6 pt-5 pb-2 text-xs font-bold uppercase tracking-wide text-gray-400">
+                    Menu
+                  </h3>
+                  <DrawerLink
+                    to="/tours"
+                    icon={<ShoppingCart className="w-5 h-5" />}
+                    label="Tours"
                     onClick={() => setMenuOpen(false)}
                   />
                   <DrawerLink
@@ -507,15 +521,15 @@ const Navbar = () => {
                     onClick={() => setMenuOpen(false)}
                   />
                   <DrawerLink
-                    to="/contact"
-                    icon={<Globe className="w-5 h-5" />}
-                    label="Contact Us"
+                    to="/about"
+                    icon={<Info className="w-5 h-5" />}
+                    label="About Us"
                     onClick={() => setMenuOpen(false)}
                   />
                   <DrawerLink
-                    to="/switzerland"
-                    icon={<ShoppingCart className="w-5 h-5" />}
-                    label="Trip inspiration"
+                    to="/contact"
+                    icon={<Globe className="w-5 h-5" />}
+                    label="Contact Us"
                     onClick={() => setMenuOpen(false)}
                   />
                 </div>
