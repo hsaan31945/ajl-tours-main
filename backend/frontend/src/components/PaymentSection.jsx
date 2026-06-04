@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBooking } from "../context/BookingContext";
 import PriceWithEdit from "./PriceWithEdit";
@@ -176,7 +176,6 @@ function PaymentSection({
   price,
   tickets,
   setTickets,
-  totalPrice,
   currency,
   tour,
   date,
@@ -198,14 +197,6 @@ function PaymentSection({
   const minTickets = pricing.minTickets;
   const currentTickets = pricing.tickets;
   const ticketsMeetMinimum = pricing.validTickets;
-  const effectiveTotalPrice = useMemo(() => {
-    const numericTotal = Number(totalPrice);
-    if (Number.isFinite(numericTotal)) {
-      return numericTotal;
-    }
-    return pricing.total;
-  }, [pricing.total, totalPrice]);
-
   useEffect(() => {
     if (Number(tickets) < minTickets) {
       setTickets(minTickets);
@@ -330,10 +321,6 @@ function PaymentSection({
             Increase adults to continue.
           </p>
         )}
-        <div className="flex justify-between mt-2">
-          <span className="font-bold text-lg">Total:</span>
-          <span className="font-bold text-orange-600 text-2xl">{(currency || pricing.currency)}{effectiveTotalPrice.toFixed(2)}</span>
-        </div>
       </div>
       <button
         type="button"
