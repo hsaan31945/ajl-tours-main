@@ -5,7 +5,7 @@
       "destination": "https://ajl-tours-backend-phi.vercel.app/api/$1"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!.*\\..*).*)",
       "destination": "/"
     }
   ],
