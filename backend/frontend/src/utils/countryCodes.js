@@ -208,7 +208,7 @@ const COUNTRY_CODE_DATA = [
   ["South Korea", "+82"],
   ["South Sudan", "+211"],
   ["Spain", "+34"],
-  ["Sri Lanka", "+94"],
+  ["Srilanka", "+94"],
   ["Sudan", "+249"],
   ["Suriname", "+597"],
   ["Svalbard and Jan Mayen", "+47"],

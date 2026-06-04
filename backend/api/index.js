@@ -66,6 +66,11 @@ module.exports = async (req, res) => {
     
     // Extract path and method
     let url = req.url || '';
+    const queryString = url.includes('?') ? url.split('?').slice(1).join('?') : '';
+    req.query = {
+      ...(req.query || {}),
+      ...Object.fromEntries(new URLSearchParams(queryString)),
+    };
     let path = url.split('?')[0];
     
     // Normalize path - handle both /api/tours and /tours
@@ -211,6 +216,8 @@ module.exports = async (req, res) => {
             _id: div._id.toString(),
             name: div.name,
             description: div.description,
+            bannerImage: div.bannerImage,
+            banner_image: div.bannerImage,
             isActive: div.isActive
           })));
         } else if (method === 'POST') {
@@ -219,13 +226,76 @@ module.exports = async (req, res) => {
           if (!expected || !header || header.trim() !== expected.trim()) {
             return res.status(401).json({ message: 'Invalid or missing admin passcode' });
           }
-          const { name, description } = req.body;
+          const { name, description, bannerImage, banner_image } = req.body;
           if (!name) {
             return res.status(400).json({ message: 'Name is required' });
           }
-          const division = new Division({ name, description: description || '' });
+          const division = new Division({
+            name: String(name).trim(),
+            description: description || '',
+            bannerImage: bannerImage || banner_image || '',
+          });
           await division.save();
           res.status(201).json({
+            id: division._id.toString(),
+            _id: division._id.toString(),
+            name: division.name,
+            description: division.description,
+            bannerImage: division.bannerImage,
+            banner_image: division.bannerImage,
+            isActive: division.isActive
+          });
+        } else {
+          res.status(405).json({ success: false, error: 'Method not allowed' });
+        }
+      } else {
+        const divisionId = normalizedPath.replace('/divisions/', '').split('/')[0];
+        if ((method === 'PUT' || method === 'PATCH') && divisionId) {
+          const header = req.headers['x-admin-passcode'] || req.headers['X-Admin-Passcode'];
+          const expected = process.env.ADMIN_PASSCODE || '';
+          if (!expected || !header || header.trim() !== expected.trim()) {
+            return res.status(401).json({ message: 'Invalid or missing admin passcode' });
+          }
+          const { name, description, bannerImage, banner_image } = req.body;
+          if (!name) {
+            return res.status(400).json({ message: 'Name is required' });
+          }
+          const division = await Division.findByIdAndUpdate(
+            divisionId,
+            {
+              name: String(name).trim(),
+              description: description || '',
+              bannerImage: bannerImage || banner_image || '',
+            },
+            { new: true, runValidators: true }
+          );
+          if (!division) {
+            return res.status(404).json({ message: 'Division not found' });
+          }
+          res.json({
+            id: division._id.toString(),
+            _id: division._id.toString(),
+            name: division.name,
+            description: division.description,
+            bannerImage: division.bannerImage,
+            banner_image: division.bannerImage,
+            isActive: division.isActive
+          });
+        } else if (method === 'DELETE' && divisionId) {
+          const header = req.headers['x-admin-passcode'] || req.headers['X-Admin-Passcode'];
+          const expected = process.env.ADMIN_PASSCODE || '';
+          if (!expected || !header || header.trim() !== expected.trim()) {
+            return res.status(401).json({ message: 'Invalid or missing admin passcode' });
+          }
+          const division = await Division.findByIdAndUpdate(
+            divisionId,
+            { isActive: false },
+            { new: true }
+          );
+          if (!division) {
+            return res.status(404).json({ message: 'Division not found' });
+          }
+          res.json({
             id: division._id.toString(),
             _id: division._id.toString(),
             name: division.name,
@@ -233,10 +303,8 @@ module.exports = async (req, res) => {
             isActive: division.isActive
           });
         } else {
-          res.status(405).json({ success: false, error: 'Method not allowed' });
+          res.status(404).json({ success: false, error: 'Route not found' });
         }
-      } else {
-        res.status(404).json({ success: false, error: 'Route not found' });
       }
     } else if (normalizedPath === '/users' && method === 'POST') {
       const { name, email, password, phone } = req.body || {};

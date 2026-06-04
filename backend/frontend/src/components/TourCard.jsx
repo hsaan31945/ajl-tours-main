@@ -54,9 +54,20 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
     }
   };
 
+  const displayImage =
+    (Array.isArray(tour.images) && tour.images.find((img) => img && String(img).trim())) ||
+    tour.photo ||
+    null;
+  const ratingValue = Number(tour.rating || tour.avgRating || 0);
+  const reviewsValue = Number(tour.reviews || 0);
+  const destinationName = String(tour.divisionName || tour.destination || "").toLowerCase();
+  const detailBasePath = destinationName.includes("sri")
+    ? "/srilanka"
+    : "/switzerland";
+
   const handleCardClick = () => {
     if (!tourId) return;
-    navigate(`/switzerland/${tourId}/checkout-sw`, { state: { tour } });
+    navigate(`${detailBasePath}/${tourId}/checkout-sw`, { state: { tour } });
   };
 
   const handleCardKeyDown = (event) => {
@@ -71,13 +82,6 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
       event.stopPropagation();
     }
   };
-
-  const displayImage =
-    (Array.isArray(tour.images) && tour.images.find((img) => img && String(img).trim())) ||
-    tour.photo ||
-    null;
-  const ratingValue = Number(tour.rating || tour.avgRating || 0);
-  const reviewsValue = Number(tour.reviews || 0);
 
   useEffect(() => {
     setImageFailed(false);

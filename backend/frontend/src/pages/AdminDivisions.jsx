@@ -1,16 +1,11 @@
-import React, { useContext, useEffect, useState } from "react";
-import { AppContext } from "../context/AppContext";
+import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { io } from "socket.io-client";
 import { useAdmin } from "../context/AdminContext";
-
-// Use environment variables for production compatibility
-const API_URL = process.env.NODE_ENV === 'production' ? '/api' : "/api";
-const SOCKET_URL = process.env.NODE_ENV === 'production' ? window.location.origin : window.location.origin;
+import { apiUrl } from "../utils/api";
 
 const AdminDivisions = () => {
-  const { isAdmin } = useAdmin();
+  const { isAdmin, passcodeHeader, getAuthHeader } = useAdmin();
   const navigate = useNavigate();
   const [divisions, setDivisions] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -25,43 +20,43 @@ const AdminDivisions = () => {
     banner_image: ""
   });
 
+  const divisionId = (division) => division?._id || division?.id;
+  const authHeaders = () => (
+    getAuthHeader ? getAuthHeader() : (passcodeHeader ? { 'X-Admin-Passcode': passcodeHeader } : {})
+  );
+
+  const fetchDivisions = useCallback(async () => {
+    try {
+      const res = await axios.get(apiUrl('/api/divisions'));
+      setDivisions(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error("Failed to fetch divisions:", err);
+      setDivisions([]);
+    }
+  }, []);
+
   useEffect(() => {
     if (!isAdmin) {
       navigate("/admin");
       return;
     }
 
-    // Fetch divisions
-    const fetchDivisions = async () => {
-      try {
-        const res = await axios.get(`${API_URL}/divisions`);
-        setDivisions(res.data);
-      } catch (err) {
-        console.error("Failed to fetch divisions:", err);
-      }
-    };
-
     fetchDivisions();
-
-    // Real-time updates
-    const socket = io(SOCKET_URL);
-    socket.on("divisionCreated", (division) => {
-      setDivisions((prev) => [...prev, division]);
-    });
-    socket.on("divisionUpdated", (division) => {
-      setDivisions((prev) => prev.map(d => d.id === division.id ? division : d));
-    });
-    socket.on("divisionDeleted", (id) => {
-      setDivisions((prev) => prev.filter(d => d.id !== Number(id)));
-    });
-
-    return () => socket.disconnect();
-  }, [isAdmin, navigate]);
+  }, [fetchDivisions, isAdmin, navigate]);
 
   const handleAddDivision = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API_URL}/divisions`, formData);
+      const res = await axios.post(
+        apiUrl('/api/divisions'),
+        {
+          name: formData.name,
+          description: formData.description,
+          banner_image: formData.banner_image,
+        },
+        { headers: authHeaders() }
+      );
+      setDivisions((prev) => [...prev, res.data]);
       setShowAddModal(false);
       setFormData({ name: "", description: "", banner_image: "" });
     } catch (err) {
@@ -72,7 +67,19 @@ const AdminDivisions = () => {
   const handleEditDivision = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`${API_URL}/divisions/${currentDivision.id}`, formData);
+      const id = divisionId(currentDivision);
+      const res = await axios.put(
+        apiUrl(`/api/divisions/${id}`),
+        {
+          name: formData.name,
+          description: formData.description,
+          banner_image: formData.banner_image,
+        },
+        { headers: authHeaders() }
+      );
+      setDivisions((prev) => prev.map((division) => (
+        divisionId(division) === id ? res.data : division
+      )));
       setShowEditModal(false);
       setCurrentDivision(null);
       setFormData({ name: "", description: "", banner_image: "" });
@@ -83,7 +90,10 @@ const AdminDivisions = () => {
 
   const handleDeleteDivisions = async () => {
     try {
-      await Promise.all(selected.map(id => axios.delete(`${API_URL}/divisions/${id}`)));
+      await Promise.all(selected.map((id) => (
+        axios.delete(apiUrl(`/api/divisions/${id}`), { headers: authHeaders() })
+      )));
+      setDivisions((prev) => prev.filter((division) => !selected.includes(divisionId(division))));
       setSelected([]);
       setDeleteMode(false);
       setShowConfirm(false);
@@ -97,7 +107,7 @@ const AdminDivisions = () => {
     setFormData({
       name: division.name,
       description: division.description || "",
-      banner_image: division.banner_image || ""
+      banner_image: division.banner_image || division.bannerImage || ""
     });
     setShowEditModal(true);
   };
@@ -164,21 +174,21 @@ const AdminDivisions = () => {
               </tr>
             ) : (
               divisions.map((division) => (
-                <tr key={division.id}>
+                <tr key={divisionId(division)}>
                   {deleteMode && (
                     <td className="py-2 px-4 text-center">
                       <input
                         type="checkbox"
-                        checked={selected.includes(division.id)}
-                        onChange={() => toggleSelect(division.id)}
+                        checked={selected.includes(divisionId(division))}
+                        onChange={() => toggleSelect(divisionId(division))}
                       />
                     </td>
                   )}
                   <td className="py-2 px-4 font-semibold">{division.name}</td>
                   <td className="py-2 px-4">{division.description || "No description"}</td>
                   <td className="py-2 px-4">
-                    {division.banner_image ? (
-                      <img src={division.banner_image} alt={division.name} className="w-16 h-12 object-cover rounded" />
+                    {division.banner_image || division.bannerImage ? (
+                      <img src={division.banner_image || division.bannerImage} alt={division.name} className="w-16 h-12 object-cover rounded" />
                     ) : (
                       "No image"
                     )}
@@ -320,9 +330,9 @@ const AdminDivisions = () => {
             </button>
             <h3 className="text-xl font-bold mb-4">Confirm Delete</h3>
             <div className="mb-6">
-              Are you sure you want to permanently delete the selected division(s)? 
+              Are you sure you want to remove the selected location(s) from the active list?
               <br /><br />
-              <strong>Warning:</strong> This will also delete all tours associated with these divisions!
+              <strong>Note:</strong> Existing tour records are not deleted, but removed locations will no longer appear in the tour location dropdown.
             </div>
             <div className="flex gap-4">
               <button
@@ -346,7 +356,6 @@ const AdminDivisions = () => {
 };
 
 export default AdminDivisions;
-
 
 
 

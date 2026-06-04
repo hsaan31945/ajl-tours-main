@@ -171,7 +171,10 @@ module.exports = async (req, res) => {
     }
 
     // Parse URL - handle Vercel serverless function URLs
-    let url = req.url || '';
+    const originalUrl = req.url || '';
+    const queryString = originalUrl.includes('?') ? originalUrl.split('?').slice(1).join('?') : '';
+    const queryParams = new URLSearchParams(queryString);
+    let url = originalUrl;
     // Remove query string if present
     url = url.split('?')[0];
     // Ensure URL starts with /api for consistency
@@ -216,28 +219,90 @@ module.exports = async (req, res) => {
 
     // Divisions API
     if (url.startsWith('/api/divisions')) {
-      if (req.method === 'GET') {
+      const divisionId = url.split('/api/divisions/')[1]?.split('?')[0];
+
+      if (req.method === 'GET' && !divisionId) {
         const divisions = await Division.find({ isActive: true }).sort({ name: 1 });
         return res.json(divisions.map(div => ({
           id: div._id.toString(),
           _id: div._id.toString(),
           name: div.name,
           description: div.description,
+          bannerImage: div.bannerImage,
+          banner_image: div.bannerImage,
           isActive: div.isActive
         })));
       }
-      if (req.method === 'POST') {
+      if (req.method === 'POST' && !divisionId) {
         const header = req.headers['x-admin-passcode'] || req.headers['X-Admin-Passcode'];
         if (!isValidAdminPasscode(header)) {
           return res.status(401).json({ message: 'Invalid or missing admin passcode' });
         }
-        const { name, description } = body;
+        const { name, description, bannerImage, banner_image } = body;
         if (!name) {
           return res.status(400).json({ message: 'Name is required' });
         }
-        const division = new Division({ name, description: description || '' });
+        const division = new Division({
+          name: String(name).trim(),
+          description: description || '',
+          bannerImage: bannerImage || banner_image || '',
+        });
         await division.save();
         return res.status(201).json({
+          id: division._id.toString(),
+          _id: division._id.toString(),
+          name: division.name,
+          description: division.description,
+          bannerImage: division.bannerImage,
+          banner_image: division.bannerImage,
+          isActive: division.isActive
+        });
+      }
+      if ((req.method === 'PUT' || req.method === 'PATCH') && divisionId) {
+        const header = req.headers['x-admin-passcode'] || req.headers['X-Admin-Passcode'];
+        if (!isValidAdminPasscode(header)) {
+          return res.status(401).json({ message: 'Invalid or missing admin passcode' });
+        }
+        const { name, description, bannerImage, banner_image } = body;
+        if (!name) {
+          return res.status(400).json({ message: 'Name is required' });
+        }
+        const division = await Division.findByIdAndUpdate(
+          divisionId,
+          {
+            name: String(name).trim(),
+            description: description || '',
+            bannerImage: bannerImage || banner_image || '',
+          },
+          { new: true, runValidators: true }
+        );
+        if (!division) {
+          return res.status(404).json({ message: 'Division not found' });
+        }
+        return res.json({
+          id: division._id.toString(),
+          _id: division._id.toString(),
+          name: division.name,
+          description: division.description,
+          bannerImage: division.bannerImage,
+          banner_image: division.bannerImage,
+          isActive: division.isActive
+        });
+      }
+      if (req.method === 'DELETE' && divisionId) {
+        const header = req.headers['x-admin-passcode'] || req.headers['X-Admin-Passcode'];
+        if (!isValidAdminPasscode(header)) {
+          return res.status(401).json({ message: 'Invalid or missing admin passcode' });
+        }
+        const division = await Division.findByIdAndUpdate(
+          divisionId,
+          { isActive: false },
+          { new: true }
+        );
+        if (!division) {
+          return res.status(404).json({ message: 'Division not found' });
+        }
+        return res.json({
           id: division._id.toString(),
           _id: division._id.toString(),
           name: division.name,
@@ -351,6 +416,22 @@ module.exports = async (req, res) => {
               setCacheHeaders(res);
               return res.json(transformedTours);
             } else {
+              const requestedDivision = queryParams.get('division');
+              const requestedView = queryParams.get('view') || 'list';
+              const requestedSort = queryParams.get('sort') || 'newest';
+              const requestedLimit = queryParams.get('limit') || 50;
+
+              if (requestedDivision) {
+                const tours = await tourService.getToursList({
+                  division: requestedDivision,
+                  view: requestedView,
+                  sort: requestedSort,
+                  limit: requestedLimit,
+                });
+                setCacheHeaders(res);
+                return res.json(tours);
+              }
+
               // GET all tours
               const cachedList = cacheValid(toursCache) ? toursCache.data : null;
               if (cachedList) {
