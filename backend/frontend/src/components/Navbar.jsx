@@ -1,6 +1,6 @@
 import React, { useState, useContext, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, Home, Heart, ShoppingCart, History as HistoryIcon, MapPin, Globe, BookOpen, Info } from "lucide-react";
+import { Menu, X, Home, Heart, ShoppingCart, History as HistoryIcon, MapPin, Globe, BookOpen, Info, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AppContext } from "../context/AppContext.jsx";
 import { assets } from "../assets/assets.js";
@@ -16,7 +16,10 @@ const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [destinationsOpen, setDestinationsOpen] = useState(false);
   const location = useLocation();
-  const isDestinationsActive = destinationsOpen || location.pathname.startsWith("/switzerland");
+  const isDestinationsActive =
+    destinationsOpen ||
+    location.pathname.startsWith("/switzerland") ||
+    location.pathname.startsWith("/sirilanka");
   const destinationsRef = useRef(null);
   // Initialize search visibility: show on all pages except homepage (where it shows after scroll)
   const [showCompactSearch, setShowCompactSearch] = useState(location.pathname !== "/");
@@ -277,45 +280,92 @@ const Navbar = () => {
       </div>
 
       {/* Menu for desktop */}
-      <div className="hidden sm:flex items-center gap-6">
-        <ul className="flex gap-6 text-sm font-medium">
+      <div className="hidden sm:flex items-center gap-5">
+        <ul className="flex items-center gap-2 text-sm font-semibold">
+          <li>
+            <Link
+              to="/"
+              className={`inline-flex items-center rounded-full px-4 py-2 transition-colors ${
+                location.pathname === "/"
+                  ? "bg-orange-50 text-orange-700"
+                  : "text-gray-700 hover:bg-gray-100 hover:text-orange-600"
+              }`}
+            >
+              Home
+            </Link>
+          </li>
+
           {/* Destinations dropdown */}
           <li
-            className="relative"
+            className="group relative"
             ref={destinationsRef}
+            onMouseEnter={() => {
+              setDestinationsOpen(true);
+              loadToursForNavigation();
+            }}
+            onMouseLeave={() => setDestinationsOpen(false)}
           >
             <button
               type="button"
               title="Destinations"
-              onClick={() => {
-                setDestinationsOpen((prev) => !prev);
+              onFocus={() => {
+                setDestinationsOpen(true);
                 loadToursForNavigation();
               }}
-              className={`pb-1 border-b-2 border-transparent text-gray-700 hover:text-orange-500 hover:border-orange-400 transition-colors flex flex-col items-center justify-center ${
-                isDestinationsActive ? "text-orange-600 border-orange-500" : ""
+              onClick={() => {
+                setDestinationsOpen((current) => !current);
+                loadToursForNavigation();
+              }}
+              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 transition-colors ${
+                isDestinationsActive
+                  ? "bg-orange-50 text-orange-700"
+                  : "text-gray-700 hover:bg-gray-100 hover:text-orange-600"
               }`}
             >
-              <MapPin className="w-5 h-5" />
-              <span className="sr-only">Destinations</span>
+              Destinations
+              <ChevronDown className={`h-4 w-4 transition-transform ${destinationsOpen ? "rotate-180" : ""}`} />
             </button>
 
-            {destinationsOpen && (
-              <div className="absolute right-0 mt-3 w-80 bg-white rounded-xl shadow-xl border border-gray-200 z-40">
-                <div className="px-4 py-3 border-b border-gray-100">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900">
+              <div
+                className={`absolute right-1/2 top-full z-40 w-[min(980px,calc(100vw-3rem))] translate-x-1/2 pt-3 text-left transition duration-150 group-hover:visible group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 ${
+                  destinationsOpen
+                    ? "visible pointer-events-auto translate-y-0 opacity-100"
+                    : "invisible pointer-events-none translate-y-2 opacity-0"
+                }`}
+              >
+                <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl">
+                <div className="mb-5 border-b border-gray-100 pb-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">
                     Destinations
-                  </h3>
-                  <p className="text-xs text-gray-500">
-                    Choose a tour within Switzerland
-                  </p>
+                    </h3>
+                    <p className="mt-1 text-sm font-normal text-gray-500">
+                      Choose a Switzerland experience
+                    </p>
+                  </div>
                 </div>
-                <div className="px-4 py-3">
-                  <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">
-                    Switzerland
-                  </h4>
-                  <ul className="max-h-64 overflow-y-auto space-y-1">
-                    {allTours.length > 0 ? (
-                      allTours.map((tour) => {
+
+                <div className="grid gap-8 lg:grid-cols-[1.3fr_1fr_1fr]">
+                  <div>
+                    <div className="mb-4 space-y-2">
+                      <Link
+                        to="/switzerland"
+                        onClick={() => setDestinationsOpen(false)}
+                        className="block rounded-lg px-3 py-2 text-base font-bold text-gray-900 transition hover:bg-orange-50 hover:text-orange-700"
+                      >
+                        Switzerland
+                      </Link>
+                      <Link
+                        to="/sirilanka"
+                        onClick={() => setDestinationsOpen(false)}
+                        className="block rounded-lg px-3 py-2 text-base font-bold text-gray-900 transition hover:bg-orange-50 hover:text-orange-700"
+                      >
+                        Sirilanka
+                      </Link>
+                    </div>
+                    <ul className="grid max-h-80 gap-x-6 gap-y-2 overflow-y-auto pr-2 md:grid-cols-2">
+                      {allTours.length > 0 ? (
+                        allTours.map((tour) => {
                         const id = getTourId(tour);
                         return (
                           <li key={id}>
@@ -329,66 +379,121 @@ const Navbar = () => {
                                 }
                                 setDestinationsOpen(false);
                               }}
-                              className="w-full text-left px-2 py-1.5 rounded text-sm text-gray-700 hover:text-orange-600 hover:bg-gray-50"
+                                className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold leading-snug text-gray-700 transition hover:bg-orange-50 hover:text-orange-700"
                             >
                               {tour.name}
                             </button>
                           </li>
                         );
                       })
-                    ) : (
-                      <li className="text-xs text-gray-500 px-2 py-2">
-                        No Switzerland tours available yet.
-                      </li>
-                    )}
-                  </ul>
+                      ) : null}
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 className="mb-3 text-base font-bold text-gray-900">Explore</h4>
+                    <ul className="space-y-2">
+                      {[
+                        { label: "All tours", to: "/tours" },
+                        { label: "Switzerland tours", to: "/switzerland" },
+                        { label: "Travel blogs", to: "/blogs" },
+                        { label: "Flexibility policy", to: "/flexibility" },
+                      ].map((item) => (
+                        <li key={item.to}>
+                          <Link
+                            to={item.to}
+                            onClick={() => setDestinationsOpen(false)}
+                            className="block rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-orange-50 hover:text-orange-700"
+                          >
+                            {item.label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 className="mb-3 text-base font-bold text-gray-900">Plan Your Trip</h4>
+                    <ul className="space-y-2">
+                      {[
+                        { label: "Contact us", to: "/contact" },
+                        { label: "About AJL Tours", to: "/about" },
+                        { label: "Favorites", to: "/favorites" },
+                        { label: "Booking history", to: "/history" },
+                      ].map((item) => (
+                        <li key={item.to}>
+                          <Link
+                            to={item.to}
+                            onClick={() => setDestinationsOpen(false)}
+                            className="block rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-orange-50 hover:text-orange-700"
+                          >
+                            {item.label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
                 </div>
               </div>
-            )}
           </li>
 
           <li>
             <Link
-              to="/"
-              title="Home"
-              className={`pb-1 border-b-2 border-transparent text-gray-600 hover:text-orange-500 hover:border-orange-400 transition-colors flex flex-col items-center justify-center ${
-                location.pathname === "/" ? "text-orange-600 border-orange-500" : ""
+              to="/tours"
+              className={`inline-flex items-center rounded-full px-4 py-2 transition-colors ${
+                location.pathname === "/tours"
+                  ? "bg-orange-50 text-orange-700"
+                  : "text-gray-700 hover:bg-gray-100 hover:text-orange-600"
               }`}
             >
-              <Home className="w-5 h-5" />
-              <span className="sr-only">Home</span>
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/about"
-              title="About Us"
-              className={`pb-1 border-b-2 border-transparent text-gray-600 hover:text-orange-500 hover:border-orange-400 transition-colors flex flex-col items-center justify-center ${
-                location.pathname === "/about" ? "text-orange-600 border-orange-500" : ""
-              }`}
-            >
-              <Info className="w-5 h-5" />
-              <span className="sr-only">About Us</span>
+              Tours
             </Link>
           </li>
           <li>
             <Link
               to="/blogs"
-              title="Blogs"
-              className={`pb-1 border-b-2 border-transparent text-gray-600 hover:text-orange-500 hover:border-orange-400 transition-colors flex flex-col items-center justify-center ${
-                location.pathname === "/blogs" ? "text-orange-600 border-orange-500" : ""
+              className={`inline-flex items-center rounded-full px-4 py-2 transition-colors ${
+                location.pathname.startsWith("/blogs")
+                  ? "bg-orange-50 text-orange-700"
+                  : "text-gray-700 hover:bg-gray-100 hover:text-orange-600"
               }`}
             >
-              <BookOpen className="w-5 h-5" />
-              <span className="sr-only">Blogs</span>
+              Blogs
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/about"
+              className={`inline-flex items-center rounded-full px-4 py-2 transition-colors ${
+                location.pathname === "/about"
+                  ? "bg-orange-50 text-orange-700"
+                  : "text-gray-700 hover:bg-gray-100 hover:text-orange-600"
+              }`}
+            >
+              About
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/contact"
+              className={`inline-flex items-center rounded-full px-4 py-2 transition-colors ${
+                location.pathname === "/contact"
+                  ? "bg-orange-50 text-orange-700"
+                  : "text-gray-700 hover:bg-gray-100 hover:text-orange-600"
+              }`}
+            >
+              Contact
             </Link>
           </li>
           <li>
             <Link
               to="/favorites"
               title="Favorites"
-              className={`pb-1 border-b-2 border-transparent text-gray-600 hover:text-orange-500 hover:border-orange-400 transition-colors flex flex-col items-center justify-center ${
-                location.pathname === "/favorites" ? "text-orange-600 border-orange-500" : ""
+              className={`inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
+                location.pathname === "/favorites"
+                  ? "bg-orange-50 text-orange-700"
+                  : "text-gray-600 hover:bg-gray-100 hover:text-orange-600"
               }`}
             >
               <Heart className="w-5 h-5" />
@@ -399,24 +504,14 @@ const Navbar = () => {
             <Link
               to="/checkout"
               title="Checkout"
-              className={`pb-1 border-b-2 border-transparent text-gray-600 hover:text-orange-500 hover:border-orange-400 transition-colors flex flex-col items-center justify-center ${
-                location.pathname === "/checkout" ? "text-orange-600 border-orange-500" : ""
+              className={`inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
+                location.pathname === "/checkout"
+                  ? "bg-orange-50 text-orange-700"
+                  : "text-gray-600 hover:bg-gray-100 hover:text-orange-600"
               }`}
             >
               <ShoppingCart className="w-5 h-5" />
               <span className="sr-only">Checkout</span>
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/history"
-              title="History"
-              className={`pb-1 border-b-2 border-transparent text-gray-600 hover:text-orange-500 hover:border-orange-400 transition-colors flex flex-col items-center justify-center ${
-                location.pathname === "/history" ? "text-orange-600 border-orange-500" : ""
-              }`}
-            >
-              <HistoryIcon className="w-5 h-5" />
-              <span className="sr-only">History</span>
             </Link>
           </li>
         </ul>

@@ -21,6 +21,7 @@ const Booking = lazy(() => import("./pages/Booking"));
 const Invoice = lazy(() => import("./pages/Invoice"));
 const About = lazy(() => import("./pages/About"));
 const SwitzerlandLocations = lazy(() => import("./pages/SwitzerlandLocations"));
+const SirilankaLocations = lazy(() => import("./pages/SirilankaLocations"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminUsers = lazy(() => import("./pages/AdminUsers"));
@@ -139,6 +140,7 @@ const App = () => {
               <Route path="/invoice" element={<Invoice />} />
               <Route path="/locations" element={<Navigate to="/switzerland" replace />} />
               <Route path="/switzerland" element={<SwitzerlandLocations />} />
+              <Route path="/sirilanka" element={<SirilankaLocations />} />
               
               <Route 
                 path="/switzerland/:id/checkout-sw" 
