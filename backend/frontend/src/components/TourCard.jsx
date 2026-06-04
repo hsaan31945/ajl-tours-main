@@ -76,6 +76,8 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
     (Array.isArray(tour.images) && tour.images.find((img) => img && String(img).trim())) ||
     tour.photo ||
     null;
+  const ratingValue = Number(tour.rating || tour.avgRating || 0);
+  const reviewsValue = Number(tour.reviews || 0);
 
   useEffect(() => {
     setImageFailed(false);
@@ -155,14 +157,14 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
         </div>
 
         {/* Rating (If available) */}
-        {(tour.rating || tour.avgRating) && (
+        {ratingValue > 0 && (
           <div className="flex items-center mb-4">
             <div className="flex items-center text-yellow-500">
               <Star className="w-4 h-4 fill-current" />
-              <span className="ml-1 font-bold text-gray-900">{tour.rating || tour.avgRating}</span>
+              <span className="ml-1 font-bold text-gray-900">{ratingValue}</span>
             </div>
-            {tour.reviews && (
-              <span className="ml-2 text-gray-500 text-sm">({tour.reviews} reviews)</span>
+            {reviewsValue > 0 && (
+              <span className="ml-2 text-gray-500 text-sm">({reviewsValue} reviews)</span>
             )}
           </div>
         )}

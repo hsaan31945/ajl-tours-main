@@ -299,23 +299,14 @@ const Navbar = () => {
           <li
             className="group relative"
             ref={destinationsRef}
-            onMouseEnter={() => {
-              setDestinationsOpen(true);
-              loadToursForNavigation();
-            }}
+            onMouseEnter={() => setDestinationsOpen(true)}
             onMouseLeave={() => setDestinationsOpen(false)}
           >
             <button
               type="button"
               title="Destinations"
-              onFocus={() => {
-                setDestinationsOpen(true);
-                loadToursForNavigation();
-              }}
-              onClick={() => {
-                setDestinationsOpen((current) => !current);
-                loadToursForNavigation();
-              }}
+              onFocus={() => setDestinationsOpen(true)}
+              onClick={() => setDestinationsOpen((current) => !current)}
               className={`inline-flex items-center gap-2 rounded-full px-4 py-2 transition-colors ${
                 isDestinationsActive
                   ? "bg-orange-50 text-orange-700"
@@ -327,113 +318,29 @@ const Navbar = () => {
             </button>
 
               <div
-                className={`absolute right-1/2 top-full z-40 w-[min(980px,calc(100vw-3rem))] translate-x-1/2 pt-3 text-left transition duration-150 group-hover:visible group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 ${
+                className={`absolute left-0 top-full z-40 w-64 pt-3 text-left transition duration-150 group-hover:visible group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 ${
                   destinationsOpen
                     ? "visible pointer-events-auto translate-y-0 opacity-100"
                     : "invisible pointer-events-none translate-y-2 opacity-0"
                 }`}
               >
-                <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl">
-                <div className="mb-5 border-b border-gray-100 pb-4">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900">
-                    Destinations
-                    </h3>
-                    <p className="mt-1 text-sm font-normal text-gray-500">
-                      Choose a Switzerland experience
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid gap-8 lg:grid-cols-[1.3fr_1fr_1fr]">
-                  <div>
-                    <div className="mb-4 space-y-2">
-                      <Link
-                        to="/switzerland"
-                        onClick={() => setDestinationsOpen(false)}
-                        className="block rounded-lg px-3 py-2 text-base font-bold text-gray-900 transition hover:bg-orange-50 hover:text-orange-700"
-                      >
-                        Switzerland
-                      </Link>
-                      <Link
-                        to="/sirilanka"
-                        onClick={() => setDestinationsOpen(false)}
-                        className="block rounded-lg px-3 py-2 text-base font-bold text-gray-900 transition hover:bg-orange-50 hover:text-orange-700"
-                      >
-                        Sirilanka
-                      </Link>
-                    </div>
-                    <ul className="grid max-h-80 gap-x-6 gap-y-2 overflow-y-auto pr-2 md:grid-cols-2">
-                      {allTours.length > 0 ? (
-                        allTours.map((tour) => {
-                        const id = getTourId(tour);
-                        return (
-                          <li key={id}>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (id) {
-                                  navigate(`/switzerland/${id}/checkout-sw`, { state: { tour } });
-                                } else {
-                                  navigate("/switzerland");
-                                }
-                                setDestinationsOpen(false);
-                              }}
-                                className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold leading-snug text-gray-700 transition hover:bg-orange-50 hover:text-orange-700"
-                            >
-                              {tour.name}
-                            </button>
-                          </li>
-                        );
-                      })
-                      ) : null}
-                    </ul>
-                  </div>
-
-                  <div>
-                    <h4 className="mb-3 text-base font-bold text-gray-900">Explore</h4>
-                    <ul className="space-y-2">
-                      {[
-                        { label: "All tours", to: "/tours" },
-                        { label: "Switzerland tours", to: "/switzerland" },
-                        { label: "Travel blogs", to: "/blogs" },
-                        { label: "Flexibility policy", to: "/flexibility" },
-                      ].map((item) => (
-                        <li key={item.to}>
-                          <Link
-                            to={item.to}
-                            onClick={() => setDestinationsOpen(false)}
-                            className="block rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-orange-50 hover:text-orange-700"
-                          >
-                            {item.label}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div>
-                    <h4 className="mb-3 text-base font-bold text-gray-900">Plan Your Trip</h4>
-                    <ul className="space-y-2">
-                      {[
-                        { label: "Contact us", to: "/contact" },
-                        { label: "About AJL Tours", to: "/about" },
-                        { label: "Favorites", to: "/favorites" },
-                        { label: "Booking history", to: "/history" },
-                      ].map((item) => (
-                        <li key={item.to}>
-                          <Link
-                            to={item.to}
-                            onClick={() => setDestinationsOpen(false)}
-                            className="block rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-orange-50 hover:text-orange-700"
-                          >
-                            {item.label}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
+                <div className="rounded-xl border border-gray-200 bg-white p-2 shadow-xl">
+                  <Link
+                    to="/switzerland"
+                    onClick={() => setDestinationsOpen(false)}
+                    className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-bold text-gray-900 transition hover:bg-orange-50 hover:text-orange-700"
+                  >
+                    <MapPin className="h-4 w-4 text-orange-600" />
+                    Switzerland
+                  </Link>
+                  <Link
+                    to="/sirilanka"
+                    onClick={() => setDestinationsOpen(false)}
+                    className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-bold text-gray-900 transition hover:bg-orange-50 hover:text-orange-700"
+                  >
+                    <MapPin className="h-4 w-4 text-orange-600" />
+                    Sirilanka
+                  </Link>
                 </div>
               </div>
           </li>
