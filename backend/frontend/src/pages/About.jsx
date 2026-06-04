@@ -178,7 +178,7 @@ const About = () => {
               },
               {
                 img: "https://img.freepik.com/free-photo/cheerful-young-tourist-student-smiling-camera-outdoor_1150-18412.jpg?w=1380&t=st=1689822402~exp=1689823002~hmac=6177bbd4170abf3788d0bc6fc9ef62ff1b71c5791ec59001c0d50fa04a4d3e78",
-                name: "Zafar",
+                name: "Mirza A",
                 title: "Swiss Tour Specialist",
               },
             ].map((item, index) => (

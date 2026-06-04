@@ -1,7 +1,7 @@
 import React from "react";
 import { FaWhatsapp } from "react-icons/fa";
 
-const WHATSAPP_URL = "https://wa.me/41763913002";
+const WHATSAPP_URL = "https://wa.me/41782078902";
 
 function FloatingWhatsApp() {
   return (
