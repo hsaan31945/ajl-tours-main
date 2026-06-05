@@ -118,6 +118,9 @@ class TourController {
       if (error.message === 'Tour not found') {
         return next(new AppError('Tour not found', 404));
       }
+      if (error.message.includes('Division not found')) {
+        return next(new AppError('Division not found. Please create a division first.', 404));
+      }
       next(error);
     }
   }

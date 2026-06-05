@@ -65,6 +65,20 @@ const cleanTourName = (value) => (
     .trim()
 );
 
+const normalizeDivisionKey = (value) => (
+  String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
+);
+
+const getDivisionInputValue = (value) => {
+  if (!value) return '';
+  if (typeof value === 'object') {
+    return value._id || value.id || value.name || '';
+  }
+  return value;
+};
+
 const normalizeItinerary = (items) => (
   Array.isArray(items)
     ? items
@@ -159,6 +173,30 @@ class TourService {
       });
     }
     return division;
+  }
+
+  async resolveDivision(divisionInput) {
+    const value = getDivisionInputValue(divisionInput);
+    if (!value) return null;
+
+    if (mongoose.Types.ObjectId.isValid(String(value))) {
+      return Division.findOne({
+        _id: value,
+        isActive: { $ne: false },
+      });
+    }
+
+    const requestedKey = normalizeDivisionKey(value);
+    if (!requestedKey) return null;
+
+    const divisions = await Division.find({ isActive: { $ne: false } })
+      .select('_id name description')
+      .lean();
+
+    const matched = divisions.find((division) => normalizeDivisionKey(division.name) === requestedKey);
+    if (!matched) return null;
+
+    return Division.findById(matched._id);
   }
 
   normalizeTourUpdatePayload(updateData = {}, fallbackId = null, withDefaults = false) {
@@ -318,13 +356,7 @@ class TourService {
     const match = { isActive: { $ne: false } };
 
     if (division) {
-      const escaped = String(division).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const divisionDoc = await Division.findOne({
-        name: { $regex: new RegExp(escaped, 'i') },
-        isActive: { $ne: false },
-      })
-        .select('_id')
-        .lean();
+      const divisionDoc = await this.resolveDivision(division);
 
       if (divisionDoc) {
         match.division = divisionDoc._id;
@@ -595,12 +627,12 @@ class TourService {
    */
   async createTour(tourData) {
     try {
-      let division = null;
-      if (tourData.division && mongoose.Types.ObjectId.isValid(String(tourData.division))) {
-        division = await Division.findById(tourData.division);
-      }
+      let division = await this.resolveDivision(tourData.division);
 
       if (!division) {
+        if (tourData.division) {
+          throw new Error('Division not found. Please create a division first.');
+        }
         division = await this.getSwitzerlandDivision();
       }
 
@@ -713,6 +745,13 @@ class TourService {
       }
 
       const payload = this.normalizeTourUpdatePayload(updateData, tourId);
+      if (payload.division) {
+        const division = await this.resolveDivision(payload.division);
+        if (!division) {
+          throw new Error('Division not found. Please create a division first.');
+        }
+        payload.division = division._id;
+      }
       if (payload.metadata !== undefined) {
         payload.metadata = {
           ...(existingTour.metadata || {}),
@@ -741,6 +780,13 @@ class TourService {
     }
 
     const payload = this.normalizeTourUpdatePayload(updateData);
+    if (payload.division) {
+      const division = await this.resolveDivision(payload.division);
+      if (!division) {
+        throw new Error('Division not found. Please create a division first.');
+      }
+      payload.division = division._id;
+    }
     if (payload.metadata !== undefined) {
       payload.metadata = {
         ...(existingTour.metadata || {}),
