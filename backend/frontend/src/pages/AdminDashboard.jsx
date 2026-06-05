@@ -85,7 +85,7 @@ const AdminDashboard = () => {
 
       const divisionId = division?._id || division?.id;
       const params = divisionId ? `?division=${encodeURIComponent(divisionId)}` : "";
-      navigate(`/tour-wizard${params}`);
+      navigate(`/admin/tour-wizard${params}`);
     } catch (error) {
       alert(`Could not prepare ${location.name}. Please add it from Manage Locations first.\n\n${error.message}`);
     } finally {

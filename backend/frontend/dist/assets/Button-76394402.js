@@ -1,1 +1,0 @@
-import{j as e}from"./index-b4f43cd2.js";import"./vendor-f1f6ceaa.js";const m=({children:s,className:t="",...o})=>e.jsxDEV("button",{className:`button-31 ${t}`.trim(),...o,children:s},void 0,!1,{fileName:"/Users/hassaanahmed/WORK/ajl-tours-main/backend/frontend/src/components/Button.jsx",lineNumber:4,columnNumber:3},globalThis);export{m as B};
