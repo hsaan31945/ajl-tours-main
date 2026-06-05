@@ -26,12 +26,26 @@ export const getDatePrice = (tour, selectedDate) => {
 
 export const roundMoney = (value) => Math.round((Number(value) || 0) * 100) / 100;
 
+export const getRawDiscountPrice = (tour) => (
+  tour?.discountPrice ??
+  tour?.discountedPrice ??
+  tour?.salePrice ??
+  tour?.metadata?.discountPrice ??
+  tour?.metadata?.discountedPrice ??
+  tour?.metadata?.salePrice ??
+  tour?.metadata?.discount?.price ??
+  null
+);
+
 export const getDiscountPrice = (tour, originalPrice = tour?.price) => {
-  if (!tour?.discountEnabled) return null;
   const original = Number(originalPrice);
-  const discountPrice = Number(tour?.discountPrice);
+  const discountPrice = Number(getRawDiscountPrice(tour));
   if (!Number.isFinite(original) || !Number.isFinite(discountPrice)) return null;
-  return discountPrice >= 0 && discountPrice < original ? roundMoney(discountPrice) : null;
+  if (discountPrice < 0 || discountPrice >= original) return null;
+
+  // Older tour saves may have a valid discountPrice without discountEnabled set.
+  // Treat the valid lower price as the source of truth for customer pricing.
+  return roundMoney(discountPrice);
 };
 
 export const getEffectiveTourPrice = (tour, fallbackPrice = 0) => {

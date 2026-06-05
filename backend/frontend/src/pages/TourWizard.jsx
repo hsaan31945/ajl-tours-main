@@ -720,7 +720,11 @@ const TourWizard = () => {
                 <input
                   type="checkbox"
                   checked={tourData.discountEnabled}
-                  onChange={(e) => setTourData(prev => ({ ...prev, discountEnabled: e.target.checked }))}
+                  onChange={(e) => setTourData(prev => ({
+                    ...prev,
+                    discountEnabled: e.target.checked,
+                    discountPrice: e.target.checked ? prev.discountPrice : ""
+                  }))}
                   className="h-5 w-5 accent-orange-600"
                 />
               </label>
@@ -731,10 +735,13 @@ const TourWizard = () => {
                 type="number"
                 min="0"
                 value={tourData.discountPrice}
-                onChange={(e) => setTourData(prev => ({ ...prev, discountPrice: e.target.value }))}
+                onChange={(e) => setTourData(prev => ({
+                  ...prev,
+                  discountPrice: e.target.value,
+                  discountEnabled: e.target.value !== ""
+                }))}
                 placeholder="Leave blank for no discount"
-                disabled={!tourData.discountEnabled}
-                className="w-full border rounded-lg px-4 py-2 disabled:bg-gray-100 disabled:text-gray-400"
+                className="w-full border rounded-lg px-4 py-2"
               />
             </div>
             <div>

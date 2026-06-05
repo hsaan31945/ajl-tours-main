@@ -46,6 +46,18 @@ const normalizeTour = (tour) => {
   const divisionId = division?._id?.toString?.() || (typeof division === 'string' ? division : null);
   const divisionName = typeof division === 'object' ? division?.name : null;
   const datePrices = normalizeDatePrices(tour.datePrices);
+  const rawDiscountPrice =
+    tour.discountPrice ??
+    tour.discountedPrice ??
+    tour.salePrice ??
+    tour.metadata?.discountPrice ??
+    tour.metadata?.discountedPrice ??
+    tour.metadata?.salePrice ??
+    tour.metadata?.discount?.price ??
+    null;
+  const normalizedDiscountPrice = Number.isFinite(Number(rawDiscountPrice)) && Number(rawDiscountPrice) >= 0
+    ? Number(rawDiscountPrice)
+    : null;
   const id = tour._id?.toString?.() || tour._id;
   const normalizedReviews = Array.isArray(tour.reviews)
     ? tour.reviews
@@ -77,8 +89,8 @@ const normalizeTour = (tour) => {
     bookingSummary: tour.bookingSummary || '',
     overview: tour.overview || '',
     price: tour.price,
-    discountEnabled: Boolean(tour.discountEnabled),
-    discountPrice: Number.isFinite(Number(tour.discountPrice)) ? Number(tour.discountPrice) : null,
+    discountEnabled: Boolean(tour.discountEnabled || normalizedDiscountPrice !== null),
+    discountPrice: normalizedDiscountPrice,
     currency: tour.currency || 'CHF',
     images: tour.images || [],
     startLocation: tour.startLocation,

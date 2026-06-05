@@ -269,7 +269,11 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
                 <input
                   type="checkbox"
                   checked={formData.discountEnabled}
-                  onChange={(e) => handleInputChange('discountEnabled', e.target.checked)}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    discountEnabled: e.target.checked,
+                    discountPrice: e.target.checked ? prev.discountPrice : ''
+                  }))}
                   className="h-5 w-5 accent-orange-600"
                 />
               </label>
@@ -280,9 +284,12 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
                 type="number"
                 min="0"
                 value={formData.discountPrice}
-                onChange={(e) => handleInputChange('discountPrice', e.target.value)}
-                disabled={!formData.discountEnabled}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
+                onChange={(e) => setFormData(prev => ({
+                  ...prev,
+                  discountPrice: e.target.value,
+                  discountEnabled: e.target.value !== ''
+                }))}
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Leave blank for no discount"
               />
             </div>
@@ -627,9 +634,12 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
               type="number"
               min="0"
               value={formData.discountPrice}
-              onChange={(e) => handleInputChange('discountPrice', e.target.value)}
-              disabled={!formData.discountEnabled}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
+              onChange={(e) => setFormData(prev => ({
+                ...prev,
+                discountPrice: e.target.value,
+                discountEnabled: e.target.value !== ''
+              }))}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Leave blank for no discount"
             />
             <label className="flex items-center justify-between gap-4 border rounded-lg px-3 py-2 bg-white cursor-pointer">
@@ -637,7 +647,11 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
               <input
                 type="checkbox"
                 checked={formData.discountEnabled}
-                onChange={(e) => handleInputChange('discountEnabled', e.target.checked)}
+                onChange={(e) => setFormData(prev => ({
+                  ...prev,
+                  discountEnabled: e.target.checked,
+                  discountPrice: e.target.checked ? prev.discountPrice : ''
+                }))}
                 className="h-5 w-5 accent-orange-600"
               />
             </label>

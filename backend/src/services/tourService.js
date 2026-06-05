@@ -148,6 +148,22 @@ const applyReviewSummary = (tour = {}) => {
   return tour;
 };
 
+const getRawDiscountPrice = (tour = {}) => (
+  tour.discountPrice ??
+  tour.discountedPrice ??
+  tour.salePrice ??
+  tour.metadata?.discountPrice ??
+  tour.metadata?.discountedPrice ??
+  tour.metadata?.salePrice ??
+  tour.metadata?.discount?.price ??
+  null
+);
+
+const getNormalizedDiscountPrice = (tour = {}) => {
+  const discountPrice = Number(getRawDiscountPrice(tour));
+  return Number.isFinite(discountPrice) && discountPrice >= 0 ? discountPrice : null;
+};
+
 class TourService {
   /** First usable tour image for card views. */
   pickListImage(images) {
@@ -221,6 +237,9 @@ class TourService {
         const discountPrice = Number(payload.discountPrice);
         payload.discountPrice = Number.isFinite(discountPrice) && discountPrice >= 0 ? discountPrice : null;
       }
+    }
+    if (payload.discountPrice !== undefined && payload.discountEnabled === undefined) {
+      payload.discountEnabled = payload.discountPrice !== null;
     }
     if (payload.currency !== undefined) payload.currency = String(payload.currency || 'CHF').trim().toUpperCase() || 'CHF';
     if (payload.minTicketsPerBooking !== undefined) {
@@ -311,8 +330,8 @@ class TourService {
         description,
         bookingSummary: tour.bookingSummary || '',
         price: Number(tour.price) || 0,
-      discountEnabled: Boolean(tour.discountEnabled),
-      discountPrice: Number.isFinite(Number(tour.discountPrice)) ? Number(tour.discountPrice) : null,
+      discountEnabled: Boolean(tour.discountEnabled || getNormalizedDiscountPrice(tour) !== null),
+      discountPrice: getNormalizedDiscountPrice(tour),
       currency: tour.currency || 'CHF',
       images: thumbnail ? [thumbnail] : [],
       startLocation: tour.startLocation,
@@ -342,8 +361,8 @@ class TourService {
       name: tour.name,
       startLocation: tour.startLocation,
       price: Number(tour.price) || 0,
-      discountEnabled: Boolean(tour.discountEnabled),
-      discountPrice: Number.isFinite(Number(tour.discountPrice)) ? Number(tour.discountPrice) : null,
+      discountEnabled: Boolean(tour.discountEnabled || getNormalizedDiscountPrice(tour) !== null),
+      discountPrice: getNormalizedDiscountPrice(tour),
       isActive: tour.isActive !== false,
     };
   }
@@ -683,7 +702,7 @@ class TourService {
         overview: optionalText(tourData.overview) || null,
         bookingSummary: optionalText(tourData.bookingSummary)?.slice(0, 400) || null,
         price: Number(tourData.price),
-        discountEnabled: Boolean(tourData.discountEnabled),
+        discountEnabled: Boolean(tourData.discountEnabled || optionalNumber(tourData.discountPrice) !== undefined),
         discountPrice: optionalNumber(tourData.discountPrice),
         startLocation: String(tourData.startLocation).trim(),
         endLocation: String(tourData.endLocation).trim(),

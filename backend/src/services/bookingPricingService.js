@@ -44,9 +44,19 @@ const getDatePrice = (tour, selectedDate) => {
   return Number.isFinite(number) && number >= 0 ? number : null;
 };
 
+const getRawDiscountPrice = (tour) => (
+  tour?.discountPrice ??
+  tour?.discountedPrice ??
+  tour?.salePrice ??
+  tour?.metadata?.discountPrice ??
+  tour?.metadata?.discountedPrice ??
+  tour?.metadata?.salePrice ??
+  tour?.metadata?.discount?.price ??
+  null
+);
+
 const getDiscountPrice = (tour, originalPrice) => {
-  if (!tour?.discountEnabled) return null;
-  const discountPrice = Number(tour.discountPrice);
+  const discountPrice = Number(getRawDiscountPrice(tour));
   const original = Number(originalPrice);
   if (!Number.isFinite(discountPrice) || !Number.isFinite(original)) return null;
   return discountPrice >= 0 && discountPrice < original ? toMoney(discountPrice) : null;

@@ -21,7 +21,14 @@ export const mapTourResponse = (tour) => {
     // Pricing
     price: tour.price || 0,
     discountEnabled: Boolean(tour.discountEnabled),
-    discountPrice: tour.discountPrice ?? null,
+    discountPrice: tour.discountPrice ??
+      tour.discountedPrice ??
+      tour.salePrice ??
+      tour.metadata?.discountPrice ??
+      tour.metadata?.discountedPrice ??
+      tour.metadata?.salePrice ??
+      tour.metadata?.discount?.price ??
+      null,
     currency: tour.currency || 'CHF',
     
     // Duration & Details
