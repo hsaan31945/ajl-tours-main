@@ -59,7 +59,8 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
     { id: 'highlights', title: 'Highlights' },
     { id: 'inclusion', title: 'Inclusions & Exclusions' },
     { id: 'itinerary', title: 'Itinerary' },
-    { id: 'pricing', title: 'Pricing' }
+    { id: 'pricing', title: 'Pricing' },
+    { id: 'group-discount', title: 'Group Discount' }
   ];
 
   useEffect(() => {
@@ -781,6 +782,56 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
                 {JSON.stringify(formData.datePrices, null, 2)}
               </pre>
             </div>
+          </div>
+        );
+
+      case 8: // Group Discount
+        return (
+          <div className="space-y-4">
+            <label className="block text-sm font-medium mb-2">Group Discount Settings</label>
+            <label className="flex items-center justify-between gap-4 border rounded-lg px-3 py-2 bg-white cursor-pointer">
+              <span>
+                <span className="block font-semibold text-gray-900">
+                  {formData.groupDiscountEnabled ? 'Group discount active' : 'No group discount'}
+                </span>
+                <span className="block text-xs text-gray-500">
+                  Applies only for 4 or more travelers. Existing discount stays separate.
+                </span>
+              </span>
+              <input
+                type="checkbox"
+                checked={formData.groupDiscountEnabled}
+                onChange={(e) => setFormData(prev => ({
+                  ...prev,
+                  groupDiscountEnabled: e.target.checked,
+                  groupDiscount4: e.target.checked ? prev.groupDiscount4 : '',
+                  groupDiscount5: e.target.checked ? prev.groupDiscount5 : '',
+                  groupDiscount6Plus: e.target.checked ? prev.groupDiscount6Plus : ''
+                }))}
+                className="h-5 w-5 accent-orange-600"
+              />
+            </label>
+            {formData.groupDiscountEnabled && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {[
+                  ['groupDiscount4', '4 Person Discount'],
+                  ['groupDiscount5', '5 Person Discount'],
+                  ['groupDiscount6Plus', '6+ Person Discount'],
+                ].map(([field, label]) => (
+                  <div key={field}>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">{label}</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData[field]}
+                      onChange={(e) => handleInputChange(field, e.target.value)}
+                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="0"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         );
 

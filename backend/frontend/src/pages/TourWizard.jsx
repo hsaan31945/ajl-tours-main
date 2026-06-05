@@ -762,68 +762,6 @@ const TourWizard = () => {
                 className="w-full border rounded-lg px-4 py-2"
               />
             </div>
-            <div className="md:col-span-2 border rounded-lg p-4 bg-gray-50">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Group Discount Settings</label>
-              <label className="flex items-center justify-between gap-4 border rounded-lg px-4 py-2 bg-white cursor-pointer">
-                <span>
-                  <span className="block font-semibold text-gray-900">
-                    {tourData.groupDiscountEnabled ? "Group discount active" : "No group discount"}
-                  </span>
-                  <span className="block text-xs text-gray-500">
-                    Applies only when travelers exceed 3
-                  </span>
-                </span>
-                <input
-                  type="checkbox"
-                  checked={tourData.groupDiscountEnabled}
-                  onChange={(e) => setTourData(prev => ({
-                    ...prev,
-                    groupDiscountEnabled: e.target.checked,
-                    groupDiscount4: e.target.checked ? prev.groupDiscount4 : "",
-                    groupDiscount5: e.target.checked ? prev.groupDiscount5 : "",
-                    groupDiscount6Plus: e.target.checked ? prev.groupDiscount6Plus : ""
-                  }))}
-                  className="h-5 w-5 accent-orange-600"
-                />
-              </label>
-              {tourData.groupDiscountEnabled && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">4 Person Discount</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={tourData.groupDiscount4}
-                      onChange={(e) => setTourData(prev => ({ ...prev, groupDiscount4: e.target.value }))}
-                      placeholder="0"
-                      className="w-full border rounded-lg px-4 py-2"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">5 Person Discount</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={tourData.groupDiscount5}
-                      onChange={(e) => setTourData(prev => ({ ...prev, groupDiscount5: e.target.value }))}
-                      placeholder="0"
-                      className="w-full border rounded-lg px-4 py-2"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">6+ Person Discount</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={tourData.groupDiscount6Plus}
-                      onChange={(e) => setTourData(prev => ({ ...prev, groupDiscount6Plus: e.target.value }))}
-                      placeholder="0"
-                      className="w-full border rounded-lg px-4 py-2"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Public Status</label>
               <label className="flex items-center justify-between gap-4 border rounded-lg px-4 py-2 bg-white cursor-pointer">
@@ -892,6 +830,70 @@ const TourWizard = () => {
               placeholder="Enter tour description..."
             />
           </div>
+        </div>
+
+        {/* Group Discount Section */}
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-8 border-l-4 border-orange-500">
+          <h2 className="text-2xl font-bold mb-4">Group Discount Settings</h2>
+          <label className="flex items-center justify-between gap-4 border rounded-lg px-4 py-3 bg-white cursor-pointer">
+            <span>
+              <span className="block font-semibold text-gray-900">
+                {tourData.groupDiscountEnabled ? "Group discount active" : "No group discount"}
+              </span>
+              <span className="block text-xs text-gray-500">
+                Applies only for 4 or more travelers. Existing discount stays separate.
+              </span>
+            </span>
+            <input
+              type="checkbox"
+              checked={tourData.groupDiscountEnabled}
+              onChange={(e) => setTourData(prev => ({
+                ...prev,
+                groupDiscountEnabled: e.target.checked,
+                groupDiscount4: e.target.checked ? prev.groupDiscount4 : "",
+                groupDiscount5: e.target.checked ? prev.groupDiscount5 : "",
+                groupDiscount6Plus: e.target.checked ? prev.groupDiscount6Plus : ""
+              }))}
+              className="h-5 w-5 accent-orange-600"
+            />
+          </label>
+          {tourData.groupDiscountEnabled && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">4 Person Discount</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={tourData.groupDiscount4}
+                  onChange={(e) => setTourData(prev => ({ ...prev, groupDiscount4: e.target.value }))}
+                  placeholder="0"
+                  className="w-full border rounded-lg px-4 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">5 Person Discount</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={tourData.groupDiscount5}
+                  onChange={(e) => setTourData(prev => ({ ...prev, groupDiscount5: e.target.value }))}
+                  placeholder="0"
+                  className="w-full border rounded-lg px-4 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">6+ Person Discount</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={tourData.groupDiscount6Plus}
+                  onChange={(e) => setTourData(prev => ({ ...prev, groupDiscount6Plus: e.target.value }))}
+                  placeholder="0"
+                  className="w-full border rounded-lg px-4 py-2"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* About This Activity Section */}

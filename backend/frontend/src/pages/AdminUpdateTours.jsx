@@ -153,6 +153,7 @@ const AdminUpdateTours = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tour Name</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Destination</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Group Discount</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
@@ -179,6 +180,18 @@ const AdminUpdateTours = () => {
                             <>CHF {tour.price || 0}</>
                           )}
                         </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {tour.groupDiscountEnabled ? (
+                          <div className="text-xs text-green-700">
+                            <div className="font-semibold">Enabled</div>
+                            <div>4: CHF {tour.groupDiscount4 || 0}</div>
+                            <div>5: CHF {tour.groupDiscount5 || 0}</div>
+                            <div>6+: CHF {tour.groupDiscount6Plus || 0}</div>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-500">Off</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
