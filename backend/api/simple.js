@@ -55,9 +55,11 @@ const normalizeTour = (tour) => {
     tour.metadata?.salePrice ??
     tour.metadata?.discount?.price ??
     null;
-  const normalizedDiscountPrice = Number.isFinite(Number(rawDiscountPrice)) && Number(rawDiscountPrice) >= 0
-    ? Number(rawDiscountPrice)
-    : null;
+  const normalizedDiscountPrice =
+    rawDiscountPrice !== null && rawDiscountPrice !== undefined && rawDiscountPrice !== '' &&
+    Number.isFinite(Number(rawDiscountPrice)) && Number(rawDiscountPrice) >= 0
+      ? Number(rawDiscountPrice)
+      : null;
   const id = tour._id?.toString?.() || tour._id;
   const normalizedReviews = Array.isArray(tour.reviews)
     ? tour.reviews

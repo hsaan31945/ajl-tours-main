@@ -38,8 +38,11 @@ export const getRawDiscountPrice = (tour) => (
 );
 
 export const getDiscountPrice = (tour, originalPrice = tour?.price) => {
+  const rawDiscountPrice = getRawDiscountPrice(tour);
+  if (rawDiscountPrice === null || rawDiscountPrice === undefined || rawDiscountPrice === "") return null;
+
   const original = Number(originalPrice);
-  const discountPrice = Number(getRawDiscountPrice(tour));
+  const discountPrice = Number(rawDiscountPrice);
   if (!Number.isFinite(original) || !Number.isFinite(discountPrice)) return null;
   if (discountPrice < 0 || discountPrice >= original) return null;
 

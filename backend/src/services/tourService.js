@@ -160,7 +160,10 @@ const getRawDiscountPrice = (tour = {}) => (
 );
 
 const getNormalizedDiscountPrice = (tour = {}) => {
-  const discountPrice = Number(getRawDiscountPrice(tour));
+  const rawDiscountPrice = getRawDiscountPrice(tour);
+  if (rawDiscountPrice === null || rawDiscountPrice === undefined || rawDiscountPrice === '') return null;
+
+  const discountPrice = Number(rawDiscountPrice);
   return Number.isFinite(discountPrice) && discountPrice >= 0 ? discountPrice : null;
 };
 

@@ -56,7 +56,10 @@ const getRawDiscountPrice = (tour) => (
 );
 
 const getDiscountPrice = (tour, originalPrice) => {
-  const discountPrice = Number(getRawDiscountPrice(tour));
+  const rawDiscountPrice = getRawDiscountPrice(tour);
+  if (rawDiscountPrice === null || rawDiscountPrice === undefined || rawDiscountPrice === '') return null;
+
+  const discountPrice = Number(rawDiscountPrice);
   const original = Number(originalPrice);
   if (!Number.isFinite(discountPrice) || !Number.isFinite(original)) return null;
   return discountPrice >= 0 && discountPrice < original ? toMoney(discountPrice) : null;
