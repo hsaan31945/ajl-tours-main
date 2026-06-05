@@ -43,6 +43,7 @@ const TopDealsSection = () => {
     setError("");
     try {
       const allTours = await fetchToursList({
+        division: 'switzerland',
         limit: 12,
         sort: 'popular',
       });
@@ -63,7 +64,7 @@ const TopDealsSection = () => {
             rating: tour.rating,
             reviews: tour.reviews,
             address: tour.startLocation || tour.address,
-            destination: tour.destination || 'switzerland',
+            destination: tour.divisionName || tour.destination || 'switzerland',
             salesCount: 0 // Default to 0, use reviews/rating for sorting
           };
         });

@@ -25,7 +25,7 @@ const ExploreTours = () => {
 
   // Load tours from MongoDB only. No localStorage or hardcoded fallbacks.
   const loadTours = useCallback(async () => {
-    const data = await fetchToursList({ limit: 12, sort: 'newest' });
+    const data = await fetchToursList({ division: 'switzerland', limit: 12, sort: 'newest' });
     if (!data.length) return [];
 
     return data
