@@ -13,6 +13,7 @@ function buildQuery(params = {}) {
   if (params.limit != null) qs.set('limit', String(params.limit));
   if (params.sort) qs.set('sort', params.sort);
   if (params.full) qs.set('full', 'true');
+  if (params.includeImages != null) qs.set('includeImages', params.includeImages ? 'true' : 'false');
   return qs.toString();
 }
 

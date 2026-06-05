@@ -11,7 +11,7 @@ class TourController {
    */
   async getAllTours(req, res, next) {
     try {
-      const { division, limit, sort, view, full } = req.query;
+      const { division, limit, sort, view, full, includeImages } = req.query;
       const useList = full !== 'true';
 
       const tours = useList
@@ -20,6 +20,7 @@ class TourController {
             limit: limit || 50,
             sort: sort || 'newest',
             view: view || 'list',
+            includeImages: includeImages === 'true',
           })
         : await tourService.getAllTours();
 
@@ -43,6 +44,12 @@ class TourController {
   async getTourById(req, res, next) {
     try {
       const { id } = req.params;
+      if (req.query?.imageOnly === 'true') {
+        const image = await tourService.getTourCardImageById(id);
+        res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=600, stale-while-revalidate=1800');
+        return res.json(image);
+      }
+
       const tour = await tourService.getTourById(id);
       res.setHeader('Cache-Control', 'no-store');
       res.json(tour);

@@ -344,6 +344,31 @@ module.exports = async (req, res) => {
       switch (req.method) {
         case 'GET':
           if (tourId) {
+            if (queryParams.get('imageOnly') === 'true') {
+              const imageQuery = /^[0-9a-f]{24}$/i.test(tourId)
+                ? Tour.findById(tourId)
+                : Tour.findOne({ 'metadata.staticId': tourId });
+              const imageTour = await imageQuery
+                .select('images')
+                .slice('images', 1)
+                .lean({ virtuals: true });
+
+              if (!imageTour) {
+                return res.status(404).json({ message: 'Tour not found' });
+              }
+
+              const firstImage = Array.isArray(imageTour.images)
+                ? imageTour.images.find((image) => image && String(image).trim())
+                : null;
+              const imageId = imageTour._id?.toString?.() || tourId;
+              setCacheHeaders(res);
+              return res.json({
+                id: imageId,
+                _id: imageId,
+                image: firstImage || null,
+              });
+            }
+
             // GET single tour
             const cachedTour = tourByIdCache.get(tourId);
             if (cacheValid(cachedTour)) {
@@ -436,6 +461,7 @@ module.exports = async (req, res) => {
               const requestedView = queryParams.get('view') || 'list';
               const requestedSort = queryParams.get('sort') || 'newest';
               const requestedLimit = queryParams.get('limit') || 50;
+              const requestedIncludeImages = queryParams.get('includeImages') === 'true';
 
               if (requestedDivision) {
                 const tours = await tourService.getToursList({
@@ -443,6 +469,7 @@ module.exports = async (req, res) => {
                   view: requestedView,
                   sort: requestedSort,
                   limit: requestedLimit,
+                  includeImages: requestedIncludeImages,
                 });
                 setCacheHeaders(res);
                 return res.json(tours);

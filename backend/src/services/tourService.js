@@ -379,9 +379,11 @@ class TourService {
       limit = 50,
       sort = 'newest',
       view = 'list',
+      includeImages = false,
     } = options;
 
-    const cacheKey = JSON.stringify({ division, limit, sort, view });
+    const shouldIncludeImages = includeImages === true || includeImages === 'true';
+    const cacheKey = JSON.stringify({ division, limit, sort, view, includeImages: shouldIncludeImages });
     const cached = listCache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {
       return cached.data;
@@ -406,6 +408,43 @@ class TourService {
         ? { reviews: -1, rating: -1, createdAt: -1 }
         : { createdAt: -1 };
 
+    const addFieldsStage = {
+      divisionName: { $ifNull: [{ $arrayElemAt: ['$divisionDoc.name', 0] }, ''] },
+      rating: { $ifNull: ['$metadata.rating', 0] },
+      reviews: { $ifNull: ['$metadata.reviews', 0] },
+    };
+
+    if (shouldIncludeImages) {
+      addFieldsStage.firstImage = { $arrayElemAt: ['$images', 0] };
+    }
+
+    const projectStage = {
+      name: 1,
+      description: 1,
+      price: 1,
+      discountEnabled: 1,
+      discountPrice: 1,
+      startLocation: 1,
+      endLocation: 1,
+      duration: 1,
+      tourType: 1,
+      division: 1,
+      divisionName: 1,
+      rating: 1,
+      reviews: 1,
+      maxTotalTickets: 1,
+      isActive: 1,
+      metadata: 1,
+      createdAt: 1,
+      updatedAt: 1,
+    };
+
+    if (shouldIncludeImages) {
+      projectStage.images = {
+        $cond: [{ $ne: ['$firstImage', null] }, ['$firstImage'], []],
+      };
+    }
+
     const pipeline = [
       { $match: match },
       {
@@ -417,38 +456,9 @@ class TourService {
         },
       },
       {
-        $addFields: {
-          divisionName: { $ifNull: [{ $arrayElemAt: ['$divisionDoc.name', 0] }, ''] },
-          firstImage: { $arrayElemAt: ['$images', 0] },
-          rating: { $ifNull: ['$metadata.rating', 0] },
-          reviews: { $ifNull: ['$metadata.reviews', 0] },
-        },
+        $addFields: addFieldsStage,
       },
-      {
-        $project: {
-          name: 1,
-          description: 1,
-          price: 1,
-          discountEnabled: 1,
-          discountPrice: 1,
-          startLocation: 1,
-          endLocation: 1,
-          duration: 1,
-          tourType: 1,
-          division: 1,
-          divisionName: 1,
-          rating: 1,
-          reviews: 1,
-          maxTotalTickets: 1,
-          isActive: 1,
-          metadata: 1,
-          createdAt: 1,
-          updatedAt: 1,
-          images: {
-            $cond: [{ $ne: ['$firstImage', null] }, ['$firstImage'], []],
-          },
-        },
-      },
+      { $project: projectStage },
       { $sort: sortStage },
       { $limit: safeLimit },
     ];
@@ -463,6 +473,34 @@ class TourService {
     const deduped = this.dedupeTours(formatted);
     listCache.set(cacheKey, { data: deduped, expiresAt: Date.now() + LIST_CACHE_TTL_MS });
     return deduped;
+  }
+
+  async getTourCardImageById(id) {
+    const tourId = normalizeTourId(id);
+
+    if (!tourId) {
+      throw new Error('Tour ID is required');
+    }
+
+    const query = isValidObjectId(tourId)
+      ? Tour.findById(tourId)
+      : Tour.findOne({ 'metadata.staticId': tourId });
+
+    const tour = await query
+      .select('images metadata')
+      .slice('images', 1)
+      .lean();
+
+    if (!tour) {
+      throw new Error('Tour not found');
+    }
+
+    const idValue = tour._id ? tour._id.toString() : tourId;
+    return {
+      id: idValue,
+      _id: idValue,
+      image: this.pickListImage(tour.images),
+    };
   }
 
   dedupeTours(tours = []) {
