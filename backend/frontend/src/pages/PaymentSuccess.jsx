@@ -63,6 +63,10 @@ const PaymentSuccess = () => {
         databaseId: databaseBooking?._id || databaseBooking?.id || "",
         tourName: databaseBooking?.tourTitle || data.tourName || "Unknown Tour",
         amount: Number(databaseBooking?.totalPrice ?? data.amount ?? 0),
+        groupDiscountTier: databaseBooking?.groupDiscountTier || data.groupDiscountTier || null,
+        groupDiscountUnitAmount: Number(databaseBooking?.groupDiscountUnitAmount ?? data.groupDiscountUnitAmount ?? 0),
+        groupDiscountTotal: Number(databaseBooking?.groupDiscountTotal ?? data.groupDiscountTotal ?? 0),
+        hasGroupDiscount: Number(databaseBooking?.groupDiscountTotal ?? data.groupDiscountTotal ?? 0) > 0,
         tickets: Number(databaseBooking?.travelers ?? data.tickets ?? 1),
         bookingDate: new Date().toISOString(),
         tourId: data.tourId || "",
@@ -110,9 +114,13 @@ const PaymentSuccess = () => {
         const flexibility = d.flexibility || 'standard';
         const pricing = calculateBookingPricing({
           tour: {
-            price: d.tourPrice ?? d.amount ?? 0,
+            price: d.saleUnitPrice ?? d.tourPrice ?? d.amount ?? 0,
             currency: d.tourCurrency || d.currency || 'CHF',
             minTicketsPerBooking: d.minTicketsPerBooking || 1,
+            groupDiscountEnabled: d.groupDiscountEnabled === true,
+            groupDiscount4: d.groupDiscount4 ?? null,
+            groupDiscount5: d.groupDiscount5 ?? null,
+            groupDiscount6Plus: d.groupDiscount6Plus ?? null,
           },
           tickets,
           selectedDate: d.selectedDate || d.date,
@@ -122,6 +130,10 @@ const PaymentSuccess = () => {
         return {
           tourName: d.tourName || d.tourTitle || 'Tour',
           amount: pricing.total,
+          groupDiscountTier: pricing.groupDiscountTier || d.groupDiscountTier || null,
+          groupDiscountUnitAmount: pricing.groupDiscountUnitAmount || Number(d.groupDiscountUnitAmount || 0),
+          groupDiscountTotal: pricing.groupDiscountTotal || Number(d.groupDiscountTotal || 0),
+          hasGroupDiscount: pricing.hasGroupDiscount || Boolean(d.hasGroupDiscount),
           tickets: pricing.tickets,
           tourId: d.tourId || 'unknown',
           currency: pricing.currency,
@@ -215,8 +227,16 @@ const PaymentSuccess = () => {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Amount Paid:</span>
-              <span className="font-semibold">${bookingData?.amount || 0}</span>
+              <span className="font-semibold">{bookingData?.currency || "CHF"}{Number(bookingData?.amount || 0).toFixed(2)}</span>
             </div>
+            {bookingData?.hasGroupDiscount && (
+              <div className="flex justify-between">
+                <span className="text-gray-600">Group Discount:</span>
+                <span className="font-semibold text-green-700">
+                  -{bookingData?.currency || "CHF"}{Number(bookingData?.groupDiscountTotal || 0).toFixed(2)}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-gray-600">Tickets:</span>
               <span className="font-semibold">{bookingData?.tickets || 1}</span>

@@ -35,7 +35,7 @@ class BookingService {
     }
     
     return await Booking.find(query)
-      .populate('tourId', 'name price')
+      .populate('tourId', 'name price discountEnabled discountPrice groupDiscountEnabled groupDiscount4 groupDiscount5 groupDiscount6Plus')
       .sort({ createdAt: -1 })
       .lean();
   }
@@ -51,7 +51,7 @@ class BookingService {
     }
     
     const booking = await Booking.findById(bookingId)
-      .populate('tourId', 'name price')
+      .populate('tourId', 'name price discountEnabled discountPrice groupDiscountEnabled groupDiscount4 groupDiscount5 groupDiscount6Plus')
       .lean();
     
     if (!booking) {
@@ -67,7 +67,7 @@ class BookingService {
   async createBooking(bookingData) {
     if (bookingData.stripePaymentId) {
       const existingBooking = await Booking.findOne({ stripePaymentId: bookingData.stripePaymentId })
-        .populate('tourId', 'name price');
+        .populate('tourId', 'name price discountEnabled discountPrice groupDiscountEnabled groupDiscount4 groupDiscount5 groupDiscount6Plus');
       if (existingBooking) {
         return existingBooking.toObject({ virtuals: true });
       }
@@ -88,6 +88,11 @@ class BookingService {
         travelers: pricing.tickets,
         totalPrice: pricing.total,
         unitPrice: pricing.pricedUnit,
+        originalUnitPrice: pricing.originalUnitPrice,
+        discountUnitPrice: pricing.discountUnitPrice,
+        groupDiscountTier: pricing.groupDiscountTier,
+        groupDiscountUnitAmount: pricing.groupDiscountUnitAmount,
+        groupDiscountTotal: pricing.groupDiscountTotal,
         paymentCurrency: pricing.currency.toUpperCase(),
         minTicketsAtBooking: pricing.minTickets,
         flexibility: pricing.flexibility,
@@ -99,7 +104,7 @@ class BookingService {
     
     const booking = new Booking(bookingData);
     await booking.save();
-    await booking.populate('tourId', 'name price');
+    await booking.populate('tourId', 'name price discountEnabled discountPrice groupDiscountEnabled groupDiscount4 groupDiscount5 groupDiscount6Plus');
     return booking.toObject({ virtuals: true });
   }
 
@@ -117,7 +122,7 @@ class BookingService {
       bookingId,
       { status: normalizeBookingStatus(status) },
       { new: true }
-    ).populate('tourId', 'name price');
+    ).populate('tourId', 'name price discountEnabled discountPrice groupDiscountEnabled groupDiscount4 groupDiscount5 groupDiscount6Plus');
     
     if (!booking) {
       throw new Error('Booking not found');

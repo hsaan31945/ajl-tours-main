@@ -43,6 +43,29 @@ const bookingSchema = new mongoose.Schema({
     type: Number,
     min: 0
   },
+  originalUnitPrice: {
+    type: Number,
+    min: 0
+  },
+  discountUnitPrice: {
+    type: Number,
+    min: 0
+  },
+  groupDiscountTier: {
+    type: String,
+    enum: ['4', '5', '6Plus', null],
+    default: null
+  },
+  groupDiscountUnitAmount: {
+    type: Number,
+    min: 0,
+    default: 0
+  },
+  groupDiscountTotal: {
+    type: Number,
+    min: 0,
+    default: 0
+  },
   paymentCurrency: {
     type: String,
     default: 'CHF',
@@ -93,4 +116,3 @@ const bookingSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model('Booking', bookingSchema);
-

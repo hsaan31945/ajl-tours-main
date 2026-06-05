@@ -167,6 +167,19 @@ const getNormalizedDiscountPrice = (tour = {}) => {
   return Number.isFinite(discountPrice) && discountPrice >= 0 ? discountPrice : null;
 };
 
+const normalizeGroupDiscountValue = (value) => {
+  if (value === null || value === undefined || value === '') return null;
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? number : null;
+};
+
+const getGroupDiscountFields = (tour = {}) => ({
+  groupDiscountEnabled: tour.groupDiscountEnabled === true,
+  groupDiscount4: normalizeGroupDiscountValue(tour.groupDiscount4),
+  groupDiscount5: normalizeGroupDiscountValue(tour.groupDiscount5),
+  groupDiscount6Plus: normalizeGroupDiscountValue(tour.groupDiscount6Plus),
+});
+
 class TourService {
   /** First usable tour image for card views. */
   pickListImage(images) {
@@ -243,6 +256,18 @@ class TourService {
     }
     if (payload.discountPrice !== undefined && payload.discountEnabled === undefined) {
       payload.discountEnabled = payload.discountPrice !== null;
+    }
+    if (payload.groupDiscountEnabled !== undefined) {
+      payload.groupDiscountEnabled = Boolean(payload.groupDiscountEnabled);
+    }
+    ['groupDiscount4', 'groupDiscount5', 'groupDiscount6Plus'].forEach((field) => {
+      if (payload[field] === undefined) return;
+      payload[field] = normalizeGroupDiscountValue(payload[field]);
+    });
+    if (payload.groupDiscountEnabled === false) {
+      payload.groupDiscount4 = null;
+      payload.groupDiscount5 = null;
+      payload.groupDiscount6Plus = null;
     }
     if (payload.currency !== undefined) payload.currency = String(payload.currency || 'CHF').trim().toUpperCase() || 'CHF';
     if (payload.minTicketsPerBooking !== undefined) {
@@ -325,6 +350,7 @@ class TourService {
     const reviewSummary = getReviewSummary(tour);
     const legacyReviewCount = Number(tour.metadata?.reviews);
     const legacyRating = Number(tour.metadata?.rating);
+    const groupDiscountFields = getGroupDiscountFields(tour);
 
     return {
       id,
@@ -335,6 +361,7 @@ class TourService {
         price: Number(tour.price) || 0,
       discountEnabled: Boolean(tour.discountEnabled || getNormalizedDiscountPrice(tour) !== null),
       discountPrice: getNormalizedDiscountPrice(tour),
+      ...groupDiscountFields,
       currency: tour.currency || 'CHF',
       images: thumbnail ? [thumbnail] : [],
       startLocation: tour.startLocation,
@@ -366,6 +393,7 @@ class TourService {
       price: Number(tour.price) || 0,
       discountEnabled: Boolean(tour.discountEnabled || getNormalizedDiscountPrice(tour) !== null),
       discountPrice: getNormalizedDiscountPrice(tour),
+      ...getGroupDiscountFields(tour),
       isActive: tour.isActive !== false,
     };
   }
@@ -379,11 +407,9 @@ class TourService {
       limit = 50,
       sort = 'newest',
       view = 'list',
-      includeImages = false,
     } = options;
 
-    const shouldIncludeImages = includeImages === true || includeImages === 'true';
-    const cacheKey = JSON.stringify({ division, limit, sort, view, includeImages: shouldIncludeImages });
+    const cacheKey = JSON.stringify({ division, limit, sort, view });
     const cached = listCache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {
       return cached.data;
@@ -408,43 +434,6 @@ class TourService {
         ? { reviews: -1, rating: -1, createdAt: -1 }
         : { createdAt: -1 };
 
-    const addFieldsStage = {
-      divisionName: { $ifNull: [{ $arrayElemAt: ['$divisionDoc.name', 0] }, ''] },
-      rating: { $ifNull: ['$metadata.rating', 0] },
-      reviews: { $ifNull: ['$metadata.reviews', 0] },
-    };
-
-    if (shouldIncludeImages) {
-      addFieldsStage.firstImage = { $arrayElemAt: ['$images', 0] };
-    }
-
-    const projectStage = {
-      name: 1,
-      description: 1,
-      price: 1,
-      discountEnabled: 1,
-      discountPrice: 1,
-      startLocation: 1,
-      endLocation: 1,
-      duration: 1,
-      tourType: 1,
-      division: 1,
-      divisionName: 1,
-      rating: 1,
-      reviews: 1,
-      maxTotalTickets: 1,
-      isActive: 1,
-      metadata: 1,
-      createdAt: 1,
-      updatedAt: 1,
-    };
-
-    if (shouldIncludeImages) {
-      projectStage.images = {
-        $cond: [{ $ne: ['$firstImage', null] }, ['$firstImage'], []],
-      };
-    }
-
     const pipeline = [
       { $match: match },
       {
@@ -456,9 +445,42 @@ class TourService {
         },
       },
       {
-        $addFields: addFieldsStage,
+        $addFields: {
+          divisionName: { $ifNull: [{ $arrayElemAt: ['$divisionDoc.name', 0] }, ''] },
+          firstImage: { $arrayElemAt: ['$images', 0] },
+          rating: { $ifNull: ['$metadata.rating', 0] },
+          reviews: { $ifNull: ['$metadata.reviews', 0] },
+        },
       },
-      { $project: projectStage },
+      {
+        $project: {
+          name: 1,
+          description: 1,
+          price: 1,
+          discountEnabled: 1,
+          discountPrice: 1,
+          groupDiscountEnabled: 1,
+          groupDiscount4: 1,
+          groupDiscount5: 1,
+          groupDiscount6Plus: 1,
+          startLocation: 1,
+          endLocation: 1,
+          duration: 1,
+          tourType: 1,
+          division: 1,
+          divisionName: 1,
+          rating: 1,
+          reviews: 1,
+          maxTotalTickets: 1,
+          isActive: 1,
+          metadata: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          images: {
+            $cond: [{ $ne: ['$firstImage', null] }, ['$firstImage'], []],
+          },
+        },
+      },
       { $sort: sortStage },
       { $limit: safeLimit },
     ];
@@ -473,34 +495,6 @@ class TourService {
     const deduped = this.dedupeTours(formatted);
     listCache.set(cacheKey, { data: deduped, expiresAt: Date.now() + LIST_CACHE_TTL_MS });
     return deduped;
-  }
-
-  async getTourCardImageById(id) {
-    const tourId = normalizeTourId(id);
-
-    if (!tourId) {
-      throw new Error('Tour ID is required');
-    }
-
-    const query = isValidObjectId(tourId)
-      ? Tour.findById(tourId)
-      : Tour.findOne({ 'metadata.staticId': tourId });
-
-    const tour = await query
-      .select('images metadata')
-      .slice('images', 1)
-      .lean();
-
-    if (!tour) {
-      throw new Error('Tour not found');
-    }
-
-    const idValue = tour._id ? tour._id.toString() : tourId;
-    return {
-      id: idValue,
-      _id: idValue,
-      image: this.pickListImage(tour.images),
-    };
   }
 
   dedupeTours(tours = []) {
@@ -745,6 +739,10 @@ class TourService {
         price: Number(tourData.price),
         discountEnabled: Boolean(tourData.discountEnabled || optionalNumber(tourData.discountPrice) !== undefined),
         discountPrice: optionalNumber(tourData.discountPrice),
+        groupDiscountEnabled: Boolean(tourData.groupDiscountEnabled),
+        groupDiscount4: tourData.groupDiscountEnabled ? optionalNumber(tourData.groupDiscount4) : null,
+        groupDiscount5: tourData.groupDiscountEnabled ? optionalNumber(tourData.groupDiscount5) : null,
+        groupDiscount6Plus: tourData.groupDiscountEnabled ? optionalNumber(tourData.groupDiscount6Plus) : null,
         startLocation: String(tourData.startLocation).trim(),
         endLocation: String(tourData.endLocation).trim(),
         routeDetails: optionalText(tourData.routeDetails) || null,

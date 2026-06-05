@@ -138,6 +138,12 @@ const Booking = () => {
       tourId: getTourId(tour),
       tourTitle: title,
       totalPrice: pricing.total,
+      unitPrice: pricing.unitPrice,
+      originalUnitPrice: pricing.originalBaseUnitPrice,
+      discountUnitPrice: pricing.discountUnitPrice,
+      groupDiscountTier: pricing.groupDiscountTier,
+      groupDiscountUnitAmount: pricing.groupDiscountUnitAmount,
+      groupDiscountTotal: pricing.groupDiscountTotal,
       paymentCurrency: pricing.currency,
     };
     try {

@@ -124,10 +124,19 @@ const UserDetails = () => {
       const tourDataForPayment = {
         tourName,
         tourPrice: pricing.baseUnitPrice,
+        saleUnitPrice: pricing.saleUnitPrice,
         amount: pricing.total,
+        groupDiscountTier: pricing.groupDiscountTier,
+        groupDiscountUnitAmount: pricing.groupDiscountUnitAmount,
+        groupDiscountTotal: pricing.groupDiscountTotal,
+        hasGroupDiscount: pricing.hasGroupDiscount,
         tickets: currentTickets,
         tourId: getTourId(tour) || "unknown",
         currency: pricing.currency,
+        groupDiscountEnabled: tour.groupDiscountEnabled === true,
+        groupDiscount4: tour.groupDiscount4 ?? null,
+        groupDiscount5: tour.groupDiscount5 ?? null,
+        groupDiscount6Plus: tour.groupDiscount6Plus ?? null,
         date: date || new Date().toLocaleDateString(),
         time: time || "09:00",
         flexibility: flexibility || "standard" // Include flexibility selection
@@ -295,6 +304,12 @@ const UserDetails = () => {
           <div className="flex flex-col gap-2 mt-2">
             <input type="text" placeholder="Enter promo, credit, or gift code" className="border rounded px-3 py-2 text-sm" />
           </div>
+          {pricing.hasGroupDiscount && (
+            <div className="flex justify-between items-center text-sm text-green-700">
+              <span>Group discount ({currentTickets >= 6 ? "6+" : currentTickets} adults)</span>
+              <span>-{pricing.currency}{pricing.groupDiscountTotal.toFixed(2)}</span>
+            </div>
+          )}
           <div className="flex justify-between items-center mt-4 font-bold text-lg">
             <span>Total</span>
             <span>{pricing.currency}{pricing.total.toFixed(2)}</span>

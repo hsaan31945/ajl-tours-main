@@ -33,6 +33,10 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
     price: '',
     discountEnabled: false,
     discountPrice: '',
+    groupDiscountEnabled: false,
+    groupDiscount4: '',
+    groupDiscount5: '',
+    groupDiscount6Plus: '',
     duration: '',
     tourType: '',
     reviewText: '',
@@ -92,6 +96,10 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
         price: normalizedTour.price || '',
         discountEnabled: Boolean(normalizedTour.discountEnabled),
         discountPrice: normalizedTour.discountPrice ?? '',
+        groupDiscountEnabled: normalizedTour.groupDiscountEnabled === true,
+        groupDiscount4: normalizedTour.groupDiscount4 ?? '',
+        groupDiscount5: normalizedTour.groupDiscount5 ?? '',
+        groupDiscount6Plus: normalizedTour.groupDiscount6Plus ?? '',
         duration: normalizedTour.duration || '',
         tourType: normalizedTour.type || '',
         reviewText: normalizedTour.reviewText || '',
@@ -181,6 +189,16 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
         discountEnabled: Boolean(formData.discountEnabled),
         discountPrice: formData.discountEnabled && formData.discountPrice !== ''
           ? Number(formData.discountPrice)
+          : null,
+        groupDiscountEnabled: Boolean(formData.groupDiscountEnabled),
+        groupDiscount4: formData.groupDiscountEnabled && formData.groupDiscount4 !== ''
+          ? Number(formData.groupDiscount4)
+          : null,
+        groupDiscount5: formData.groupDiscountEnabled && formData.groupDiscount5 !== ''
+          ? Number(formData.groupDiscount5)
+          : null,
+        groupDiscount6Plus: formData.groupDiscountEnabled && formData.groupDiscount6Plus !== ''
+          ? Number(formData.groupDiscount6Plus)
           : null,
         highlights: cleanTextArray(formData.highlights),
         included: cleanTextArray(formData.included),
@@ -292,6 +310,68 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
                 className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Leave blank for no discount"
               />
+            </div>
+            <div className="md:col-span-2 border rounded-lg p-4 bg-gray-50">
+              <label className="block text-sm font-medium mb-2">Group Discount Settings</label>
+              <label className="flex items-center justify-between gap-4 border rounded-lg px-3 py-2 bg-white cursor-pointer">
+                <span>
+                  <span className="block font-semibold text-gray-900">
+                    {formData.groupDiscountEnabled ? 'Group discount active' : 'No group discount'}
+                  </span>
+                  <span className="block text-xs text-gray-500">
+                    Applies only when travelers exceed 3
+                  </span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={formData.groupDiscountEnabled}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    groupDiscountEnabled: e.target.checked,
+                    groupDiscount4: e.target.checked ? prev.groupDiscount4 : '',
+                    groupDiscount5: e.target.checked ? prev.groupDiscount5 : '',
+                    groupDiscount6Plus: e.target.checked ? prev.groupDiscount6Plus : ''
+                  }))}
+                  className="h-5 w-5 accent-orange-600"
+                />
+              </label>
+              {formData.groupDiscountEnabled && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">4 Person Discount</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.groupDiscount4}
+                      onChange={(e) => handleInputChange('groupDiscount4', e.target.value)}
+                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">5 Person Discount</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.groupDiscount5}
+                      onChange={(e) => handleInputChange('groupDiscount5', e.target.value)}
+                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">6+ Person Discount</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.groupDiscount6Plus}
+                      onChange={(e) => handleInputChange('groupDiscount6Plus', e.target.value)}
+                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">Public Status</label>
@@ -655,6 +735,45 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
                 className="h-5 w-5 accent-orange-600"
               />
             </label>
+            <div className="border rounded-lg p-4 bg-gray-50">
+              <label className="block text-sm font-medium mb-2">Group Discount Settings</label>
+              <label className="flex items-center justify-between gap-4 border rounded-lg px-3 py-2 bg-white cursor-pointer">
+                <span className="font-semibold text-gray-900">Enable Group Discount</span>
+                <input
+                  type="checkbox"
+                  checked={formData.groupDiscountEnabled}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    groupDiscountEnabled: e.target.checked,
+                    groupDiscount4: e.target.checked ? prev.groupDiscount4 : '',
+                    groupDiscount5: e.target.checked ? prev.groupDiscount5 : '',
+                    groupDiscount6Plus: e.target.checked ? prev.groupDiscount6Plus : ''
+                  }))}
+                  className="h-5 w-5 accent-orange-600"
+                />
+              </label>
+              {formData.groupDiscountEnabled && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+                  {[
+                    ['groupDiscount4', '4 Person Discount'],
+                    ['groupDiscount5', '5 Person Discount'],
+                    ['groupDiscount6Plus', '6+ Person Discount'],
+                  ].map(([field, label]) => (
+                    <div key={field}>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">{label}</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={formData[field]}
+                        onChange={(e) => handleInputChange(field, e.target.value)}
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="0"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="text-sm text-gray-600">
               <p>Advanced pricing by date can be configured in the database directly.</p>
               <p>Current date-specific prices:</p>

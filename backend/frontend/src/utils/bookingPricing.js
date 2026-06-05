@@ -1,3 +1,5 @@
+import { calculateGroupDiscount } from "./groupDiscountPricing";
+
 export const FLEXIBILITY_MULTIPLIER = 1.225;
 export const DEFAULT_CURRENCY = "CHF";
 
@@ -68,7 +70,13 @@ export const calculateBookingPricing = ({
   const currentTickets = Math.max(parsedTickets || minTickets, minTickets);
   const originalBaseUnitPrice = roundMoney(getDatePrice(tour, selectedDate) ?? tour?.price ?? fallbackPrice);
   const discountUnitPrice = getDiscountPrice(tour, originalBaseUnitPrice);
-  const baseUnitPrice = discountUnitPrice ?? originalBaseUnitPrice;
+  const saleUnitPrice = discountUnitPrice ?? originalBaseUnitPrice;
+  const groupDiscount = calculateGroupDiscount({
+    tour,
+    travelers: currentTickets,
+    unitPrice: saleUnitPrice,
+  });
+  const baseUnitPrice = groupDiscount.unitPriceAfterGroupDiscount;
   const unitPrice = flexibility === "upgrade"
     ? roundMoney(baseUnitPrice * FLEXIBILITY_MULTIPLIER)
     : baseUnitPrice;
@@ -81,6 +89,12 @@ export const calculateBookingPricing = ({
     originalBaseUnitPrice,
     discountUnitPrice,
     hasDiscount: discountUnitPrice !== null,
+    saleUnitPrice,
+    groupDiscount,
+    groupDiscountUnitAmount: groupDiscount.unitAmount,
+    groupDiscountTotal: groupDiscount.totalAmount,
+    groupDiscountTier: groupDiscount.tier,
+    hasGroupDiscount: groupDiscount.applied,
     baseUnitPrice,
     unitPrice,
     total,

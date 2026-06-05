@@ -254,6 +254,12 @@ const Flexibility = () => {
             <span className="text-green-700">Free cancellation</span>
             <span className="text-green-700">Great value</span>
           </div>
+          {pricing.hasGroupDiscount && (
+            <div className="flex justify-between items-center text-sm text-green-700">
+              <span>Group discount ({localTicketCount >= 6 ? "6+" : localTicketCount} adults)</span>
+              <span>-{pricing.currency}{pricing.groupDiscountTotal.toFixed(2)}</span>
+            </div>
+          )}
           <div className="flex justify-between items-center mt-4 font-bold text-lg">
             <span>Total</span>
             <span>{pricing.currency}{totalPrice.toFixed(2)}</span>

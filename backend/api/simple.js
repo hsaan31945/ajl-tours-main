@@ -60,6 +60,12 @@ const normalizeTour = (tour) => {
     Number.isFinite(Number(rawDiscountPrice)) && Number(rawDiscountPrice) >= 0
       ? Number(rawDiscountPrice)
       : null;
+  const normalizeGroupDiscountValue = (value) => (
+    value !== null && value !== undefined && value !== '' &&
+    Number.isFinite(Number(value)) && Number(value) >= 0
+      ? Number(value)
+      : null
+  );
   const id = tour._id?.toString?.() || tour._id;
   const normalizedReviews = Array.isArray(tour.reviews)
     ? tour.reviews
@@ -93,6 +99,10 @@ const normalizeTour = (tour) => {
     price: tour.price,
     discountEnabled: Boolean(tour.discountEnabled || normalizedDiscountPrice !== null),
     discountPrice: normalizedDiscountPrice,
+    groupDiscountEnabled: tour.groupDiscountEnabled === true,
+    groupDiscount4: normalizeGroupDiscountValue(tour.groupDiscount4),
+    groupDiscount5: normalizeGroupDiscountValue(tour.groupDiscount5),
+    groupDiscount6Plus: normalizeGroupDiscountValue(tour.groupDiscount6Plus),
     currency: tour.currency || 'CHF',
     images: tour.images || [],
     startLocation: tour.startLocation,
@@ -344,31 +354,6 @@ module.exports = async (req, res) => {
       switch (req.method) {
         case 'GET':
           if (tourId) {
-            if (queryParams.get('imageOnly') === 'true') {
-              const imageQuery = /^[0-9a-f]{24}$/i.test(tourId)
-                ? Tour.findById(tourId)
-                : Tour.findOne({ 'metadata.staticId': tourId });
-              const imageTour = await imageQuery
-                .select('images')
-                .slice('images', 1)
-                .lean({ virtuals: true });
-
-              if (!imageTour) {
-                return res.status(404).json({ message: 'Tour not found' });
-              }
-
-              const firstImage = Array.isArray(imageTour.images)
-                ? imageTour.images.find((image) => image && String(image).trim())
-                : null;
-              const imageId = imageTour._id?.toString?.() || tourId;
-              setCacheHeaders(res);
-              return res.json({
-                id: imageId,
-                _id: imageId,
-                image: firstImage || null,
-              });
-            }
-
             // GET single tour
             const cachedTour = tourByIdCache.get(tourId);
             if (cacheValid(cachedTour)) {
@@ -377,7 +362,7 @@ module.exports = async (req, res) => {
             }
 
             const tour = await Tour.findById(tourId)
-              .select('name description bookingSummary price discountEnabled discountPrice currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt reviews')
+              .select('name description bookingSummary price discountEnabled discountPrice groupDiscountEnabled groupDiscount4 groupDiscount5 groupDiscount6Plus currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt reviews')
               .populate({ path: 'division', select: 'name', options: { lean: true } })
               .lean({ virtuals: true });
             if (!tour) {
@@ -437,7 +422,7 @@ module.exports = async (req, res) => {
                   };
               
               const tours = await Tour.find(query)
-                .select('name description bookingSummary price discountEnabled discountPrice currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt destination reviews')
+                .select('name description bookingSummary price discountEnabled discountPrice groupDiscountEnabled groupDiscount4 groupDiscount5 groupDiscount6Plus currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt destination reviews')
                 .slice('images', 1)
                 .populate({ path: 'division', select: 'name', options: { lean: true } })
                 .sort({ createdAt: -1 })
@@ -461,7 +446,6 @@ module.exports = async (req, res) => {
               const requestedView = queryParams.get('view') || 'list';
               const requestedSort = queryParams.get('sort') || 'newest';
               const requestedLimit = queryParams.get('limit') || 50;
-              const requestedIncludeImages = queryParams.get('includeImages') === 'true';
 
               if (requestedDivision) {
                 const tours = await tourService.getToursList({
@@ -469,7 +453,6 @@ module.exports = async (req, res) => {
                   view: requestedView,
                   sort: requestedSort,
                   limit: requestedLimit,
-                  includeImages: requestedIncludeImages,
                 });
                 setCacheHeaders(res);
                 return res.json(tours);
@@ -485,7 +468,7 @@ module.exports = async (req, res) => {
               console.log('Fetching all tours from database...');
               const nowTs = Date.now();
               const tours = await Tour.find({ isActive: true })
-                .select('name description bookingSummary price discountEnabled discountPrice currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt reviews')
+                .select('name description bookingSummary price discountEnabled discountPrice groupDiscountEnabled groupDiscount4 groupDiscount5 groupDiscount6Plus currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt reviews')
                 .slice('images', 1)
                 .populate({ path: 'division', select: 'name', options: { lean: true } })
                 .sort({ createdAt: -1 })
@@ -539,7 +522,7 @@ module.exports = async (req, res) => {
             }
             await tour.save();
             const updatedTour = await Tour.findById(reviewTourId)
-              .select('name description bookingSummary price discountEnabled discountPrice currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt reviews')
+              .select('name description bookingSummary price discountEnabled discountPrice groupDiscountEnabled groupDiscount4 groupDiscount5 groupDiscount6Plus currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt reviews')
               .populate({ path: 'division', select: 'name', options: { lean: true } })
               .lean({ virtuals: true });
             tourByIdCache.delete(reviewTourId);

@@ -29,6 +29,10 @@ export const mapTourResponse = (tour) => {
       tour.metadata?.salePrice ??
       tour.metadata?.discount?.price ??
       null,
+    groupDiscountEnabled: tour.groupDiscountEnabled === true,
+    groupDiscount4: tour.groupDiscount4 ?? null,
+    groupDiscount5: tour.groupDiscount5 ?? null,
+    groupDiscount6Plus: tour.groupDiscount6Plus ?? null,
     currency: tour.currency || 'CHF',
     
     // Duration & Details
@@ -186,6 +190,16 @@ export const normalizeTourData = (tour) => {
     discountPrice: mappedTour.discountPrice === null || mappedTour.discountPrice === undefined
       ? null
       : Number(mappedTour.discountPrice),
+    groupDiscountEnabled: mappedTour.groupDiscountEnabled === true,
+    groupDiscount4: mappedTour.groupDiscount4 === null || mappedTour.groupDiscount4 === undefined
+      ? null
+      : Number(mappedTour.groupDiscount4),
+    groupDiscount5: mappedTour.groupDiscount5 === null || mappedTour.groupDiscount5 === undefined
+      ? null
+      : Number(mappedTour.groupDiscount5),
+    groupDiscount6Plus: mappedTour.groupDiscount6Plus === null || mappedTour.groupDiscount6Plus === undefined
+      ? null
+      : Number(mappedTour.groupDiscount6Plus),
     duration: mappedTour.duration?.toString().trim() || '',
     type: mappedTour.type?.toString().trim() || '',
     tourType: mappedTour.tourType?.toString().trim() || '',

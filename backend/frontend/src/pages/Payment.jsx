@@ -111,6 +111,11 @@ const PaymentForm = ({ clientSecret, paymentSummary }) => {
               <h3 className="font-bold">{tourName}</h3>
               <p className="text-gray-600">{date} • {time}</p>
               <p className="text-gray-600">{displayTickets} adult{displayTickets > 1 ? "s" : ""} • {displayCurrency}{totalPrice.toFixed(2)}</p>
+              {displayPricing.hasGroupDiscount && (
+                <p className="text-sm font-semibold text-green-700">
+                  Group discount ({displayTickets >= 6 ? "6+" : displayTickets} adults): -{displayCurrency}{Number(displayPricing.groupDiscountTotal || 0).toFixed(2)}
+                </p>
+              )}
               </div>
 
             {/* Payment Form */}

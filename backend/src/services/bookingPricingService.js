@@ -1,5 +1,6 @@
 const Tour = require('../../models/Tour');
 const { normalizeTourId, isValidObjectId } = require('../utils/tourId');
+const { calculateGroupDiscount } = require('./groupDiscountService');
 
 const FLEXIBILITY_MULTIPLIER = 1.225;
 const DEFAULT_CURRENCY = 'CHF';
@@ -88,7 +89,13 @@ const calculateTourPricing = (tour, options = {}) => {
   const datePrice = getDatePrice(tour, options.selectedDate || options.tripDate || options.date);
   const originalUnitPrice = toMoney(datePrice ?? tour.price);
   const discountUnitPrice = getDiscountPrice(tour, originalUnitPrice);
-  const unitPrice = discountUnitPrice ?? originalUnitPrice;
+  const saleUnitPrice = discountUnitPrice ?? originalUnitPrice;
+  const groupDiscount = calculateGroupDiscount({
+    tour,
+    travelers: tickets,
+    unitPrice: saleUnitPrice,
+  });
+  const unitPrice = groupDiscount.unitPriceAfterGroupDiscount;
   if (!Number.isFinite(unitPrice) || unitPrice < 0) {
     throw new BookingValidationError('Tour price is not valid');
   }
@@ -107,6 +114,12 @@ const calculateTourPricing = (tour, options = {}) => {
     originalUnitPrice,
     discountUnitPrice,
     hasDiscount: discountUnitPrice !== null,
+    saleUnitPrice,
+    groupDiscount,
+    groupDiscountUnitAmount: groupDiscount.unitAmount,
+    groupDiscountTotal: groupDiscount.totalAmount,
+    groupDiscountTier: groupDiscount.tier,
+    hasGroupDiscount: groupDiscount.applied,
     unitPrice,
     pricedUnit,
     total,

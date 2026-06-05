@@ -212,7 +212,14 @@ const AdminOrders = () => {
                     <td className="py-2 px-2">{b.address || "-"}</td>
                     <td className="py-2 px-2">{b.tourTitle || b.tripName || "-"}</td>
                     <td className="py-2 px-2">{b.travelers}</td>
-                    <td className="py-2 px-2">{symbol}{(b.totalPrice * rate).toFixed(2)}</td>
+                    <td className="py-2 px-2">
+                      <div>{symbol}{(b.totalPrice * rate).toFixed(2)}</div>
+                      {Number(b.groupDiscountTotal || 0) > 0 && (
+                        <div className="text-xs font-semibold text-green-700">
+                          Group -{symbol}{(Number(b.groupDiscountTotal) * rate).toFixed(2)}
+                        </div>
+                      )}
+                    </td>
                     <td className="py-2 px-2">{user && user.registrationDate ? new Date(user.registrationDate).toLocaleDateString("en-US", { year: "2-digit", month: "short", day: "numeric" }) : "-"}</td>
                     <td className="py-2 px-2">{b.tripDate ? new Date(b.tripDate).toLocaleDateString("en-US", { year: "2-digit", month: "short", day: "numeric" }) : "-"}</td>
                     <td className="py-2 px-2 font-semibold">

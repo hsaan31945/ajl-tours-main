@@ -54,7 +54,12 @@ const BookingHistory = () => {
                       <h3 className="font-semibold text-lg text-gray-800">{booking.tourName}</h3>
                       <div className="text-sm text-gray-600 mt-1">
                         <span className="mr-4">📅 {new Date(booking.bookingDate).toLocaleDateString()}</span>
-                        <span className="mr-4">💰 ${booking.amount}</span>
+                        <span className="mr-4">💰 {booking.currency || "$"}{Number(booking.amount || 0).toFixed(2)}</span>
+                        {Number(booking.groupDiscountTotal || 0) > 0 && (
+                          <span className="mr-4 text-green-700">
+                            Group discount -{booking.currency || "$"}{Number(booking.groupDiscountTotal).toFixed(2)}
+                          </span>
+                        )}
                         <span className="mr-4">👥 {booking.tickets} {booking.tickets > 1 ? 'people' : 'person'}</span>
                         <span className="text-green-600 font-semibold">✅ Confirmed</span>
                       </div>
@@ -81,6 +86,5 @@ const BookingHistory = () => {
 };
 
 export default BookingHistory;
-
 
 

@@ -32,6 +32,9 @@ const InvoicePDF = ({ booking, symbol }) => (
         <Text style={styles.label}>Package Details</Text>
         <Text>Tour: {booking.tourTitle}</Text>
         <Text>Number of Travelers: {booking.travelers}</Text>
+        {Number(booking.groupDiscountTotal || 0) > 0 && (
+          <Text>Group Discount: -{symbol}{Number(booking.groupDiscountTotal).toFixed(2)}</Text>
+        )}
         <Text>Total Price: {symbol}{Number(booking.totalPrice).toFixed(2)}</Text>
       </View>
     </Page>
@@ -81,6 +84,11 @@ const Invoice = () => {
           <strong>Number of Travelers: </strong>
           {booking.travelers}
         </p>
+        {Number(booking.groupDiscountTotal || 0) > 0 && (
+          <p>
+            <strong>Group Discount:</strong> -{symbol}{Number(booking.groupDiscountTotal).toFixed(2)}
+          </p>
+        )}
         <p>
           <strong>Total Price:</strong> {symbol}{Number(booking.totalPrice).toFixed(2)}
         </p>

@@ -326,6 +326,14 @@ const AdminTravelRecords = () => {
                                 <span className="text-gray-500">Amount:</span>
                                 <span className="font-medium">${booking.totalPrice} {booking.paymentCurrency}</span>
                               </div>
+                              {Number(booking.groupDiscountTotal || 0) > 0 && (
+                                <div className="flex justify-between">
+                                  <span className="text-gray-500">Group Discount:</span>
+                                  <span className="font-medium text-green-700">
+                                    -${Number(booking.groupDiscountTotal).toFixed(2)}
+                                  </span>
+                                </div>
+                              )}
                               <div className="flex justify-between">
                                 <span className="text-gray-500">Payment Method:</span>
                                 <span className="font-medium">Credit Card</span>

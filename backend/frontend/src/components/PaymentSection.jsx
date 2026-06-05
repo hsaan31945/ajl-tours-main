@@ -259,6 +259,16 @@ function PaymentSection({
             )}
           </div>
         </div>
+        {pricing.hasGroupDiscount && (
+          <div className="flex justify-between items-center rounded-lg bg-green-50 px-3 py-2 text-sm">
+            <span className="font-semibold text-green-700">
+              Group discount ({pricing.tickets >= 6 ? '6+' : pricing.tickets} adults)
+            </span>
+            <span className="font-bold text-green-700">
+              -{pricing.currency}{pricing.groupDiscountTotal.toFixed(2)}
+            </span>
+          </div>
+        )}
         
         {/* Admin-only: Minimum Tickets Setting */}
         {isAdmin && (

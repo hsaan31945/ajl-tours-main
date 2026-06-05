@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Heart, MapPin, Plane, Star } from "lucide-react";
 import { useCurrency } from "../context/CurrencyContext";
@@ -14,9 +14,7 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
   const { symbol, rate } = useCurrency();
   const { isAdmin, passcodeHeader } = useAdmin();
   const navigate = useNavigate();
-  const cardRef = useRef(null);
   const [imageFailed, setImageFailed] = useState(false);
-  const [lazyImage, setLazyImage] = useState(null);
 
   const tourId = getTourId(tour);
   const tourName = cleanDisplayName(tour?.name || tour?.title || "Tour");
@@ -57,11 +55,10 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
     }
   };
 
-  const propImage =
+  const displayImage =
     (Array.isArray(tour.images) && tour.images.find((img) => img && String(img).trim())) ||
     tour.photo ||
     null;
-  const displayImage = propImage || lazyImage || null;
   const ratingValue = Number(tour.rating || tour.avgRating || 0);
   const reviewsValue = Number(tour.reviews || 0);
   const originalPrice = Number(tour.price || 0);
@@ -94,67 +91,8 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
     setImageFailed(false);
   }, [displayImage]);
 
-  useEffect(() => {
-    setLazyImage(null);
-  }, [tourId]);
-
-  useEffect(() => {
-    if (propImage || !tourId) return undefined;
-
-    let cancelled = false;
-    let observer;
-
-    const loadCardImage = async () => {
-      try {
-        const res = await fetch(apiUrl(`/api/tours/${tourId}?imageOnly=true`), {
-          headers: {
-            "Cache-Control": "public, max-age=300",
-          },
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        const nextImage =
-          data?.image ||
-          (Array.isArray(data?.images) && data.images.find((img) => img && String(img).trim())) ||
-          null;
-        if (!cancelled && nextImage) {
-          setLazyImage(nextImage);
-        }
-      } catch (error) {
-        if (!cancelled) {
-          console.warn("Could not load tour card image:", error);
-        }
-      }
-    };
-
-    if (!("IntersectionObserver" in window) || !cardRef.current) {
-      loadCardImage();
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          observer.disconnect();
-          loadCardImage();
-        }
-      },
-      { rootMargin: "600px 0px" }
-    );
-
-    observer.observe(cardRef.current);
-
-    return () => {
-      cancelled = true;
-      if (observer) observer.disconnect();
-    };
-  }, [propImage, tourId]);
-
   return (
     <div 
-      ref={cardRef}
       className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full cursor-pointer group"
       onClick={handleCardClick}
       onKeyDown={handleCardKeyDown}
