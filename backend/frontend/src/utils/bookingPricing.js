@@ -26,6 +26,19 @@ export const getDatePrice = (tour, selectedDate) => {
 
 export const roundMoney = (value) => Math.round((Number(value) || 0) * 100) / 100;
 
+export const getDiscountPrice = (tour, originalPrice = tour?.price) => {
+  if (!tour?.discountEnabled) return null;
+  const original = Number(originalPrice);
+  const discountPrice = Number(tour?.discountPrice);
+  if (!Number.isFinite(original) || !Number.isFinite(discountPrice)) return null;
+  return discountPrice >= 0 && discountPrice < original ? roundMoney(discountPrice) : null;
+};
+
+export const getEffectiveTourPrice = (tour, fallbackPrice = 0) => {
+  const originalPrice = roundMoney(tour?.price ?? fallbackPrice);
+  return getDiscountPrice(tour, originalPrice) ?? originalPrice;
+};
+
 export const calculateBookingPricing = ({
   tour,
   tickets,
@@ -36,7 +49,9 @@ export const calculateBookingPricing = ({
   const parsedTickets = parseTicketCount(tickets);
   const minTickets = getMinTickets(tour);
   const currentTickets = Math.max(parsedTickets || minTickets, minTickets);
-  const baseUnitPrice = roundMoney(getDatePrice(tour, selectedDate) ?? tour?.price ?? fallbackPrice);
+  const originalBaseUnitPrice = roundMoney(getDatePrice(tour, selectedDate) ?? tour?.price ?? fallbackPrice);
+  const discountUnitPrice = getDiscountPrice(tour, originalBaseUnitPrice);
+  const baseUnitPrice = discountUnitPrice ?? originalBaseUnitPrice;
   const unitPrice = flexibility === "upgrade"
     ? roundMoney(baseUnitPrice * FLEXIBILITY_MULTIPLIER)
     : baseUnitPrice;
@@ -46,6 +61,9 @@ export const calculateBookingPricing = ({
     tickets: currentTickets,
     validTickets: currentTickets >= minTickets,
     minTickets,
+    originalBaseUnitPrice,
+    discountUnitPrice,
+    hasDiscount: discountUnitPrice !== null,
     baseUnitPrice,
     unitPrice,
     total,

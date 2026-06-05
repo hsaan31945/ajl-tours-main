@@ -239,15 +239,24 @@ function PaymentSection({
       <div className="flex flex-col gap-2 w-full mb-4">
         <div className="flex justify-between items-center">
           <span className="font-semibold">Per Person:</span>
-          <div className="font-bold text-orange-600">
-            <PriceWithEdit
-              price={Number(price)}
-              currencySymbol={currency || "CHF"}
-              tourId={tour?.id}
-              isAdmin={isAdmin}
-              onSavePrice={onSavePrice}
-              onUpdated={onPriceUpdated}
-            />
+          <div className="font-bold text-orange-600 text-right">
+            {pricing.hasDiscount && (
+              <div className="text-sm font-semibold text-gray-400 line-through">
+                {currency || "CHF"}{pricing.originalBaseUnitPrice.toFixed(2)}
+              </div>
+            )}
+            {isAdmin ? (
+              <PriceWithEdit
+                price={Number(pricing.originalBaseUnitPrice)}
+                currencySymbol={currency || "CHF"}
+                tourId={tour?.id}
+                isAdmin={isAdmin}
+                onSavePrice={onSavePrice}
+                onUpdated={onPriceUpdated}
+              />
+            ) : (
+              <span>{currency || "CHF"}{pricing.baseUnitPrice.toFixed(2)}</span>
+            )}
           </div>
         </div>
         

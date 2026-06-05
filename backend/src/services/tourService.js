@@ -213,6 +213,15 @@ class TourService {
     if (payload.name !== undefined) payload.name = cleanTourName(payload.name);
     if (payload.title !== undefined) payload.title = cleanTourName(payload.title);
     if (payload.price !== undefined) payload.price = Number(payload.price);
+    if (payload.discountEnabled !== undefined) payload.discountEnabled = Boolean(payload.discountEnabled);
+    if (payload.discountPrice !== undefined) {
+      if (payload.discountPrice === null || payload.discountPrice === '') {
+        payload.discountPrice = null;
+      } else {
+        const discountPrice = Number(payload.discountPrice);
+        payload.discountPrice = Number.isFinite(discountPrice) && discountPrice >= 0 ? discountPrice : null;
+      }
+    }
     if (payload.currency !== undefined) payload.currency = String(payload.currency || 'CHF').trim().toUpperCase() || 'CHF';
     if (payload.minTicketsPerBooking !== undefined) {
       const minTickets = Number(payload.minTicketsPerBooking);
@@ -302,6 +311,8 @@ class TourService {
         description,
         bookingSummary: tour.bookingSummary || '',
         price: Number(tour.price) || 0,
+      discountEnabled: Boolean(tour.discountEnabled),
+      discountPrice: Number.isFinite(Number(tour.discountPrice)) ? Number(tour.discountPrice) : null,
       currency: tour.currency || 'CHF',
       images: thumbnail ? [thumbnail] : [],
       startLocation: tour.startLocation,
@@ -331,6 +342,8 @@ class TourService {
       name: tour.name,
       startLocation: tour.startLocation,
       price: Number(tour.price) || 0,
+      discountEnabled: Boolean(tour.discountEnabled),
+      discountPrice: Number.isFinite(Number(tour.discountPrice)) ? Number(tour.discountPrice) : null,
       isActive: tour.isActive !== false,
     };
   }
@@ -394,6 +407,8 @@ class TourService {
           name: 1,
           description: 1,
           price: 1,
+          discountEnabled: 1,
+          discountPrice: 1,
           startLocation: 1,
           endLocation: 1,
           duration: 1,
@@ -668,6 +683,8 @@ class TourService {
         overview: optionalText(tourData.overview) || null,
         bookingSummary: optionalText(tourData.bookingSummary)?.slice(0, 400) || null,
         price: Number(tourData.price),
+        discountEnabled: Boolean(tourData.discountEnabled),
+        discountPrice: optionalNumber(tourData.discountPrice),
         startLocation: String(tourData.startLocation).trim(),
         endLocation: String(tourData.endLocation).trim(),
         routeDetails: optionalText(tourData.routeDetails) || null,

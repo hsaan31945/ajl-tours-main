@@ -5,6 +5,7 @@ import { normalizeTourData } from '../utils/tourDataMapper';
 import { getTourId } from '../utils/tourId';
 import { apiUrl } from '../utils/api';
 import TourReviews, { getTourReviewSummary } from '../components/TourReviews';
+import { getDiscountPrice } from '../utils/bookingPricing';
 
 const TourDetails = () => {
   const { id } = useParams();
@@ -100,6 +101,7 @@ const TourDetails = () => {
   const reviewLabel = reviewSummary.reviewCount
     ? `${reviewSummary.reviewAverage.toFixed(1)} / 5`
     : 'No ratings yet';
+  const discountPrice = getDiscountPrice(tour, tour?.price);
 
   if (loading) {
     return (
@@ -197,7 +199,10 @@ const TourDetails = () => {
             {/* Price */}
             <div className="border-t border-b py-4">
               <div className="text-3xl font-bold text-gray-900">
-                ${tour.price}
+                {discountPrice !== null && (
+                  <span className="mr-3 text-xl text-gray-400 line-through">${tour.price}</span>
+                )}
+                ${discountPrice ?? tour.price}
                 <span className="text-lg font-normal text-gray-600"> per person</span>
               </div>
             </div>

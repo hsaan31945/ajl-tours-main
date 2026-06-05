@@ -169,7 +169,16 @@ const AdminUpdateTours = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">CHF {tour.price || 0}</div>
+                        <div className="text-sm text-gray-900">
+                          {tour.discountEnabled && Number(tour.discountPrice) < Number(tour.price) ? (
+                            <>
+                              <span className="text-gray-400 line-through mr-2">CHF {tour.price || 0}</span>
+                              <span className="font-semibold text-red-600">CHF {tour.discountPrice}</span>
+                            </>
+                          ) : (
+                            <>CHF {tour.price || 0}</>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 

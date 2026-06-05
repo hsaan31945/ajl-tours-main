@@ -30,6 +30,7 @@ const validateTourData = (req, res, next) => {
       division,
       name,
       price,
+      discountPrice,
       startLocation,
       endLocation,
       startDate,
@@ -52,6 +53,13 @@ const validateTourData = (req, res, next) => {
     const priceNum = Number(price);
     if (isNaN(priceNum) || priceNum < 0) {
       return next(new AppError('Price must be a valid positive number', 400));
+    }
+
+    if (discountPrice !== undefined && discountPrice !== null && discountPrice !== '') {
+      const discountPriceNum = Number(discountPrice);
+      if (isNaN(discountPriceNum) || discountPriceNum < 0) {
+        return next(new AppError('Discounted price must be a valid positive number', 400));
+      }
     }
     
     if (!startLocation || typeof startLocation !== 'string' || startLocation.trim().length === 0) {
@@ -111,13 +119,20 @@ const validateTourData = (req, res, next) => {
  */
 const validateTourUpdate = (req, res, next) => {
   try {
-    const { price, startDate, endDate } = req.body;
+    const { price, discountPrice, startDate, endDate } = req.body;
 
     // Validate price if provided
     if (price !== undefined) {
       const priceNum = Number(price);
       if (isNaN(priceNum) || priceNum < 0) {
         return next(new AppError('Price must be a valid positive number', 400));
+      }
+    }
+
+    if (discountPrice !== undefined && discountPrice !== null && discountPrice !== '') {
+      const discountPriceNum = Number(discountPrice);
+      if (isNaN(discountPriceNum) || discountPriceNum < 0) {
+        return next(new AppError('Discounted price must be a valid positive number', 400));
       }
     }
 
@@ -161,7 +176,6 @@ module.exports = {
   validateTourUpdate,
   validateObjectId
 };
-
 
 
 

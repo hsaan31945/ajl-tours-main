@@ -60,6 +60,8 @@ const TopDealsSection = () => {
             desc: tour.description,
             description: tour.description,
             price: Number(tour.price) || 0,
+            discountEnabled: Boolean(tour.discountEnabled),
+            discountPrice: tour.discountPrice ?? null,
             images: Array.isArray(tour.images) && tour.images.length > 0 ? tour.images : [],
             rating: tour.rating,
             reviews: tour.reviews,

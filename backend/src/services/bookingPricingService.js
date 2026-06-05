@@ -44,6 +44,14 @@ const getDatePrice = (tour, selectedDate) => {
   return Number.isFinite(number) && number >= 0 ? number : null;
 };
 
+const getDiscountPrice = (tour, originalPrice) => {
+  if (!tour?.discountEnabled) return null;
+  const discountPrice = Number(tour.discountPrice);
+  const original = Number(originalPrice);
+  if (!Number.isFinite(discountPrice) || !Number.isFinite(original)) return null;
+  return discountPrice >= 0 && discountPrice < original ? toMoney(discountPrice) : null;
+};
+
 const calculateTourPricing = (tour, options = {}) => {
   if (!tour) {
     throw new BookingValidationError('Tour not found', 404);
@@ -65,7 +73,9 @@ const calculateTourPricing = (tour, options = {}) => {
 
   const flexibility = options.flexibility === 'upgrade' ? 'upgrade' : 'standard';
   const datePrice = getDatePrice(tour, options.selectedDate || options.tripDate || options.date);
-  const unitPrice = toMoney(datePrice ?? tour.price);
+  const originalUnitPrice = toMoney(datePrice ?? tour.price);
+  const discountUnitPrice = getDiscountPrice(tour, originalUnitPrice);
+  const unitPrice = discountUnitPrice ?? originalUnitPrice;
   if (!Number.isFinite(unitPrice) || unitPrice < 0) {
     throw new BookingValidationError('Tour price is not valid');
   }
@@ -81,6 +91,9 @@ const calculateTourPricing = (tour, options = {}) => {
     travelers: tickets,
     minTickets,
     maxTickets: Number.isFinite(maxTickets) && maxTickets > 0 ? maxTickets : null,
+    originalUnitPrice,
+    discountUnitPrice,
+    hasDiscount: discountUnitPrice !== null,
     unitPrice,
     pricedUnit,
     total,

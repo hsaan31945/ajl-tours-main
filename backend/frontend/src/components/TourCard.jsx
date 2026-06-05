@@ -8,6 +8,7 @@ import { getTourId } from "../utils/tourId";
 import { apiUrl } from "../utils/api";
 import { clearToursCache } from "../services/toursApi";
 import { cleanDisplayName } from "../utils/textFormatting";
+import { getDiscountPrice } from "../utils/bookingPricing";
 
 const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
   const { symbol, rate } = useCurrency();
@@ -60,6 +61,9 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
     null;
   const ratingValue = Number(tour.rating || tour.avgRating || 0);
   const reviewsValue = Number(tour.reviews || 0);
+  const originalPrice = Number(tour.price || 0);
+  const discountPrice = getDiscountPrice(tour, originalPrice);
+  const hasDiscount = discountPrice !== null;
   const destinationName = String(tour.divisionName || tour.destination || "").toLowerCase();
   const detailBasePath = destinationName.includes("sri")
     ? "/srilanka"
@@ -177,17 +181,26 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
         <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
           <div className="flex flex-col" onClick={stopAdminFieldClick}>
             <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">From</span>
-            <div className="flex items-baseline">
-              <span className="text-2xl font-black text-red-600">
-                {symbol}
+            {hasDiscount && (
+              <span className="text-sm font-semibold text-gray-400 line-through">
+                {symbol}{(originalPrice * rate).toFixed(2)}
               </span>
-              <EditableField
-                tag="span"
-                value={((tour.price || 0) * rate).toFixed(2)}
-                className="text-2xl font-black text-red-600 ml-0.5"
-                onSave={(val) => handleSaveField("price", val)}
-                showEditIcon={isAdmin}
-              />
+            )}
+            <div className="flex items-baseline">
+              {!hasDiscount && <span className="text-2xl font-black text-red-600">{symbol}</span>}
+              {hasDiscount ? (
+                <span className="text-2xl font-black text-red-600">
+                  {symbol}{(discountPrice * rate).toFixed(2)}
+                </span>
+              ) : (
+                <EditableField
+                  tag="span"
+                  value={(originalPrice * rate).toFixed(2)}
+                  className="text-2xl font-black text-red-600 ml-0.5"
+                  onSave={(val) => handleSaveField("price", val)}
+                  showEditIcon={isAdmin}
+                />
+              )}
               <span className="text-sm text-gray-500 ml-1">/person</span>
             </div>
           </div>

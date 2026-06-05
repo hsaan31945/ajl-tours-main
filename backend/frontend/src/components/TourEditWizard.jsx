@@ -31,6 +31,8 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
     description: '',
     overview: '',
     price: '',
+    discountEnabled: false,
+    discountPrice: '',
     duration: '',
     tourType: '',
     reviewText: '',
@@ -88,6 +90,8 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
         description: normalizedTour.description || '',
         overview: normalizedTour.overview || '',
         price: normalizedTour.price || '',
+        discountEnabled: Boolean(normalizedTour.discountEnabled),
+        discountPrice: normalizedTour.discountPrice ?? '',
         duration: normalizedTour.duration || '',
         tourType: normalizedTour.type || '',
         reviewText: normalizedTour.reviewText || '',
@@ -174,6 +178,10 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
       const dataToSend = {
         ...formData,
         price: formData.price ? Number(formData.price) : formData.price,
+        discountEnabled: Boolean(formData.discountEnabled),
+        discountPrice: formData.discountEnabled && formData.discountPrice !== ''
+          ? Number(formData.discountPrice)
+          : null,
         highlights: cleanTextArray(formData.highlights),
         included: cleanTextArray(formData.included),
         excluded: cleanTextArray(formData.excluded),
@@ -245,6 +253,37 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
                 onChange={(e) => handleInputChange('price', e.target.value)}
                 className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter price"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Discount</label>
+              <label className="flex items-center justify-between gap-4 border rounded-lg px-3 py-2 bg-white cursor-pointer">
+                <span>
+                  <span className="block font-semibold text-gray-900">
+                    {formData.discountEnabled ? 'Discount active' : 'No discount'}
+                  </span>
+                  <span className="block text-xs text-gray-500">
+                    Customers see the original price crossed out
+                  </span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={formData.discountEnabled}
+                  onChange={(e) => handleInputChange('discountEnabled', e.target.checked)}
+                  className="h-5 w-5 accent-orange-600"
+                />
+              </label>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Discounted Price</label>
+              <input
+                type="number"
+                min="0"
+                value={formData.discountPrice}
+                onChange={(e) => handleInputChange('discountPrice', e.target.value)}
+                disabled={!formData.discountEnabled}
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
+                placeholder="Leave blank for no discount"
               />
             </div>
             <div>
@@ -583,6 +622,25 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
               className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter base price"
             />
+            <label className="block text-sm font-medium mb-2">Discounted Price</label>
+            <input
+              type="number"
+              min="0"
+              value={formData.discountPrice}
+              onChange={(e) => handleInputChange('discountPrice', e.target.value)}
+              disabled={!formData.discountEnabled}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
+              placeholder="Leave blank for no discount"
+            />
+            <label className="flex items-center justify-between gap-4 border rounded-lg px-3 py-2 bg-white cursor-pointer">
+              <span className="font-semibold text-gray-900">Enable Discount</span>
+              <input
+                type="checkbox"
+                checked={formData.discountEnabled}
+                onChange={(e) => handleInputChange('discountEnabled', e.target.checked)}
+                className="h-5 w-5 accent-orange-600"
+              />
+            </label>
             <div className="text-sm text-gray-600">
               <p>Advanced pricing by date can be configured in the database directly.</p>
               <p>Current date-specific prices:</p>

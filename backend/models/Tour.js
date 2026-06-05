@@ -25,6 +25,15 @@ const tourSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
+  discountEnabled: {
+    type: Boolean,
+    default: false
+  },
+  discountPrice: {
+    type: Number,
+    min: 0,
+    default: null
+  },
   currency: {
     type: String,
     default: 'CHF',

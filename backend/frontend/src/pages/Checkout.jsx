@@ -679,16 +679,27 @@ const Checkout = () => {
       <div className="w-full max-w-6xl grid grid-cols-2 md:grid-cols-4 gap-6 items-start bg-gray-50 rounded-xl shadow p-6 mb-10">
         <div className="flex flex-col items-start">
           <span className="text-xs text-gray-500">Price</span>
-          <EditableField
-            value={`From ${tour?.currency || "CHF"}${tour?.price}`}
-            tag="span"
-            className="text-lg font-bold text-red-600"
-            forceEditMode={effectiveEditMode}
-            onSave={(value) => {
-              const priceValue = parseFloat(value.match(/\d+\.?\d*/)?.[0] || tour?.price);
-              return saveSingleField('price', priceValue);
-            }}
-          />
+          {pricing.hasDiscount && (
+            <span className="text-sm font-semibold text-gray-400 line-through">
+              {pricing.currency}{pricing.originalBaseUnitPrice.toFixed(2)}
+            </span>
+          )}
+          {effectiveEditMode ? (
+            <EditableField
+              value={`From ${tour?.currency || "CHF"}${pricing.originalBaseUnitPrice.toFixed(2)}`}
+              tag="span"
+              className="text-lg font-bold text-red-600"
+              forceEditMode={effectiveEditMode}
+              onSave={(value) => {
+                const priceValue = parseFloat(value.match(/\d+\.?\d*/)?.[0] || tour?.price);
+                return saveSingleField('price', priceValue);
+              }}
+            />
+          ) : (
+            <span className="text-lg font-bold text-red-600">
+              From {pricing.currency}{pricePerTicket.toFixed(2)}
+            </span>
+          )}
         </div>
         <div className="flex flex-col items-start">
           <span className="text-xs text-gray-500">Duration</span>
@@ -1107,7 +1118,14 @@ const Checkout = () => {
                 onChange={(e) => setSelectedDate(e.target.value)}
                 className="border rounded px-3 py-2"
               />
-              <span className="text-red-700 font-semibold">{pricing.currency}{pricePerTicket.toFixed(2)}</span>
+              <span className="text-red-700 font-semibold">
+                {pricing.hasDiscount && (
+                  <span className="mr-2 text-gray-400 line-through">
+                    {pricing.currency}{pricing.originalBaseUnitPrice.toFixed(2)}
+                  </span>
+                )}
+                {pricing.currency}{pricePerTicket.toFixed(2)}
+              </span>
             </div>
           )}
         </div>

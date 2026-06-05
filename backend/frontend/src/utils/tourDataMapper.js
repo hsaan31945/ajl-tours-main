@@ -20,6 +20,8 @@ export const mapTourResponse = (tour) => {
     
     // Pricing
     price: tour.price || 0,
+    discountEnabled: Boolean(tour.discountEnabled),
+    discountPrice: tour.discountPrice ?? null,
     currency: tour.currency || 'CHF',
     
     // Duration & Details
@@ -173,6 +175,10 @@ export const normalizeTourData = (tour) => {
     name: cleanDisplayName(mappedTour.name),
     title: cleanDisplayName(mappedTour.title),
     price: Number(mappedTour.price) || 0,
+    discountEnabled: Boolean(mappedTour.discountEnabled),
+    discountPrice: mappedTour.discountPrice === null || mappedTour.discountPrice === undefined
+      ? null
+      : Number(mappedTour.discountPrice),
     duration: mappedTour.duration?.toString().trim() || '',
     type: mappedTour.type?.toString().trim() || '',
     tourType: mappedTour.tourType?.toString().trim() || '',

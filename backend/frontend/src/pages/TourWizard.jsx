@@ -123,6 +123,8 @@ const TourWizard = () => {
     name: "",
     description: "",
     price: 0,
+    discountEnabled: false,
+    discountPrice: "",
     currency: "CHF",
     isActive: true,
     
@@ -181,6 +183,8 @@ const TourWizard = () => {
               name: data.name || data.title || "",
               description: data.description || data.desc || "",
               price: data.price || 0,
+              discountEnabled: Boolean(data.discountEnabled),
+              discountPrice: data.discountPrice ?? "",
               images: data.images || [],
               startLocation: data.startLocation || "",
               endLocation: data.endLocation || "",
@@ -475,6 +479,10 @@ const TourWizard = () => {
         name: tourData.name,
         description: tourData.description,
         price: Number(tourData.price),
+        discountEnabled: Boolean(tourData.discountEnabled),
+        discountPrice: tourData.discountEnabled && tourData.discountPrice !== ""
+          ? Number(tourData.discountPrice)
+          : null,
         isActive: tourData.isActive !== false,
         startLocation: tourData.startLocation,
         endLocation: tourData.endLocation,
@@ -696,6 +704,37 @@ const TourWizard = () => {
                 onChange={(e) => setTourData(prev => ({ ...prev, price: e.target.value }))}
                 placeholder="0"
                 className="w-full border rounded-lg px-4 py-2"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Discount</label>
+              <label className="flex items-center justify-between gap-4 border rounded-lg px-4 py-2 bg-white cursor-pointer">
+                <span>
+                  <span className="block font-semibold text-gray-900">
+                    {tourData.discountEnabled ? "Discount active" : "No discount"}
+                  </span>
+                  <span className="block text-xs text-gray-500">
+                    Show original price crossed out to customers
+                  </span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={tourData.discountEnabled}
+                  onChange={(e) => setTourData(prev => ({ ...prev, discountEnabled: e.target.checked }))}
+                  className="h-5 w-5 accent-orange-600"
+                />
+              </label>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Discounted Price</label>
+              <input
+                type="number"
+                min="0"
+                value={tourData.discountPrice}
+                onChange={(e) => setTourData(prev => ({ ...prev, discountPrice: e.target.value }))}
+                placeholder="Leave blank for no discount"
+                disabled={!tourData.discountEnabled}
+                className="w-full border rounded-lg px-4 py-2 disabled:bg-gray-100 disabled:text-gray-400"
               />
             </div>
             <div>
