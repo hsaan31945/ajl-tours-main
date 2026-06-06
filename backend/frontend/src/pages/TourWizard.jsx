@@ -767,7 +767,7 @@ const TourWizard = () => {
               <label className="flex items-center justify-between gap-4 border rounded-lg px-4 py-2 bg-white cursor-pointer">
                 <span>
                   <span className="block font-semibold text-gray-900">
-                    {tourData.groupDiscountEnabled ? "Group discount active" : "No group discount"}
+                    Enable Group Discount
                   </span>
                   <span className="block text-xs text-gray-500">
                     Applies only for 4 or more travelers
@@ -900,7 +900,7 @@ const TourWizard = () => {
           <label className="flex items-center justify-between gap-4 border rounded-lg px-4 py-3 bg-white cursor-pointer">
             <span>
               <span className="block font-semibold text-gray-900">
-                {tourData.groupDiscountEnabled ? "Group discount active" : "No group discount"}
+                Enable Group Discount
               </span>
               <span className="block text-xs text-gray-500">
                 Applies only for 4 or more travelers. Existing discount stays separate.

@@ -51,6 +51,7 @@ export function AdminProvider({ children }) {
 				setIsAdmin(true);
 				localStorage.setItem(TOKEN_KEY, newToken);
 				localStorage.setItem(ADMIN_KEY, 'true');
+				localStorage.setItem('isAdmin', 'true');
 				return { success: true };
 			}
 			
@@ -79,6 +80,7 @@ export function AdminProvider({ children }) {
 			if (response.data?.success) {
 			setIsAdmin(true);
 			localStorage.setItem(ADMIN_KEY, 'true');
+			localStorage.setItem('isAdmin', 'true');
 				localStorage.setItem('adminPasscode', code);
 			return true;
 		}

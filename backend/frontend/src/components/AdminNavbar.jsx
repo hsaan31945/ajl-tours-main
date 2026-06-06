@@ -1,14 +1,17 @@
 import React, { useContext } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
+import { useAdmin } from "../context/AdminContext";
 
 const AdminNavbar = () => {
   const { isAdmin, logoutAdmin } = useContext(AppContext);
+  const { isAdmin: isAuthenticatedAdmin, disableAdmin } = useAdmin();
   const navigate = useNavigate();
 
-  if (!isAdmin) return null;
+  if (!isAdmin && !isAuthenticatedAdmin) return null;
 
   const handleLogout = () => {
+    disableAdmin();
     logoutAdmin();
     navigate("/admin");
   };

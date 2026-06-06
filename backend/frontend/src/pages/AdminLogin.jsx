@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAdmin } from "../context/AdminContext";
+import { AppContext } from "../context/AppContext";
 import axios from "axios";
 
 const AdminLogin = () => {
@@ -12,6 +13,7 @@ const AdminLogin = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { login, enableWithPasscode } = useAdmin();
+  const { setIsAdmin: setAppAdmin } = useContext(AppContext);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -34,6 +36,7 @@ const AdminLogin = () => {
     try {
       const result = await login(password);
       if (result.success) {
+        setAppAdmin(true);
         setShowLogin(false);
         navigate("/admin/dashboard");
       } else {
@@ -53,6 +56,7 @@ const AdminLogin = () => {
     
     const result = await enableWithPasscode(passcode);
     if (result) {
+      setAppAdmin(true);
       setError("");
       setShowLogin(false);
       navigate("/admin/dashboard");

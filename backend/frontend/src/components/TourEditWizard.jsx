@@ -317,7 +317,7 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
               <label className="flex items-center justify-between gap-4 border rounded-lg px-3 py-2 bg-white cursor-pointer">
                 <span>
                   <span className="block font-semibold text-gray-900">
-                    {formData.groupDiscountEnabled ? 'Group discount active' : 'No group discount'}
+                    Enable Group Discount
                   </span>
                   <span className="block text-xs text-gray-500">
                     Applies only when travelers exceed 3
@@ -792,7 +792,7 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
             <label className="flex items-center justify-between gap-4 border rounded-lg px-3 py-2 bg-white cursor-pointer">
               <span>
                 <span className="block font-semibold text-gray-900">
-                  {formData.groupDiscountEnabled ? 'Group discount active' : 'No group discount'}
+                  Enable Group Discount
                 </span>
                 <span className="block text-xs text-gray-500">
                   Applies only for 4 or more travelers. Existing discount stays separate.
