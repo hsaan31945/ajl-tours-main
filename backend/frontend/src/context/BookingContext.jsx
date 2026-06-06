@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { DEFAULT_COUNTRY_CODE } from "../utils/countryCodes";
 
 const BookingContext = createContext();
 
@@ -16,7 +17,7 @@ export function BookingProvider({ children }) {
     contact: {
       fullName: "",
       email: "",
-      country: "Pakistan (+92)",
+      country: DEFAULT_COUNTRY_CODE,
       phone: ""
     }
   });

@@ -1,3 +1,5 @@
+export const DEFAULT_COUNTRY_CODE = "Switzerland (+41)";
+
 const COUNTRY_CODE_DATA = [
   ["Pakistan", "+92"],
   ["Afghanistan", "+93"],

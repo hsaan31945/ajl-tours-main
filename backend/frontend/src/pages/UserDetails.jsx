@@ -5,7 +5,7 @@ import { useBooking } from "../context/BookingContext";
 import { apiUrl } from "../utils/api";
 import { getTourId } from "../utils/tourId";
 import { calculateBookingPricing } from "../utils/bookingPricing";
-import { COUNTRY_CODES } from "../utils/countryCodes";
+import { COUNTRY_CODES, DEFAULT_COUNTRY_CODE } from "../utils/countryCodes";
 import { cleanDisplayName } from "../utils/textFormatting";
 import OrderSummaryBreakdown from "../components/OrderSummaryBreakdown";
 
@@ -22,7 +22,7 @@ const UserDetails = () => {
   const tourName = cleanDisplayName(tour?.title || tour?.name || "Tour");
   const [fullName, setFullName] = useState(contact?.fullName || "");
   const [email, setEmail] = useState(contact?.email || "");
-  const [country, setCountry] = useState(contact?.country || "Pakistan (+92)");
+  const [country, setCountry] = useState(contact?.country || DEFAULT_COUNTRY_CODE);
   const [phone, setPhone] = useState(contact?.phone || "");
   const bookingTourId = getTourId(bookingTour);
   
