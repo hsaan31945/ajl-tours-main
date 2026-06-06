@@ -4,6 +4,9 @@ import AdminControlPanel from "../components/AdminControlPanel";
 import { useAdmin } from "../context/AdminContext";
 import SEO from "../components/SEO";
 import { useHeroBanner } from "../hooks/useHeroBanner";
+import { fetchToursList } from "../services/toursApi";
+import { getTourId } from "../utils/tourId";
+import { cleanDisplayName } from "../utils/textFormatting";
 import { Search, MapPin, Compass, Users, ChevronDown, CheckCircle, Star, Quote, Car, Map, Clock, ShieldCheck, HeartPulse } from "lucide-react";
 import hero4 from "../assets/images/optimized/hero4-1600.webp";
 import hero5 from "../assets/images/optimized/hero5-1600.webp";
@@ -57,6 +60,8 @@ const Home2 = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
+  const [searchTours, setSearchTours] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [homepageContent, setHomepageContent] = useState({});
   const homeHeroBanner = useHeroBanner("home", hero6Small, defaultHeroImages);
@@ -137,13 +142,71 @@ const Home2 = () => {
     { src: hero6Small, alt: "Switzerland Alps" },
   ];
 
-  // Search data
-  const searchData = [
-    { name: "Switzerland", type: "destination", route: "/switzerland" },
-    { name: "Alps Tour", type: "tour", route: "/switzerland" },
-    { name: "Lake Geneva", type: "tour", route: "/switzerland" },
-    { name: "Swiss Train", type: "tour", route: "/switzerland" },
-  ];
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadSearchTours = async () => {
+      setSearchLoading(true);
+      try {
+        const tours = await fetchToursList({ limit: 200 });
+        if (!cancelled) {
+          setSearchTours(tours.filter((tour) => getTourId(tour) && tour?.isActive !== false));
+        }
+      } catch (error) {
+        if (!cancelled) setSearchTours([]);
+      } finally {
+        if (!cancelled) setSearchLoading(false);
+      }
+    };
+
+    loadSearchTours();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const normalizeSearchText = (value) =>
+    String(value || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+
+  const getTourRoute = (tour) => {
+    const tourId = getTourId(tour);
+    if (!tourId) return null;
+    const destinationName = String(tour.divisionName || tour.destination || "").toLowerCase();
+    const basePath = destinationName.includes("sri") ? "/srilanka" : "/switzerland";
+    return `${basePath}/${tourId}/checkout-sw`;
+  };
+
+  const buildTourSearchResults = (query) => {
+    const normalizedQuery = normalizeSearchText(query);
+    if (!normalizedQuery) return [];
+
+    const queryWords = normalizedQuery.split(/\s+/).filter(Boolean);
+    return searchTours
+      .map((tour) => {
+        const name = cleanDisplayName(tour?.name || tour?.title || "Tour");
+        const normalizedName = normalizeSearchText(name);
+        const route = getTourRoute(tour);
+        return {
+          name,
+          type: "tour",
+          route,
+          tour,
+          normalizedName,
+        };
+      })
+      .filter((result) => (
+        result.route &&
+        (
+          result.normalizedName.includes(normalizedQuery) ||
+          queryWords.every((word) => result.normalizedName.includes(word))
+        )
+      ))
+      .slice(0, 8);
+  };
 
   // Search function
   const handleSearch = (query) => {
@@ -154,10 +217,7 @@ const Home2 = () => {
       return;
     }
 
-    const filtered = searchData.filter(item =>
-      item.name.toLowerCase().includes(query.toLowerCase())
-    );
-    setSearchResults(filtered);
+    setSearchResults(buildTourSearchResults(query));
     setShowDropdown(true);
   };
 
@@ -165,17 +225,15 @@ const Home2 = () => {
   const handleSearchResultClick = (result) => {
     setSearchQuery(result.name);
     setShowDropdown(false);
-    navigate(result.route);
+    navigate(result.route, { state: { tour: result.tour } });
   };
 
   // Handle search button click
   const handleSearchButtonClick = () => {
     if (searchQuery.trim() !== "") {
-      const result = searchData.find(item =>
-        item.name.toLowerCase() === searchQuery.toLowerCase()
-      );
+      const result = searchResults[0] || buildTourSearchResults(searchQuery)[0];
       if (result) {
-        navigate(result.route);
+        handleSearchResultClick(result);
       }
     }
   };
@@ -193,6 +251,12 @@ const Home2 = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  React.useEffect(() => {
+    if (searchQuery.trim()) {
+      setSearchResults(buildTourSearchResults(searchQuery));
+    }
+  }, [searchTours]);
 
   // Auto-advance carousel every 6 seconds with smooth sliding transition
   React.useEffect(() => {
@@ -312,7 +376,11 @@ const Home2 = () => {
               
               {showDropdown && (
                 <div className="absolute top-full left-0 right-0 mt-4 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 max-h-80 overflow-y-auto">
-                  {searchResults.length > 0 ? (
+                  {searchLoading ? (
+                    <div className="px-6 py-6 text-gray-500 text-center font-medium">
+                      Loading tours...
+                    </div>
+                  ) : searchResults.length > 0 ? (
                     searchResults.map((result, index) => (
                       <div
                         key={index}
