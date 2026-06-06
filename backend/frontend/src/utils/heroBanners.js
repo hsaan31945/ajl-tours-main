@@ -1,6 +1,7 @@
 import { apiUrl } from "./api";
 
 export const HERO_BANNERS_SECTION = "hero_banners";
+export const HERO_BANNERS_CACHE_KEY = "ajlHeroBanners";
 
 export const HERO_BANNER_PAGES = [
   {
@@ -98,10 +99,33 @@ export const normalizeHeroBanners = (content = {}) => {
   }, {});
 };
 
+export const readCachedHeroBanners = () => {
+  if (typeof window === "undefined") return {};
+
+  try {
+    const cached = window.localStorage.getItem(HERO_BANNERS_CACHE_KEY);
+    return cached ? JSON.parse(cached) : {};
+  } catch (error) {
+    return {};
+  }
+};
+
+export const cacheHeroBanners = (content = {}) => {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem(HERO_BANNERS_CACHE_KEY, JSON.stringify(content || {}));
+  } catch (error) {
+    // Ignore cache write failures; the API remains the source of truth.
+  }
+};
+
 export const fetchPublicHeroBanners = async () => {
   const response = await fetch(apiUrl(`/api/content/homepage/${HERO_BANNERS_SECTION}`));
   if (response.status === 404) return {};
   if (!response.ok) throw new Error("Could not load hero banners");
   const data = await response.json();
-  return data?.content || {};
+  const content = data?.content || {};
+  cacheHeroBanners(content);
+  return content;
 };

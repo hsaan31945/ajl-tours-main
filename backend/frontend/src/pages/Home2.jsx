@@ -124,9 +124,10 @@ const Home2 = () => {
   };
 
   // Hero carousel images
+  const shouldShowFallbackHero = !homeHeroBanner.isLoading;
   const heroImages = homeHeroBanner.isCustom && homeHeroBanner.images?.length
     ? homeHeroBanner.images
-    : defaultHeroImages;
+    : (shouldShowFallbackHero ? defaultHeroImages : []);
   const mobileHeroImage = homeHeroBanner.isCustom ? heroImages[0] : hero6Small;
 
   const heroGridImages = [
@@ -195,6 +196,8 @@ const Home2 = () => {
 
   // Auto-advance carousel every 6 seconds with smooth sliding transition
   React.useEffect(() => {
+    if (heroImages.length <= 1) return undefined;
+
     const interval = setInterval(() => {
       setCurrentImageIndex((prevIndex) => 
         prevIndex === heroImages.length - 1 ? 0 : prevIndex + 1
@@ -224,18 +227,20 @@ const Home2 = () => {
       <section className="relative h-[70vh] sm:h-[60vh] md:h-screen w-full overflow-hidden bg-gray-900">
         {/* Mobile Background: Static with Overlay */}
         <div className="md:hidden absolute inset-0 z-0">
-          <img
-            src={mobileHeroImage || hero6Small}
-            srcSet={homeHeroBanner.isCustom ? undefined : `${hero6Small} 900w, ${hero6} 1600w`}
-            sizes="100vw"
-            alt={homeHeroBanner.alt || ""}
-            width="900"
-            height="600"
-            fetchpriority="high"
-            loading="eager"
-            decoding="async"
-            className="absolute inset-0 h-full w-full object-cover object-top"
-          />
+          {heroImages.length > 0 && (
+            <img
+              src={mobileHeroImage || hero6Small}
+              srcSet={homeHeroBanner.isCustom ? undefined : `${hero6Small} 900w, ${hero6} 1600w`}
+              sizes="100vw"
+              alt={homeHeroBanner.alt || ""}
+              width="900"
+              height="600"
+              fetchpriority="high"
+              loading="eager"
+              decoding="async"
+              className="absolute inset-0 h-full w-full object-cover object-top"
+            />
+          )}
           <div className="absolute inset-0 bg-black/30"></div>
         </div>
 
@@ -244,8 +249,10 @@ const Home2 = () => {
           <div 
             className="flex h-full transition-transform duration-1000 ease-in-out" 
             style={{ 
-              width: `${heroImages.length * 100}%`,
-              transform: `translateX(-${(currentImageIndex / heroImages.length) * 100}%)`
+              width: `${Math.max(heroImages.length, 1) * 100}%`,
+              transform: heroImages.length
+                ? `translateX(-${(currentImageIndex / heroImages.length) * 100}%)`
+                : "translateX(0)"
             }}
           >
             {heroImages.map((image, index) => (

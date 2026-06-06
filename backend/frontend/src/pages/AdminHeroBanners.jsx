@@ -5,6 +5,7 @@ import { useAdmin } from "../context/AdminContext";
 import { apiUrl } from "../utils/api";
 import { adminImageFormatMessage, isAllowedAdminImageFile } from "../utils/imageValidation";
 import {
+  cacheHeroBanners,
   HERO_BANNERS_SECTION,
   HERO_BANNER_PAGES,
   normalizeHeroBanners,
@@ -223,6 +224,7 @@ const AdminHeroBanners = () => {
     setMessage("");
     setError("");
     try {
+      const normalizedBanners = normalizeHeroBanners(banners);
       const response = await fetch(apiUrl(`/api/admin/content/${HERO_BANNERS_SECTION}`), {
         method: "PUT",
         headers: {
@@ -232,7 +234,7 @@ const AdminHeroBanners = () => {
             : (passcodeHeader ? { "X-Admin-Passcode": passcodeHeader } : {})),
         },
         body: JSON.stringify({
-          content: normalizeHeroBanners(banners),
+          content: normalizedBanners,
           isActive: true,
         }),
       });
@@ -243,7 +245,9 @@ const AdminHeroBanners = () => {
       }
 
       const data = await response.json();
-      setBanners(normalizeHeroBanners(data?.content || banners));
+      const savedBanners = normalizeHeroBanners(data?.content || normalizedBanners);
+      cacheHeroBanners(savedBanners);
+      setBanners(savedBanners);
       setMessage("Hero banners saved.");
     } catch (err) {
       setError(err.message || "Could not save hero banners");
