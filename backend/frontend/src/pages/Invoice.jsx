@@ -10,6 +10,7 @@ import {
 } from "@react-pdf/renderer";
 import Button from "../components/Button";
 import { useCurrency } from "../context/CurrencyContext";
+import { getGroupDiscountLabel } from "../utils/bookingPricing";
 
 const styles = StyleSheet.create({
   page: { padding: 30 },
@@ -33,7 +34,7 @@ const InvoicePDF = ({ booking, symbol }) => (
         <Text>Tour: {booking.tourTitle}</Text>
         <Text>Number of Travelers: {booking.travelers}</Text>
         {Number(booking.groupDiscountTotal || 0) > 0 && (
-          <Text>Group Discount: -{symbol}{Number(booking.groupDiscountTotal).toFixed(2)}</Text>
+          <Text>{getGroupDiscountLabel(booking, booking.tickets || booking.travelers)}: -{symbol}{Number(booking.groupDiscountTotal).toFixed(2)}</Text>
         )}
         <Text>Total Price: {symbol}{Number(booking.totalPrice).toFixed(2)}</Text>
       </View>
@@ -86,7 +87,7 @@ const Invoice = () => {
         </p>
         {Number(booking.groupDiscountTotal || 0) > 0 && (
           <p>
-            <strong>Group Discount:</strong> -{symbol}{Number(booking.groupDiscountTotal).toFixed(2)}
+            <strong>{getGroupDiscountLabel(booking, booking.tickets || booking.travelers)}:</strong> -{symbol}{Number(booking.groupDiscountTotal).toFixed(2)}
           </p>
         )}
         <p>

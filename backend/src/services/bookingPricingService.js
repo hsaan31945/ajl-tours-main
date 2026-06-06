@@ -119,6 +119,7 @@ const calculateTourPricing = (tour, options = {}) => {
     groupDiscountUnitAmount: groupDiscount.unitAmount,
     groupDiscountTotal: groupDiscount.totalAmount,
     groupDiscountTier: groupDiscount.tier,
+    groupDiscountPercent: groupDiscount.percent || 0,
     hasGroupDiscount: groupDiscount.applied,
     unitPrice,
     pricedUnit,

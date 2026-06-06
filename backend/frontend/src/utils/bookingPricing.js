@@ -58,6 +58,19 @@ export const getEffectiveTourPrice = (tour, fallbackPrice = 0) => {
   return getDiscountPrice(tour, originalPrice) ?? originalPrice;
 };
 
+export const getGroupDiscountPercent = (pricing) => {
+  const percent = Number(pricing?.groupDiscountPercent ?? pricing?.groupDiscount?.percent ?? 0);
+  return Number.isFinite(percent) && percent > 0 ? roundMoney(percent) : 0;
+};
+
+export const getGroupDiscountLabel = (pricing, travelers = pricing?.tickets) => {
+  const count = Number(travelers);
+  const travelerLabel = count >= 6 ? "6+" : String(count || "");
+  const percent = getGroupDiscountPercent(pricing);
+  const percentText = percent > 0 ? ` ${percent}%` : "";
+  return `Group discount${percentText} (${travelerLabel} adults)`;
+};
+
 export const calculateBookingPricing = ({
   tour,
   tickets,
@@ -94,6 +107,7 @@ export const calculateBookingPricing = ({
     groupDiscountUnitAmount: groupDiscount.unitAmount,
     groupDiscountTotal: groupDiscount.totalAmount,
     groupDiscountTier: groupDiscount.tier,
+    groupDiscountPercent: groupDiscount.percent || 0,
     hasGroupDiscount: groupDiscount.applied,
     baseUnitPrice,
     unitPrice,

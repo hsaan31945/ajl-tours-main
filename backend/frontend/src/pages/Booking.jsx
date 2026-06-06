@@ -144,6 +144,7 @@ const Booking = () => {
       groupDiscountTier: pricing.groupDiscountTier,
       groupDiscountUnitAmount: pricing.groupDiscountUnitAmount,
       groupDiscountTotal: pricing.groupDiscountTotal,
+      groupDiscountPercent: pricing.groupDiscountPercent,
       paymentCurrency: pricing.currency,
     };
     try {

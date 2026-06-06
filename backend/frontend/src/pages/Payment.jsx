@@ -7,7 +7,7 @@ import { Lock, CreditCard } from "lucide-react";
 import axios from "axios";
 import { apiUrl } from "../utils/api";
 import { getTourId } from "../utils/tourId";
-import { calculateBookingPricing } from "../utils/bookingPricing";
+import { calculateBookingPricing, getGroupDiscountLabel } from "../utils/bookingPricing";
 import { cleanDisplayName } from "../utils/textFormatting";
 
 const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
@@ -113,7 +113,7 @@ const PaymentForm = ({ clientSecret, paymentSummary }) => {
               <p className="text-gray-600">{displayTickets} adult{displayTickets > 1 ? "s" : ""} • {displayCurrency}{totalPrice.toFixed(2)}</p>
               {displayPricing.hasGroupDiscount && (
                 <p className="text-sm font-semibold text-green-700">
-                  Group discount ({displayTickets >= 6 ? "6+" : displayTickets} adults): -{displayCurrency}{Number(displayPricing.groupDiscountTotal || 0).toFixed(2)}
+                  {getGroupDiscountLabel(displayPricing, displayTickets)}: -{displayCurrency}{Number(displayPricing.groupDiscountTotal || 0).toFixed(2)}
                 </p>
               )}
               </div>

@@ -4,7 +4,7 @@ import { CheckCircle, Lock } from "lucide-react";
 import { useBooking } from "../context/BookingContext";
 import { apiUrl } from "../utils/api";
 import { getTourId } from "../utils/tourId";
-import { calculateBookingPricing } from "../utils/bookingPricing";
+import { calculateBookingPricing, getGroupDiscountLabel } from "../utils/bookingPricing";
 import { COUNTRY_CODES } from "../utils/countryCodes";
 import { cleanDisplayName } from "../utils/textFormatting";
 
@@ -129,6 +129,7 @@ const UserDetails = () => {
         groupDiscountTier: pricing.groupDiscountTier,
         groupDiscountUnitAmount: pricing.groupDiscountUnitAmount,
         groupDiscountTotal: pricing.groupDiscountTotal,
+        groupDiscountPercent: pricing.groupDiscountPercent,
         hasGroupDiscount: pricing.hasGroupDiscount,
         tickets: currentTickets,
         tourId: getTourId(tour) || "unknown",
@@ -306,7 +307,7 @@ const UserDetails = () => {
           </div>
           {pricing.hasGroupDiscount && (
             <div className="flex justify-between items-center text-sm text-green-700">
-              <span>Group discount ({currentTickets >= 6 ? "6+" : currentTickets} adults)</span>
+              <span>{getGroupDiscountLabel(pricing, currentTickets)}</span>
               <span>-{pricing.currency}{pricing.groupDiscountTotal.toFixed(2)}</span>
             </div>
           )}

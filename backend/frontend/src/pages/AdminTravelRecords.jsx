@@ -328,7 +328,9 @@ const AdminTravelRecords = () => {
                               </div>
                               {Number(booking.groupDiscountTotal || 0) > 0 && (
                                 <div className="flex justify-between">
-                                  <span className="text-gray-500">Group Discount:</span>
+                                  <span className="text-gray-500">
+                                    Group Discount{Number(booking.groupDiscountPercent || 0) > 0 ? ` ${Number(booking.groupDiscountPercent).toFixed(2).replace(/\.00$/, "")}%` : ""}:
+                                  </span>
                                   <span className="font-medium text-green-700">
                                     -${Number(booking.groupDiscountTotal).toFixed(2)}
                                   </span>

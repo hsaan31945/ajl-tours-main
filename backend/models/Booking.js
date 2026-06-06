@@ -66,6 +66,12 @@ const bookingSchema = new mongoose.Schema({
     min: 0,
     default: 0
   },
+  groupDiscountPercent: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: 0
+  },
   paymentCurrency: {
     type: String,
     default: 'CHF',

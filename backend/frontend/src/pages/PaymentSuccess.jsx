@@ -4,7 +4,7 @@ import { CheckCircle, Download, Mail, Home } from "lucide-react";
 import { useContext } from "react";
 import { AppContext } from "../context/AppContext";
 import { apiUrl } from "../utils/api";
-import { calculateBookingPricing } from "../utils/bookingPricing";
+import { calculateBookingPricing, getGroupDiscountLabel } from "../utils/bookingPricing";
 
 const PaymentSuccess = () => {
   const navigate = useNavigate();
@@ -66,6 +66,7 @@ const PaymentSuccess = () => {
         groupDiscountTier: databaseBooking?.groupDiscountTier || data.groupDiscountTier || null,
         groupDiscountUnitAmount: Number(databaseBooking?.groupDiscountUnitAmount ?? data.groupDiscountUnitAmount ?? 0),
         groupDiscountTotal: Number(databaseBooking?.groupDiscountTotal ?? data.groupDiscountTotal ?? 0),
+        groupDiscountPercent: Number(databaseBooking?.groupDiscountPercent ?? data.groupDiscountPercent ?? 0),
         hasGroupDiscount: Number(databaseBooking?.groupDiscountTotal ?? data.groupDiscountTotal ?? 0) > 0,
         tickets: Number(databaseBooking?.travelers ?? data.tickets ?? 1),
         bookingDate: new Date().toISOString(),
@@ -133,6 +134,7 @@ const PaymentSuccess = () => {
           groupDiscountTier: pricing.groupDiscountTier || d.groupDiscountTier || null,
           groupDiscountUnitAmount: pricing.groupDiscountUnitAmount || Number(d.groupDiscountUnitAmount || 0),
           groupDiscountTotal: pricing.groupDiscountTotal || Number(d.groupDiscountTotal || 0),
+          groupDiscountPercent: pricing.groupDiscountPercent || Number(d.groupDiscountPercent || 0),
           hasGroupDiscount: pricing.hasGroupDiscount || Boolean(d.hasGroupDiscount),
           tickets: pricing.tickets,
           tourId: d.tourId || 'unknown',
@@ -231,7 +233,7 @@ const PaymentSuccess = () => {
             </div>
             {bookingData?.hasGroupDiscount && (
               <div className="flex justify-between">
-                <span className="text-gray-600">Group Discount:</span>
+                <span className="text-gray-600">{getGroupDiscountLabel(bookingData, bookingData?.tickets)}:</span>
                 <span className="font-semibold text-green-700">
                   -{bookingData?.currency || "CHF"}{Number(bookingData?.groupDiscountTotal || 0).toFixed(2)}
                 </span>

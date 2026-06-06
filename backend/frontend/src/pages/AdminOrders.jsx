@@ -216,7 +216,7 @@ const AdminOrders = () => {
                       <div>{symbol}{(b.totalPrice * rate).toFixed(2)}</div>
                       {Number(b.groupDiscountTotal || 0) > 0 && (
                         <div className="text-xs font-semibold text-green-700">
-                          Group -{symbol}{(Number(b.groupDiscountTotal) * rate).toFixed(2)}
+                          Group{Number(b.groupDiscountPercent || 0) > 0 ? ` ${Number(b.groupDiscountPercent).toFixed(2).replace(/\.00$/, "")}%` : ""} -{symbol}{(Number(b.groupDiscountTotal) * rate).toFixed(2)}
                         </div>
                       )}
                     </td>

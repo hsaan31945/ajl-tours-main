@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useBooking } from "../context/BookingContext";
 import PriceWithEdit from "./PriceWithEdit";
 import { useAdmin } from "../context/AdminContext";
-import { calculateBookingPricing } from "../utils/bookingPricing";
+import { calculateBookingPricing, getGroupDiscountLabel } from "../utils/bookingPricing";
 import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Users } from "lucide-react";
 import EditableField from "./EditableField";
 import ParticipantStepper from "./ParticipantStepper";
@@ -262,7 +262,7 @@ function PaymentSection({
         {pricing.hasGroupDiscount && (
           <div className="flex justify-between items-center rounded-lg bg-green-50 px-3 py-2 text-sm">
             <span className="font-semibold text-green-700">
-              Group discount ({pricing.tickets >= 6 ? '6+' : pricing.tickets} adults)
+              {getGroupDiscountLabel(pricing)}
             </span>
             <span className="font-bold text-green-700">
               -{pricing.currency}{pricing.groupDiscountTotal.toFixed(2)}

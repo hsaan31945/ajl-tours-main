@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import { AppContext } from "../context/AppContext";
+import { getGroupDiscountLabel } from "../utils/bookingPricing";
 
 const BookingHistory = () => {
   const { user } = useContext(AppContext);
@@ -57,7 +58,7 @@ const BookingHistory = () => {
                         <span className="mr-4">💰 {booking.currency || "$"}{Number(booking.amount || 0).toFixed(2)}</span>
                         {Number(booking.groupDiscountTotal || 0) > 0 && (
                           <span className="mr-4 text-green-700">
-                            Group discount -{booking.currency || "$"}{Number(booking.groupDiscountTotal).toFixed(2)}
+                            {getGroupDiscountLabel(booking, booking.tickets)} -{booking.currency || "$"}{Number(booking.groupDiscountTotal).toFixed(2)}
                           </span>
                         )}
                         <span className="mr-4">👥 {booking.tickets} {booking.tickets > 1 ? 'people' : 'person'}</span>
@@ -86,5 +87,4 @@ const BookingHistory = () => {
 };
 
 export default BookingHistory;
-
 

@@ -34,6 +34,7 @@ const calculateGroupDiscount = ({ tour, travelers, unitPrice }) => {
       totalAmount: 0,
       unitPriceAfterGroupDiscount: originalUnit,
       applied: false,
+      percent: 0,
     };
   }
 

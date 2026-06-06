@@ -93,6 +93,7 @@ class BookingService {
         groupDiscountTier: pricing.groupDiscountTier,
         groupDiscountUnitAmount: pricing.groupDiscountUnitAmount,
         groupDiscountTotal: pricing.groupDiscountTotal,
+        groupDiscountPercent: pricing.groupDiscountPercent,
         paymentCurrency: pricing.currency.toUpperCase(),
         minTicketsAtBooking: pricing.minTickets,
         flexibility: pricing.flexibility,
