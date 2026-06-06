@@ -73,12 +73,6 @@ const SrilankaLocations = () => {
                 <MessageCircle className="h-4 w-4" />
                 Contact us
               </Link>
-              <Link
-                to="/switzerland"
-                className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-gray-900 shadow-lg transition hover:bg-gray-100"
-              >
-                View Switzerland tours
-              </Link>
             </div>
           </div>
         </div>
@@ -128,12 +122,6 @@ const SrilankaLocations = () => {
                     Add a tour to the Srilanka location from the admin dashboard and it will show here.
                   </p>
                 </div>
-                <Link
-                  to="/contact"
-                  className="inline-flex shrink-0 items-center justify-center rounded-lg bg-orange-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-orange-700"
-                >
-                  Request a trip
-                </Link>
               </div>
             </div>
           ) : (
