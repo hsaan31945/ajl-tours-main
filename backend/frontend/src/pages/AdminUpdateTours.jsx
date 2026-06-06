@@ -5,6 +5,26 @@ import { getTourId } from "../utils/tourId";
 import { apiUrl } from "../utils/api";
 import { normalizeTourData } from "../utils/tourDataMapper";
 
+const roundMoney = (value) => Math.round((Number(value) || 0) * 100) / 100;
+
+const getDiscountPercentFromPrice = (price, discountedPrice) => {
+  const basePrice = Number(price);
+  const salePrice = Number(discountedPrice);
+  if (!Number.isFinite(basePrice) || basePrice <= 0 || !Number.isFinite(salePrice) || salePrice < 0 || salePrice >= basePrice) {
+    return null;
+  }
+  return roundMoney(((basePrice - salePrice) / basePrice) * 100);
+};
+
+const getPriceAfterPercent = (price, percent) => {
+  const basePrice = Number(price);
+  const discountPercent = Number(percent);
+  if (!Number.isFinite(basePrice) || basePrice < 0 || !Number.isFinite(discountPercent) || discountPercent <= 0) {
+    return null;
+  }
+  return roundMoney(Math.max(0, basePrice * (1 - Math.min(100, discountPercent) / 100)));
+};
+
 const AdminUpdateTours = () => {
   const { isAdmin, passcodeHeader } = useAdmin();
   const [tours, setTours] = useState([]);
@@ -159,7 +179,13 @@ const AdminUpdateTours = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredTours.map((tour) => (
+                  {filteredTours.map((tour) => {
+                    const discountPercent = getDiscountPercentFromPrice(tour.price, tour.discountPrice);
+                    const hasRegularDiscount = Number.isFinite(Number(tour.discountPrice)) && Number(tour.discountPrice) > 0 && Number(tour.discountPrice) < Number(tour.price);
+                    const groupBasePrice = hasRegularDiscount
+                      ? Number(tour.discountPrice)
+                      : Number(tour.price || 0);
+                    return (
                     <tr key={getTourId(tour)} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{tour.name}</div>
@@ -174,7 +200,10 @@ const AdminUpdateTours = () => {
                           {tour.discountEnabled && Number(tour.discountPrice) < Number(tour.price) ? (
                             <>
                               <span className="text-gray-400 line-through mr-2">CHF {tour.price || 0}</span>
-                              <span className="font-semibold text-red-600">CHF {tour.discountPrice}</span>
+                              <span className="font-semibold text-red-600">CHF {Number(tour.discountPrice).toFixed(2)}</span>
+                              {discountPercent !== null && (
+                                <span className="ml-2 text-xs text-gray-500">({discountPercent}% off)</span>
+                              )}
                             </>
                           ) : (
                             <>CHF {tour.price || 0}</>
@@ -185,9 +214,9 @@ const AdminUpdateTours = () => {
                         {tour.groupDiscountEnabled ? (
                           <div className="text-xs text-green-700">
                             <div className="font-semibold">Enabled</div>
-                            <div>4: CHF {tour.groupDiscount4 || 0}</div>
-                            <div>5: CHF {tour.groupDiscount5 || 0}</div>
-                            <div>6+: CHF {tour.groupDiscount6Plus || 0}</div>
+                            <div>4: {tour.groupDiscount4 || 0}% {"->"} CHF {(getPriceAfterPercent(groupBasePrice, tour.groupDiscount4) ?? groupBasePrice).toFixed(2)}</div>
+                            <div>5: {tour.groupDiscount5 || 0}% {"->"} CHF {(getPriceAfterPercent(groupBasePrice, tour.groupDiscount5) ?? groupBasePrice).toFixed(2)}</div>
+                            <div>6+: {tour.groupDiscount6Plus || 0}% {"->"} CHF {(getPriceAfterPercent(groupBasePrice, tour.groupDiscount6Plus) ?? groupBasePrice).toFixed(2)}</div>
                           </div>
                         ) : (
                           <span className="text-xs text-gray-500">Off</span>
@@ -214,7 +243,7 @@ const AdminUpdateTours = () => {
                         </button>
                       </td>
                     </tr>
-                  ))}
+                  );})}
                 </tbody>
               </table>
             </div>

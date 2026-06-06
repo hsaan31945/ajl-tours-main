@@ -41,16 +41,19 @@ const tourSchema = new mongoose.Schema({
   groupDiscount4: {
     type: Number,
     min: 0,
+    max: 100,
     default: null
   },
   groupDiscount5: {
     type: Number,
     min: 0,
+    max: 100,
     default: null
   },
   groupDiscount6Plus: {
     type: Number,
     min: 0,
+    max: 100,
     default: null
   },
   currency: {

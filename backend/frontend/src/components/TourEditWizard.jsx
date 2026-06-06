@@ -24,6 +24,33 @@ const cleanItinerary = (items) => (
     : []
 );
 
+const roundMoney = (value) => Math.round((Number(value) || 0) * 100) / 100;
+
+const clampPercent = (value) => {
+  if (value === null || value === undefined || value === '') return '';
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0) return '';
+  return String(Math.min(100, number));
+};
+
+const getPercentDiscountPrice = (price, percent) => {
+  const basePrice = Number(price);
+  const discountPercent = Number(percent);
+  if (!Number.isFinite(basePrice) || basePrice < 0 || !Number.isFinite(discountPercent) || discountPercent <= 0) {
+    return null;
+  }
+  return roundMoney(Math.max(0, basePrice * (1 - Math.min(100, discountPercent) / 100)));
+};
+
+const getDiscountPercentFromPrice = (price, discountedPrice) => {
+  const basePrice = Number(price);
+  const salePrice = Number(discountedPrice);
+  if (!Number.isFinite(basePrice) || basePrice <= 0 || !Number.isFinite(salePrice) || salePrice < 0 || salePrice >= basePrice) {
+    return '';
+  }
+  return String(roundMoney(((basePrice - salePrice) / basePrice) * 100));
+};
+
 const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
   const { passcodeHeader } = useAdmin();
   const [formData, setFormData] = useState({
@@ -33,6 +60,7 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
     price: '',
     discountEnabled: false,
     discountPrice: '',
+    discountPercent: '',
     groupDiscountEnabled: false,
     groupDiscount4: '',
     groupDiscount5: '',
@@ -97,6 +125,7 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
         price: normalizedTour.price || '',
         discountEnabled: Boolean(normalizedTour.discountEnabled),
         discountPrice: normalizedTour.discountPrice ?? '',
+        discountPercent: getDiscountPercentFromPrice(normalizedTour.price || 0, normalizedTour.discountPrice),
         groupDiscountEnabled: normalizedTour.groupDiscountEnabled === true,
         groupDiscount4: normalizedTour.groupDiscount4 ?? '',
         groupDiscount5: normalizedTour.groupDiscount5 ?? '',
@@ -184,22 +213,23 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
       }
       
       // Prepare data for API - ensure price is a number
+      const percentDiscountPrice = getPercentDiscountPrice(formData.price, formData.discountPercent);
       const dataToSend = {
         ...formData,
         price: formData.price ? Number(formData.price) : formData.price,
         discountEnabled: Boolean(formData.discountEnabled),
-        discountPrice: formData.discountEnabled && formData.discountPrice !== ''
-          ? Number(formData.discountPrice)
+        discountPrice: formData.discountEnabled && percentDiscountPrice !== null
+          ? percentDiscountPrice
           : null,
         groupDiscountEnabled: Boolean(formData.groupDiscountEnabled),
         groupDiscount4: formData.groupDiscountEnabled && formData.groupDiscount4 !== ''
-          ? Number(formData.groupDiscount4)
+          ? Number(clampPercent(formData.groupDiscount4))
           : null,
         groupDiscount5: formData.groupDiscountEnabled && formData.groupDiscount5 !== ''
-          ? Number(formData.groupDiscount5)
+          ? Number(clampPercent(formData.groupDiscount5))
           : null,
         groupDiscount6Plus: formData.groupDiscountEnabled && formData.groupDiscount6Plus !== ''
-          ? Number(formData.groupDiscount6Plus)
+          ? Number(clampPercent(formData.groupDiscount6Plus))
           : null,
         highlights: cleanTextArray(formData.highlights),
         included: cleanTextArray(formData.included),
@@ -249,6 +279,12 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
     }
   };
 
+  const previewCurrency = formData.currency || 'CHF';
+  const basePricePreview = roundMoney(formData.price);
+  const standardDiscountPreview = getPercentDiscountPrice(formData.price, formData.discountPercent);
+  const groupBasePreview = standardDiscountPreview ?? basePricePreview;
+  const getGroupPreviewPrice = (percent) => getPercentDiscountPrice(groupBasePreview, percent);
+
   const renderStep = () => {
     switch (currentStep) {
       case 0: // Basic Information
@@ -291,26 +327,37 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
                   onChange={(e) => setFormData(prev => ({
                     ...prev,
                     discountEnabled: e.target.checked,
-                    discountPrice: e.target.checked ? prev.discountPrice : ''
+                    discountPercent: e.target.checked ? prev.discountPercent : '',
+                    discountPrice: ''
                   }))}
                   className="h-5 w-5 accent-orange-600"
                 />
               </label>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">Discounted Price</label>
+              <label className="block text-sm font-medium mb-2">Discount Percentage</label>
               <input
                 type="number"
                 min="0"
-                value={formData.discountPrice}
+                max="100"
+                value={formData.discountPercent}
                 onChange={(e) => setFormData(prev => ({
                   ...prev,
-                  discountPrice: e.target.value,
+                  discountPercent: clampPercent(e.target.value),
+                  discountPrice: '',
                   discountEnabled: e.target.value !== ''
                 }))}
                 className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Leave blank for no discount"
+                placeholder="e.g., 10"
               />
+              <div className="mt-2 text-sm text-gray-600">
+                Discounted price:{" "}
+                <span className="font-semibold text-red-600">
+                  {standardDiscountPreview !== null
+                    ? `${previewCurrency} ${standardDiscountPreview.toFixed(2)}`
+                    : "No discount"}
+                </span>
+              </div>
             </div>
             <div className="md:col-span-2 border rounded-lg p-4 bg-gray-50">
               <label className="block text-sm font-medium mb-2">Group Discount Settings</label>
@@ -339,37 +386,55 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
               {formData.groupDiscountEnabled && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">4 Person Discount</label>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">4 Person Discount (%)</label>
                     <input
                       type="number"
                       min="0"
+                      max="100"
                       value={formData.groupDiscount4}
-                      onChange={(e) => handleInputChange('groupDiscount4', e.target.value)}
+                      onChange={(e) => handleInputChange('groupDiscount4', clampPercent(e.target.value))}
                       className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="0"
                     />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Price: {getGroupPreviewPrice(formData.groupDiscount4) !== null
+                        ? `${previewCurrency} ${getGroupPreviewPrice(formData.groupDiscount4).toFixed(2)} /person`
+                        : "No group discount"}
+                    </p>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">5 Person Discount</label>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">5 Person Discount (%)</label>
                     <input
                       type="number"
                       min="0"
+                      max="100"
                       value={formData.groupDiscount5}
-                      onChange={(e) => handleInputChange('groupDiscount5', e.target.value)}
+                      onChange={(e) => handleInputChange('groupDiscount5', clampPercent(e.target.value))}
                       className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="0"
                     />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Price: {getGroupPreviewPrice(formData.groupDiscount5) !== null
+                        ? `${previewCurrency} ${getGroupPreviewPrice(formData.groupDiscount5).toFixed(2)} /person`
+                        : "No group discount"}
+                    </p>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">6+ Person Discount</label>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">6+ Person Discount (%)</label>
                     <input
                       type="number"
                       min="0"
+                      max="100"
                       value={formData.groupDiscount6Plus}
-                      onChange={(e) => handleInputChange('groupDiscount6Plus', e.target.value)}
+                      onChange={(e) => handleInputChange('groupDiscount6Plus', clampPercent(e.target.value))}
                       className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="0"
                     />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Price: {getGroupPreviewPrice(formData.groupDiscount6Plus) !== null
+                        ? `${previewCurrency} ${getGroupPreviewPrice(formData.groupDiscount6Plus).toFixed(2)} /person`
+                        : "No group discount"}
+                    </p>
                   </div>
                 </div>
               )}
@@ -710,19 +775,29 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
               className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter base price"
             />
-            <label className="block text-sm font-medium mb-2">Discounted Price</label>
+            <label className="block text-sm font-medium mb-2">Discount Percentage</label>
             <input
               type="number"
               min="0"
-              value={formData.discountPrice}
+              max="100"
+              value={formData.discountPercent}
               onChange={(e) => setFormData(prev => ({
                 ...prev,
-                discountPrice: e.target.value,
+                discountPercent: clampPercent(e.target.value),
+                discountPrice: '',
                 discountEnabled: e.target.value !== ''
               }))}
               className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Leave blank for no discount"
+              placeholder="e.g., 10"
             />
+            <div className="text-sm text-gray-600">
+              Discounted price:{" "}
+              <span className="font-semibold text-red-600">
+                {standardDiscountPreview !== null
+                  ? `${previewCurrency} ${standardDiscountPreview.toFixed(2)}`
+                  : "No discount"}
+              </span>
+            </div>
             <label className="flex items-center justify-between gap-4 border rounded-lg px-3 py-2 bg-white cursor-pointer">
               <span className="font-semibold text-gray-900">Enable Discount</span>
               <input
@@ -731,7 +806,8 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
                 onChange={(e) => setFormData(prev => ({
                   ...prev,
                   discountEnabled: e.target.checked,
-                  discountPrice: e.target.checked ? prev.discountPrice : ''
+                  discountPercent: e.target.checked ? prev.discountPercent : '',
+                  discountPrice: ''
                 }))}
                 className="h-5 w-5 accent-orange-600"
               />
@@ -756,20 +832,26 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
               {formData.groupDiscountEnabled && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
                   {[
-                    ['groupDiscount4', '4 Person Discount'],
-                    ['groupDiscount5', '5 Person Discount'],
-                    ['groupDiscount6Plus', '6+ Person Discount'],
+                    ['groupDiscount4', '4 Person Discount (%)'],
+                    ['groupDiscount5', '5 Person Discount (%)'],
+                    ['groupDiscount6Plus', '6+ Person Discount (%)'],
                   ].map(([field, label]) => (
                     <div key={field}>
                       <label className="block text-xs font-semibold text-gray-600 mb-1">{label}</label>
                       <input
                         type="number"
                         min="0"
+                        max="100"
                         value={formData[field]}
-                        onChange={(e) => handleInputChange(field, e.target.value)}
+                        onChange={(e) => handleInputChange(field, clampPercent(e.target.value))}
                         className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="0"
                       />
+                      <p className="mt-1 text-xs text-gray-500">
+                        Price: {getGroupPreviewPrice(formData[field]) !== null
+                          ? `${previewCurrency} ${getGroupPreviewPrice(formData[field]).toFixed(2)} /person`
+                          : "No group discount"}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -814,20 +896,26 @@ const TourEditWizard = ({ tour, initialTourData, isOpen, onClose, onSave }) => {
             {formData.groupDiscountEnabled && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {[
-                  ['groupDiscount4', '4 Person Discount'],
-                  ['groupDiscount5', '5 Person Discount'],
-                  ['groupDiscount6Plus', '6+ Person Discount'],
+                  ['groupDiscount4', '4 Person Discount (%)'],
+                  ['groupDiscount5', '5 Person Discount (%)'],
+                  ['groupDiscount6Plus', '6+ Person Discount (%)'],
                 ].map(([field, label]) => (
                   <div key={field}>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">{label}</label>
                     <input
                       type="number"
                       min="0"
+                      max="100"
                       value={formData[field]}
-                      onChange={(e) => handleInputChange(field, e.target.value)}
+                      onChange={(e) => handleInputChange(field, clampPercent(e.target.value))}
                       className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="0"
                     />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Price: {getGroupPreviewPrice(formData[field]) !== null
+                        ? `${previewCurrency} ${getGroupPreviewPrice(formData[field]).toFixed(2)} /person`
+                        : "No group discount"}
+                    </p>
                   </div>
                 ))}
               </div>

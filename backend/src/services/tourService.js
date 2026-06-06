@@ -170,7 +170,7 @@ const getNormalizedDiscountPrice = (tour = {}) => {
 const normalizeGroupDiscountValue = (value) => {
   if (value === null || value === undefined || value === '') return null;
   const number = Number(value);
-  return Number.isFinite(number) && number >= 0 ? number : null;
+  return Number.isFinite(number) && number >= 0 ? Math.min(100, number) : null;
 };
 
 const getGroupDiscountFields = (tour = {}) => ({

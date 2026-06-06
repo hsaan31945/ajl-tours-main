@@ -63,7 +63,7 @@ const normalizeTour = (tour) => {
   const normalizeGroupDiscountValue = (value) => (
     value !== null && value !== undefined && value !== '' &&
     Number.isFinite(Number(value)) && Number(value) >= 0
-      ? Number(value)
+      ? Math.min(100, Number(value))
       : null
   );
   const id = tour._id?.toString?.() || tour._id;

@@ -1,9 +1,9 @@
 const toMoney = (value) => Math.round((Number(value) || 0) * 100) / 100;
 
-const normalizeGroupDiscountAmount = (value) => {
+const normalizeGroupDiscountPercent = (value) => {
   if (value === null || value === undefined || value === '') return null;
   const number = Number(value);
-  return Number.isFinite(number) && number >= 0 ? toMoney(number) : null;
+  return Number.isFinite(number) && number >= 0 ? Math.min(100, toMoney(number)) : null;
 };
 
 const getGroupDiscountTier = (travelers) => {
@@ -16,9 +16,9 @@ const getGroupDiscountTier = (travelers) => {
 
 const getGroupDiscountConfig = (tour = {}) => ({
   enabled: tour.groupDiscountEnabled === true,
-  groupDiscount4: normalizeGroupDiscountAmount(tour.groupDiscount4),
-  groupDiscount5: normalizeGroupDiscountAmount(tour.groupDiscount5),
-  groupDiscount6Plus: normalizeGroupDiscountAmount(tour.groupDiscount6Plus),
+  groupDiscount4: normalizeGroupDiscountPercent(tour.groupDiscount4),
+  groupDiscount5: normalizeGroupDiscountPercent(tour.groupDiscount5),
+  groupDiscount6Plus: normalizeGroupDiscountPercent(tour.groupDiscount6Plus),
 });
 
 const calculateGroupDiscount = ({ tour, travelers, unitPrice }) => {
@@ -37,8 +37,9 @@ const calculateGroupDiscount = ({ tour, travelers, unitPrice }) => {
     };
   }
 
-  const configuredAmount = config[`groupDiscount${tier}`];
-  const unitAmount = configuredAmount === null ? 0 : Math.min(configuredAmount, originalUnit);
+  const configuredPercent = config[`groupDiscount${tier}`];
+  const percent = configuredPercent === null ? 0 : Math.min(configuredPercent, 100);
+  const unitAmount = toMoney(originalUnit * (percent / 100));
   const totalAmount = toMoney(unitAmount * Number(travelers));
 
   return {
@@ -48,6 +49,7 @@ const calculateGroupDiscount = ({ tour, travelers, unitPrice }) => {
     totalAmount,
     unitPriceAfterGroupDiscount: toMoney(Math.max(0, originalUnit - unitAmount)),
     applied: unitAmount > 0,
+    percent,
   };
 };
 
@@ -55,5 +57,5 @@ module.exports = {
   calculateGroupDiscount,
   getGroupDiscountConfig,
   getGroupDiscountTier,
-  normalizeGroupDiscountAmount,
+  normalizeGroupDiscountPercent,
 };
