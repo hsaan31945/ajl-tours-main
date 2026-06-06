@@ -32,6 +32,7 @@ const AdminSettings = lazy(() => import("./pages/AdminSettings"));
 const AdminDivisions = lazy(() => import("./pages/AdminDivisions"));
 const AdminUpdateTours = lazy(() => import("./pages/AdminUpdateTours"));
 const AdminTravelRecords = lazy(() => import("./pages/AdminTravelRecords"));
+const AdminHeroBanners = lazy(() => import("./pages/AdminHeroBanners"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const Payment = lazy(() => import("./pages/Payment"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
@@ -172,6 +173,7 @@ const App = () => {
               <Route path="/admin/trips" element={<AdminTrips />} />
               <Route path="/admin/divisions" element={<AdminDivisions />} />
               <Route path="/admin/tours" element={<AdminUpdateTours />} />
+              <Route path="/admin/hero-banners" element={<AdminHeroBanners />} />
               <Route path="/admin/travel-records" element={<AdminTravelRecords />} />
               <Route path="/admin/orders" element={<AdminOrders />} />
               <Route path="/admin/settings" element={<AdminSettings />} />

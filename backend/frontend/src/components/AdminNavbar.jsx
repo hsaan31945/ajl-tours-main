@@ -25,6 +25,7 @@ const AdminNavbar = () => {
         <NavLink to="/admin/divisions" className={({ isActive }) => isActive ? "font-bold underline" : ""}>Divisions</NavLink>
         <NavLink to="/admin/tour-wizard" className={({ isActive }) => isActive ? "font-bold underline" : ""}>Create Tour</NavLink>
         <NavLink to="/admin/tours" className={({ isActive }) => isActive ? "font-bold underline" : ""}>Tours</NavLink>
+        <NavLink to="/admin/hero-banners" className={({ isActive }) => isActive ? "font-bold underline" : ""}>Hero Banners</NavLink>
         <NavLink to="/admin/travel-records" className={({ isActive }) => isActive ? "font-bold underline" : ""}>Travel Records</NavLink>
         <NavLink to="/admin/orders" className={({ isActive }) => isActive ? "font-bold underline" : ""}>Orders</NavLink>
         <NavLink to="/admin/settings" className={({ isActive }) => isActive ? "font-bold underline" : ""}>Settings</NavLink>

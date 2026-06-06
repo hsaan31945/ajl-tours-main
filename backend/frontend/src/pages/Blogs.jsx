@@ -4,9 +4,11 @@ import { Calendar, Clock, MapPin, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { blogs } from "../data/blogs";
 import SEO from "../components/SEO";
+import { useHeroBanner } from "../hooks/useHeroBanner";
 
 const Blogs = () => {
   const navigate = useNavigate();
+  const heroBanner = useHeroBanner("blogs", "/assets/images/hero6.jpg");
 
   const fadeIn = {
     hidden: { opacity: 0, y: 30 },
@@ -31,16 +33,22 @@ const Blogs = () => {
       />
       {/* Hero Section */}
       <motion.div
-        className="relative bg-gradient-to-r from-orange-500 to-red-600 text-white py-20"
+        className="relative overflow-hidden bg-gray-900 text-white py-20"
         initial="hidden"
         animate="visible"
         variants={fadeIn}
       >
-        <div className="max-w-6xl mx-auto px-6 text-center">
+        <img
+          src={heroBanner.imageUrl}
+          alt={heroBanner.alt || "Blogs hero banner"}
+          className="absolute inset-0 h-full w-full object-cover opacity-55"
+        />
+        <div className="absolute inset-0 bg-black/45" />
+        <div className="relative max-w-6xl mx-auto px-6 text-center">
           <h1 className="text-4xl md:text-6xl font-bold mb-4">
-            Travel <span className="text-black">Blog</span>
+            Travel <span className="text-orange-300">Blog</span>
           </h1>
-          <p className="text-xl md:text-2xl text-orange-100 max-w-3xl mx-auto">
+          <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto">
             Discover amazing destinations, travel tips, and unforgettable experiences
           </p>
         </div>

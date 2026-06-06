@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import AdminControlPanel from "../components/AdminControlPanel";
 import { useAdmin } from "../context/AdminContext";
 import SEO from "../components/SEO";
+import { useHeroBanner } from "../hooks/useHeroBanner";
 import { Search, MapPin, Compass, Users, ChevronDown, CheckCircle, Star, Quote, Car, Map, Clock, ShieldCheck, HeartPulse } from "lucide-react";
 import hero4 from "../assets/images/optimized/hero4-1600.webp";
 import hero5 from "../assets/images/optimized/hero5-1600.webp";
@@ -57,6 +58,7 @@ const Home2 = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [homepageContent, setHomepageContent] = useState({});
+  const homeHeroBanner = useHeroBanner("home", hero6Small);
 
   // Load homepage content on mount
   useEffect(() => {
@@ -121,7 +123,7 @@ const Home2 = () => {
   };
 
   // Hero carousel images
-  const heroImages = [
+  const heroImages = homeHeroBanner.isCustom ? [homeHeroBanner.imageUrl] : [
     hero4,
     hero5, 
     hero6,
@@ -203,6 +205,10 @@ const Home2 = () => {
     return () => clearInterval(interval);
   }, [heroImages.length]);
 
+  React.useEffect(() => {
+    setCurrentImageIndex(0);
+  }, [homeHeroBanner.imageUrl]);
+
   const [openFaq, setOpenFaq] = useState(null);
 
   return (
@@ -220,13 +226,13 @@ const Home2 = () => {
         {/* Mobile Background: Static with Overlay */}
         <div className="md:hidden absolute inset-0 z-0">
           <img
-            src={hero6Small}
-            srcSet={`${hero6Small} 900w, ${hero6} 1600w`}
+            src={homeHeroBanner.imageUrl || hero6Small}
+            srcSet={homeHeroBanner.isCustom ? undefined : `${hero6Small} 900w, ${hero6} 1600w`}
             sizes="100vw"
-            alt=""
+            alt={homeHeroBanner.alt || ""}
             width="900"
             height="600"
-            fetchPriority="high"
+            fetchpriority="high"
             loading="eager"
             decoding="async"
             className="absolute inset-0 h-full w-full object-cover object-top"
@@ -253,10 +259,10 @@ const Home2 = () => {
               >
                 <img
                   src={image}
-                  alt=""
+                  alt={homeHeroBanner.isCustom ? homeHeroBanner.alt || "" : ""}
                   width="1600"
                   height="1067"
-                  fetchPriority={index === 0 ? "high" : "auto"}
+                  fetchpriority={index === 0 ? "high" : "auto"}
                   loading={index === 0 ? "eager" : "lazy"}
                   decoding="async"
                   className="h-full w-full object-cover"

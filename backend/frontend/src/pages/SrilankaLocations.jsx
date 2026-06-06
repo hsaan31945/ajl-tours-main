@@ -6,6 +6,7 @@ import TourCard from "../components/TourCard";
 import TourCardSkeleton from "../components/TourCardSkeleton";
 import { fetchToursList } from "../services/toursApi";
 import { getTourId } from "../utils/tourId";
+import { useHeroBanner } from "../hooks/useHeroBanner";
 
 const highlights = [
   "Private day trips and custom itineraries",
@@ -17,6 +18,7 @@ const SrilankaLocations = () => {
   const [dbTours, setDbTours] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const heroBanner = useHeroBanner("srilanka", "/assets/images/hero6.jpg");
 
   const fetchTours = async () => {
     setLoading(true);
@@ -46,8 +48,8 @@ const SrilankaLocations = () => {
 
       <section className="relative overflow-hidden bg-gray-900 text-white">
         <img
-          src="/assets/images/hero6.jpg"
-          alt="Scenic destination landscape"
+          src={heroBanner.imageUrl}
+          alt={heroBanner.alt || "Srilanka hero banner"}
           className="absolute inset-0 h-full w-full object-cover opacity-45"
         />
         <div className="absolute inset-0 bg-black/45" />

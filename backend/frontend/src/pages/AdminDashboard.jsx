@@ -154,7 +154,20 @@ const AdminDashboard = () => {
         {/* Admin Settings Section */}
         <section className="bg-white p-6 rounded-lg shadow">
           <h2 className="text-2xl font-semibold mb-4">Admin Settings</h2>
-          {/* Change username/password functionality will go here */}
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => navigate("/admin/hero-banners")}
+              className="px-6 py-3 bg-orange-600 text-white rounded-lg font-bold hover:bg-orange-700"
+            >
+              Change Hero Banner Pictures
+            </button>
+            <button
+              onClick={() => navigate("/admin/settings")}
+              className="px-6 py-3 bg-gray-800 text-white rounded-lg font-bold hover:bg-gray-900"
+            >
+              Admin Settings
+            </button>
+          </div>
         </section>
       </div>
     </div>

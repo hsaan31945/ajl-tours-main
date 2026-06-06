@@ -4,11 +4,13 @@ import TourCard from "../components/TourCard";
 import { fetchToursList } from "../services/toursApi";
 import SEO from "../components/SEO";
 import TourCardSkeleton from "../components/TourCardSkeleton";
+import { useHeroBanner } from "../hooks/useHeroBanner";
 
 const SwitzerlandLocations = () => {
   const [dbTours, setDbTours] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const heroBanner = useHeroBanner("switzerland", "/assets/images/hero5.jpg");
 
   const fetchTours = async () => {
     setLoading(true);
@@ -33,19 +35,29 @@ const SwitzerlandLocations = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50">
       <SEO
         title="Private Switzerland Tours | AJL Tours"
         description="Discover private Switzerland tours with AJL Tours, from scenic day trips to custom premium travel experiences."
       />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Switzerland Tours</h1>
-          <p className="text-xl text-gray-600">
-            Discover the beauty of Switzerland with our curated tour experiences
-          </p>
+      <section className="relative overflow-hidden bg-gray-900 text-white">
+        <img
+          src={heroBanner.imageUrl}
+          alt={heroBanner.alt || "Switzerland hero banner"}
+          className="absolute inset-0 h-full w-full object-cover opacity-60"
+        />
+        <div className="absolute inset-0 bg-black/45" />
+        <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+          <div className="max-w-3xl">
+            <h1 className="text-4xl font-extrabold leading-tight sm:text-5xl">Switzerland Tours</h1>
+            <p className="mt-5 max-w-2xl text-lg text-white/90">
+              Discover the beauty of Switzerland with our curated private tour experiences.
+            </p>
+          </div>
         </div>
+      </section>
 
+      <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <TourCardSkeleton count={6} />

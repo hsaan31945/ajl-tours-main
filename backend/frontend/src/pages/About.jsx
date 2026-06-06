@@ -1,6 +1,7 @@
 import React from "react";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
+import { useHeroBanner } from "../hooks/useHeroBanner";
 
 const fadeIn = {
   hidden: { opacity: 0 },
@@ -8,13 +9,15 @@ const fadeIn = {
 };
 
 const About = () => {
+  const fallbackHeroImage = "https://img.freepik.com/free-photo/travel-concept-with-landmarks_23-2149153256.jpg?t=st=1734459512~exp=1734463112~hmac=956199774261d513cea7b1861f7343dcc4bcdc9298fbcf1c82e3028ab2da7f18&w=1800";
+  const heroBanner = useHeroBanner("about", fallbackHeroImage);
+
   return (
     <div className="about-page">
       <section
         className="about-header text-center py-16 bg-cover bg-center relative"
         style={{
-          backgroundImage:
-            "url(https://img.freepik.com/free-photo/travel-concept-with-landmarks_23-2149153256.jpg?t=st=1734459512~exp=1734463112~hmac=956199774261d513cea7b1861f7343dcc4bcdc9298fbcf1c82e3028ab2da7f18&w=1800)",
+          backgroundImage: `url(${heroBanner.imageUrl})`,
         }}
       >
         <div className="absolute inset-0 bg-black opacity-40"></div>

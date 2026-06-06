@@ -4,11 +4,13 @@ import SEO from "../components/SEO";
 import { getTourId } from "../utils/tourId";
 import { fetchToursList } from "../services/toursApi";
 import TourCardSkeleton from "../components/TourCardSkeleton";
+import { useHeroBanner } from "../hooks/useHeroBanner";
 
 const Tour = () => {
   const [tours, setTours] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const heroBanner = useHeroBanner("tours", "/assets/images/hero7.jpg");
 
   const fetchTours = async () => {
     setLoading(true);
@@ -30,17 +32,29 @@ const Tour = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-gray-50">
       <SEO
         title="Switzerland Tours | AJL Tours"
         description="Explore AJL Tours' full collection of private Switzerland day tours, luxury transfers, and premium guided experiences."
       />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Our Tours</h1>
-          <p className="text-xl text-gray-600">Explore our full collection of premium tour experiences</p>
+      <section className="relative overflow-hidden bg-gray-900 text-white">
+        <img
+          src={heroBanner.imageUrl}
+          alt={heroBanner.alt || "Tours hero banner"}
+          className="absolute inset-0 h-full w-full object-cover opacity-60"
+        />
+        <div className="absolute inset-0 bg-black/45" />
+        <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+          <div className="max-w-3xl">
+            <h1 className="text-4xl font-extrabold leading-tight sm:text-5xl">Our Tours</h1>
+            <p className="mt-5 max-w-2xl text-lg text-white/90">
+              Explore our full collection of premium private tour experiences.
+            </p>
+          </div>
         </div>
+      </section>
 
+      <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <TourCardSkeleton count={6} />

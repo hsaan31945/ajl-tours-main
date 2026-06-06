@@ -337,6 +337,33 @@ module.exports = async (req, res) => {
       }
 
       res.status(200).json(user);
+    } else if (normalizedPath === '/admin/content' || normalizedPath.startsWith('/admin/content/')) {
+      const adminController = require('../controllers/adminController');
+      const { authenticateAdmin } = require('../src/middleware/auth');
+      try {
+        await new Promise((resolve, reject) => {
+          authenticateAdmin(req, res, (err) => err ? reject(err) : resolve());
+        });
+      } catch (authError) {
+        return errorHandler(authError, req, res);
+      }
+
+      if (normalizedPath === '/admin/content' && method === 'GET') {
+        await adminController.getAllHomepageContent(req, res);
+      } else {
+        const sectionMatch = normalizedPath.match(/^\/admin\/content\/([^/]+)$/);
+        if (!sectionMatch) {
+          res.status(404).json({ success: false, error: 'Route not found', path: normalizedPath });
+        } else if (method === 'GET') {
+          req.params = { section: decodeURIComponent(sectionMatch[1]) };
+          await adminController.getHomepageContent(req, res);
+        } else if (method === 'PUT') {
+          req.params = { section: decodeURIComponent(sectionMatch[1]) };
+          await adminController.updateHomepageContent(req, res);
+        } else {
+          res.status(405).json({ success: false, error: 'Method not allowed' });
+        }
+      }
     } else if (normalizedPath === '/admin/verify' && method === 'POST') {
       const passcode =
         req.body?.passcode ||
