@@ -84,6 +84,12 @@ export const calculateBookingPricing = ({
   const originalBaseUnitPrice = roundMoney(getDatePrice(tour, selectedDate) ?? tour?.price ?? fallbackPrice);
   const discountUnitPrice = getDiscountPrice(tour, originalBaseUnitPrice);
   const saleUnitPrice = discountUnitPrice ?? originalBaseUnitPrice;
+  const standardDiscountUnitAmount = discountUnitPrice !== null
+    ? roundMoney(originalBaseUnitPrice - discountUnitPrice)
+    : 0;
+  const standardDiscountPercent = standardDiscountUnitAmount > 0 && originalBaseUnitPrice > 0
+    ? roundMoney((standardDiscountUnitAmount / originalBaseUnitPrice) * 100)
+    : 0;
   const groupDiscount = calculateGroupDiscount({
     tour,
     travelers: currentTickets,
@@ -93,6 +99,11 @@ export const calculateBookingPricing = ({
   const unitPrice = flexibility === "upgrade"
     ? roundMoney(baseUnitPrice * FLEXIBILITY_MULTIPLIER)
     : baseUnitPrice;
+  const originalSubtotal = roundMoney(originalBaseUnitPrice * currentTickets);
+  const saleSubtotal = roundMoney(saleUnitPrice * currentTickets);
+  const standardDiscountTotal = roundMoney(standardDiscountUnitAmount * currentTickets);
+  const subtotalAfterDiscounts = roundMoney(baseUnitPrice * currentTickets);
+  const flexibilityUpgradeTotal = roundMoney(Math.max(0, unitPrice - baseUnitPrice) * currentTickets);
   const total = roundMoney(unitPrice * currentTickets);
 
   return {
@@ -102,7 +113,12 @@ export const calculateBookingPricing = ({
     originalBaseUnitPrice,
     discountUnitPrice,
     hasDiscount: discountUnitPrice !== null,
+    standardDiscountUnitAmount,
+    standardDiscountTotal,
+    standardDiscountPercent,
     saleUnitPrice,
+    originalSubtotal,
+    saleSubtotal,
     groupDiscount,
     groupDiscountUnitAmount: groupDiscount.unitAmount,
     groupDiscountTotal: groupDiscount.totalAmount,
@@ -110,6 +126,8 @@ export const calculateBookingPricing = ({
     groupDiscountPercent: groupDiscount.percent || 0,
     hasGroupDiscount: groupDiscount.applied,
     baseUnitPrice,
+    subtotalAfterDiscounts,
+    flexibilityUpgradeTotal,
     unitPrice,
     total,
     currency: getTourCurrency(tour),

@@ -5,9 +5,10 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useBooking } from "../context/BookingContext";
 import { apiUrl } from "../utils/api";
 import { getTourId } from "../utils/tourId";
-import { calculateBookingPricing, getGroupDiscountLabel, parseTicketCount } from "../utils/bookingPricing";
+import { calculateBookingPricing, parseTicketCount } from "../utils/bookingPricing";
 import { cleanDisplayName } from "../utils/textFormatting";
 import ParticipantStepper from "../components/ParticipantStepper";
+import OrderSummaryBreakdown from "../components/OrderSummaryBreakdown";
 
 const Flexibility = () => {
   const navigate = useNavigate();
@@ -254,12 +255,7 @@ const Flexibility = () => {
             <span className="text-green-700">Free cancellation</span>
             <span className="text-green-700">Great value</span>
           </div>
-          {pricing.hasGroupDiscount && (
-            <div className="flex justify-between items-center text-sm text-green-700">
-              <span>{getGroupDiscountLabel(pricing, localTicketCount)}</span>
-              <span>-{pricing.currency}{pricing.groupDiscountTotal.toFixed(2)}</span>
-            </div>
-          )}
+          <OrderSummaryBreakdown pricing={pricing} travelers={localTicketCount} />
           <div className="flex justify-between items-center mt-4 font-bold text-lg">
             <span>Total</span>
             <span>{pricing.currency}{totalPrice.toFixed(2)}</span>

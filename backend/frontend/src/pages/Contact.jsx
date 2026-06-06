@@ -4,9 +4,10 @@ import { CheckCircle, Lock } from "lucide-react";
 import { useBooking } from "../context/BookingContext";
 import { apiUrl } from "../utils/api";
 import { getTourId } from "../utils/tourId";
-import { calculateBookingPricing, getGroupDiscountLabel } from "../utils/bookingPricing";
+import { calculateBookingPricing } from "../utils/bookingPricing";
 import { COUNTRY_CODES } from "../utils/countryCodes";
 import { cleanDisplayName } from "../utils/textFormatting";
+import OrderSummaryBreakdown from "../components/OrderSummaryBreakdown";
 
 const UserDetails = () => {
   const navigate = useNavigate();
@@ -205,12 +206,7 @@ const UserDetails = () => {
           <div className="flex flex-col gap-2 mt-2">
             <input type="text" placeholder="Enter promo, credit, or gift code" className="border rounded px-3 py-2 text-sm" />
           </div>
-          {pricing.hasGroupDiscount && (
-            <div className="flex justify-between items-center text-sm text-green-700">
-              <span>{getGroupDiscountLabel(pricing, currentTickets)}</span>
-              <span>-{pricing.currency}{pricing.groupDiscountTotal.toFixed(2)}</span>
-            </div>
-          )}
+          <OrderSummaryBreakdown pricing={pricing} travelers={currentTickets} />
           <div className="flex justify-between items-center mt-4 font-bold text-lg">
             <span>Total</span>
             <span>{pricing.currency}{pricing.total.toFixed(2)}</span>
