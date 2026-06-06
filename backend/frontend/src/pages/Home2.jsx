@@ -53,12 +53,13 @@ const Home2 = () => {
   const navigate = useNavigate();
   const { passcodeHeader, isAdmin } = useAdmin();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const defaultHeroImages = [hero4, hero5, hero6, hero7];
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [homepageContent, setHomepageContent] = useState({});
-  const homeHeroBanner = useHeroBanner("home", hero6Small);
+  const homeHeroBanner = useHeroBanner("home", hero6Small, defaultHeroImages);
 
   // Load homepage content on mount
   useEffect(() => {
@@ -123,12 +124,10 @@ const Home2 = () => {
   };
 
   // Hero carousel images
-  const heroImages = homeHeroBanner.isCustom ? [homeHeroBanner.imageUrl] : [
-    hero4,
-    hero5, 
-    hero6,
-    hero7
-  ];
+  const heroImages = homeHeroBanner.isCustom && homeHeroBanner.images?.length
+    ? homeHeroBanner.images
+    : defaultHeroImages;
+  const mobileHeroImage = homeHeroBanner.isCustom ? heroImages[0] : hero6Small;
 
   const heroGridImages = [
     { src: hero4Small, alt: "Swiss mountain village" },
@@ -207,7 +206,7 @@ const Home2 = () => {
 
   React.useEffect(() => {
     setCurrentImageIndex(0);
-  }, [homeHeroBanner.imageUrl]);
+  }, [heroImages.join("|")]);
 
   const [openFaq, setOpenFaq] = useState(null);
 
@@ -226,7 +225,7 @@ const Home2 = () => {
         {/* Mobile Background: Static with Overlay */}
         <div className="md:hidden absolute inset-0 z-0">
           <img
-            src={homeHeroBanner.imageUrl || hero6Small}
+            src={mobileHeroImage || hero6Small}
             srcSet={homeHeroBanner.isCustom ? undefined : `${hero6Small} 900w, ${hero6} 1600w`}
             sizes="100vw"
             alt={homeHeroBanner.alt || ""}

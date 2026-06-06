@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ExternalLink, Image, RotateCcw, Save, Upload } from "lucide-react";
+import { ExternalLink, Image, Plus, RotateCcw, Save, Trash2, Upload } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAdmin } from "../context/AdminContext";
 import { apiUrl } from "../utils/api";
@@ -69,6 +69,7 @@ const AdminHeroBanners = () => {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [newImageUrls, setNewImageUrls] = useState({});
 
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
@@ -128,26 +129,92 @@ const AdminHeroBanners = () => {
     }));
   };
 
+  const getPageFallbackImages = (page) => (
+    Array.isArray(page.fallbackImages) && page.fallbackImages.length
+      ? page.fallbackImages
+      : [page.fallbackImage].filter(Boolean)
+  );
+
   const resetBanner = (page) => {
-    updateBanner(page.key, "imageUrl", page.fallbackImage);
+    const images = getPageFallbackImages(page);
+    setMessage("");
+    setError("");
+    setBanners((current) => ({
+      ...current,
+      [page.key]: {
+        ...current[page.key],
+        images,
+        imageUrl: images[0] || "",
+      },
+    }));
   };
 
-  const handleFileUpload = async (page, file) => {
-    if (!file) return;
-    if (!isAllowedAdminImageFile(file)) {
-      setError(`${adminImageFormatMessage} ${file.name} was not added.`);
+  const addImageToBanner = (pageKey, imageUrl) => {
+    const trimmedUrl = String(imageUrl || "").trim();
+    if (!trimmedUrl) return;
+
+    setMessage("");
+    setError("");
+    setBanners((current) => {
+      const currentImages = Array.isArray(current[pageKey]?.images)
+        ? current[pageKey].images
+        : [current[pageKey]?.imageUrl].filter(Boolean);
+      const images = [...currentImages, trimmedUrl];
+      return {
+        ...current,
+        [pageKey]: {
+          ...current[pageKey],
+          images,
+          imageUrl: images[0] || "",
+        },
+      };
+    });
+  };
+
+  const handleAddImageUrl = (pageKey) => {
+    addImageToBanner(pageKey, newImageUrls[pageKey]);
+    setNewImageUrls((current) => ({ ...current, [pageKey]: "" }));
+  };
+
+  const removeImage = (pageKey, imageIndex) => {
+    setMessage("");
+    setError("");
+    setBanners((current) => {
+      const currentImages = Array.isArray(current[pageKey]?.images)
+        ? current[pageKey].images
+        : [current[pageKey]?.imageUrl].filter(Boolean);
+      const images = currentImages.filter((_, index) => index !== imageIndex);
+      return {
+        ...current,
+        [pageKey]: {
+          ...current[pageKey],
+          images,
+          imageUrl: images[0] || "",
+        },
+      };
+    });
+  };
+
+  const handleFileUpload = async (page, fileList) => {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+
+    const invalidFiles = files.filter((file) => !isAllowedAdminImageFile(file));
+    if (invalidFiles.length) {
+      setError(`${adminImageFormatMessage} Rejected: ${invalidFiles.map((file) => file.name).join(", ")}`);
       return;
     }
 
     try {
-      const dataUrl = await compressImageToWebp(file);
-      if (dataUrlBytes(dataUrl) > MAX_IMAGE_BYTES) {
-        setError("This image is still too large after compression. Use a smaller WebP or AVIF image.");
+      const dataUrls = await Promise.all(files.map((file) => compressImageToWebp(file)));
+      const tooLarge = dataUrls.some((dataUrl) => dataUrlBytes(dataUrl) > MAX_IMAGE_BYTES);
+      if (tooLarge) {
+        setError("At least one image is still too large after compression. Use smaller WebP or AVIF images.");
         return;
       }
-      updateBanner(page.key, "imageUrl", dataUrl);
+      dataUrls.forEach((dataUrl) => addImageToBanner(page.key, dataUrl));
     } catch (err) {
-      setError(err.message || "Could not process this image");
+      setError(err.message || "Could not process these images");
     }
   };
 
@@ -195,7 +262,7 @@ const AdminHeroBanners = () => {
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Hero Banners</h1>
-            <p className="mt-2 text-gray-600">Change the hero banner picture for each public page.</p>
+            <p className="mt-2 text-gray-600">Add and delete hero images for public page banners.</p>
           </div>
           <button
             type="button"
@@ -214,12 +281,16 @@ const AdminHeroBanners = () => {
         <div className="space-y-5">
           {HERO_BANNER_PAGES.map((page) => {
             const banner = banners[page.key] || {};
+            const images = Array.isArray(banner.images)
+              ? banner.images.filter(Boolean)
+              : [banner.imageUrl].filter(Boolean);
+            const firstImage = images[0] || "";
             return (
               <section key={page.key} className="grid gap-5 rounded-lg border border-gray-200 bg-white p-4 shadow-sm md:grid-cols-[280px_1fr]">
                 <div className="overflow-hidden rounded-lg bg-gray-100">
-                  {banner.imageUrl ? (
+                  {firstImage ? (
                     <img
-                      src={banner.imageUrl}
+                      src={firstImage}
                       alt={banner.alt || page.label}
                       className="h-44 w-full object-cover"
                     />
@@ -233,7 +304,10 @@ const AdminHeroBanners = () => {
                 <div className="min-w-0">
                   <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <h2 className="text-xl font-bold text-gray-900">{page.label}</h2>
+                      <h2 className="text-xl font-bold text-gray-900">
+                        {page.label}
+                        {page.key === "home" && <span className="ml-2 text-sm font-semibold text-orange-600">Carousel</span>}
+                      </h2>
                       <Link
                         to={page.path}
                         className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-orange-700 hover:text-orange-800"
@@ -252,26 +326,78 @@ const AdminHeroBanners = () => {
                     </button>
                   </div>
 
-                  <div className="grid gap-4 lg:grid-cols-[1fr_220px]">
+                  <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    {images.length === 0 ? (
+                      <div className="rounded-lg border border-dashed border-gray-300 p-4 text-sm font-semibold text-gray-500">
+                        No images added.
+                      </div>
+                    ) : images.map((imageUrl, imageIndex) => (
+                      <div key={`${imageUrl}-${imageIndex}`} className="overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+                        <div className="relative h-28">
+                          <img
+                            src={imageUrl}
+                            alt={`${banner.alt || page.label} ${imageIndex + 1}`}
+                            className="h-full w-full object-cover"
+                          />
+                          <div className="absolute left-2 top-2 rounded bg-black/70 px-2 py-1 text-xs font-bold text-white">
+                            {imageIndex + 1}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeImage(page.key, imageIndex)}
+                          className="flex w-full items-center justify-center gap-2 px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Delete
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="grid gap-4 lg:grid-cols-[1fr_160px_220px]">
                     <label className="block">
-                      <span className="mb-1 block text-sm font-semibold text-gray-700">Image URL</span>
+                      <span className="mb-1 block text-sm font-semibold text-gray-700">Add image URL</span>
                       <input
                         type="text"
-                        value={banner.imageUrl || ""}
-                        onChange={(event) => updateBanner(page.key, "imageUrl", event.target.value)}
+                        value={newImageUrls[page.key] || ""}
+                        onChange={(event) => setNewImageUrls((current) => ({
+                          ...current,
+                          [page.key]: event.target.value,
+                        }))}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                            handleAddImageUrl(page.key);
+                          }
+                        }}
                         className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100"
                         placeholder="https://example.com/banner.webp"
                       />
                     </label>
 
+                    <button
+                      type="button"
+                      onClick={() => handleAddImageUrl(page.key)}
+                      disabled={!String(newImageUrls[page.key] || "").trim()}
+                      className="inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-3 text-sm font-bold text-white hover:bg-black disabled:cursor-not-allowed disabled:bg-gray-300 lg:mt-6"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add URL
+                    </button>
+
                     <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 px-4 py-3 text-sm font-bold text-gray-700 hover:bg-gray-50 lg:mt-6">
                       <Upload className="h-4 w-4" />
-                      Upload WebP/AVIF
+                      Upload Images
                       <input
                         type="file"
                         accept=".webp,.avif,image/webp,image/avif"
+                        multiple
                         className="hidden"
-                        onChange={(event) => handleFileUpload(page, event.target.files?.[0])}
+                        onChange={(event) => {
+                          handleFileUpload(page, event.target.files);
+                          event.target.value = "";
+                        }}
                       />
                     </label>
                   </div>

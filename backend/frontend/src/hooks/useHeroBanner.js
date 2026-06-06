@@ -1,11 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { fetchPublicHeroBanners, getDefaultHeroBanners } from "../utils/heroBanners";
 
 const defaultBanners = getDefaultHeroBanners();
 
-export const useHeroBanner = (pageKey, fallbackImage = "") => {
+export const useHeroBanner = (pageKey, fallbackImage = "", fallbackImages = null) => {
+  const fallbackImagesKey = Array.isArray(fallbackImages) ? fallbackImages.join("|") : "";
+  const initialImages = useMemo(() => {
+    if (fallbackImagesKey) return fallbackImagesKey.split("|").filter(Boolean);
+    return [fallbackImage || defaultBanners[pageKey]?.imageUrl || ""].filter(Boolean);
+  }, [fallbackImage, fallbackImagesKey, pageKey]);
+
   const [banner, setBanner] = useState(() => ({
-    imageUrl: fallbackImage || defaultBanners[pageKey]?.imageUrl || "",
+    imageUrl: initialImages[0] || "",
+    images: initialImages,
     alt: defaultBanners[pageKey]?.alt || "",
     isCustom: false,
   }));
@@ -18,9 +25,16 @@ export const useHeroBanner = (pageKey, fallbackImage = "") => {
         const banners = await fetchPublicHeroBanners();
         if (!cancelled) {
           const savedBanner = banners[pageKey] || {};
-          const hasSavedImage = Boolean(savedBanner.imageUrl);
+          const savedImages = Array.isArray(savedBanner.images)
+            ? savedBanner.images.map((image) => String(image || "").trim()).filter(Boolean)
+            : [];
+          const hasSavedImage = Boolean(savedBanner.imageUrl || savedImages.length);
+          const images = savedImages.length
+            ? savedImages
+            : [savedBanner.imageUrl || fallbackImage].filter(Boolean);
           setBanner({
-            imageUrl: savedBanner.imageUrl || fallbackImage,
+            imageUrl: images[0] || fallbackImage,
+            images,
             alt: savedBanner.alt || defaultBanners[pageKey]?.alt || "",
             isCustom: hasSavedImage,
           });
@@ -28,7 +42,8 @@ export const useHeroBanner = (pageKey, fallbackImage = "") => {
       } catch (error) {
         if (!cancelled) {
           setBanner({
-            imageUrl: fallbackImage || defaultBanners[pageKey]?.imageUrl || "",
+            imageUrl: initialImages[0] || "",
+            images: initialImages,
             alt: defaultBanners[pageKey]?.alt || "",
             isCustom: false,
           });
@@ -41,7 +56,7 @@ export const useHeroBanner = (pageKey, fallbackImage = "") => {
     return () => {
       cancelled = true;
     };
-  }, [fallbackImage, pageKey]);
+  }, [fallbackImage, initialImages, pageKey]);
 
   return banner;
 };

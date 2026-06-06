@@ -8,6 +8,12 @@ export const HERO_BANNER_PAGES = [
     label: "Home",
     path: "/",
     fallbackImage: "/assets/images/hero4.jpg",
+    fallbackImages: [
+      "/assets/images/hero4.jpg",
+      "/assets/images/hero5.jpg",
+      "/assets/images/hero6.jpg",
+      "/assets/images/hero7.jpg",
+    ],
   },
   {
     key: "switzerland",
@@ -43,21 +49,49 @@ export const HERO_BANNER_PAGES = [
 
 export const getDefaultHeroBanners = () =>
   HERO_BANNER_PAGES.reduce((acc, page) => {
+    const images = Array.isArray(page.fallbackImages) && page.fallbackImages.length
+      ? page.fallbackImages
+      : [page.fallbackImage];
+
     acc[page.key] = {
       imageUrl: page.fallbackImage,
+      images,
       alt: `${page.label} hero banner`,
     };
     return acc;
   }, {});
 
+const normalizeImages = (saved, defaults) => {
+  if (Array.isArray(saved?.images)) {
+    return saved.images
+      .map((image) => (typeof image === "string" ? image : image?.url || image?.imageUrl || ""))
+      .map((image) => String(image || "").trim())
+      .filter(Boolean);
+  }
+
+  const candidates = Array.isArray(saved?.images)
+    ? saved.images
+    : (Array.isArray(saved?.imageUrls) ? saved.imageUrls : []);
+  const images = candidates
+    .map((image) => (typeof image === "string" ? image : image?.url || image?.imageUrl || ""))
+    .map((image) => String(image || "").trim())
+    .filter(Boolean);
+
+  if (images.length) return images;
+  if (saved?.imageUrl) return [String(saved.imageUrl).trim()].filter(Boolean);
+  return Array.isArray(defaults.images) ? defaults.images : [defaults.imageUrl].filter(Boolean);
+};
+
 export const normalizeHeroBanners = (content = {}) => {
   const defaults = getDefaultHeroBanners();
   return HERO_BANNER_PAGES.reduce((acc, page) => {
     const saved = content?.[page.key] || {};
+    const images = normalizeImages(saved, defaults[page.key]);
     acc[page.key] = {
       ...defaults[page.key],
       ...saved,
-      imageUrl: String(saved.imageUrl || defaults[page.key].imageUrl || "").trim(),
+      images,
+      imageUrl: images[0] || "",
       alt: String(saved.alt || defaults[page.key].alt || "").trim(),
     };
     return acc;
