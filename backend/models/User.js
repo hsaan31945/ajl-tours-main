@@ -23,6 +23,18 @@ const userSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  country: {
+    type: String,
+    trim: true
+  },
+  defaultPickupAddress: {
+    type: String,
+    trim: true
+  },
+  profileImage: {
+    type: String,
+    trim: true
+  },
   role: {
     type: String,
     enum: ['user', 'admin'],
@@ -31,7 +43,23 @@ const userSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
-  }
+  },
+  passwordChangedAt: {
+    type: Date
+  },
+  lastLoginAt: {
+    type: Date
+  },
+  loginActivity: [{
+    occurredAt: {
+      type: Date,
+      default: Date.now
+    },
+    userAgent: {
+      type: String,
+      trim: true
+    }
+  }]
 }, {
   timestamps: true
 });
@@ -62,4 +90,3 @@ userSchema.methods.toJSON = function() {
 };
 
 module.exports = mongoose.model('User', userSchema);
-

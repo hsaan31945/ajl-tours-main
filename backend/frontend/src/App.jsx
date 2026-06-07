@@ -41,6 +41,7 @@ const Contact = lazy(() => import("./pages/Contact"));
 const Flexibility = lazy(() => import("./pages/Flexibility"));
 const TestVisitCheckout = lazy(() => import("./pages/TestVisitCheckout"));
 const Favorites = lazy(() => import("./pages/Favorites"));
+const CustomerDashboard = lazy(() => import("./pages/CustomerDashboard"));
 const Blogs = lazy(() => import("./pages/Blogs"));
 const BookingHistory = lazy(() => import("./pages/BookingHistory"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
@@ -165,6 +166,8 @@ const App = () => {
               <Route path="/visit-checkout-2" element={<TestVisitCheckout />} />
               <Route path="/visit-checkout-2/:id" element={<TestVisitCheckout />} />
               <Route path="/favorites" element={<Favorites />} />
+              <Route path="/dashboard" element={<CustomerDashboard />} />
+              <Route path="/account" element={<Navigate to="/dashboard" replace />} />
               <Route path="/blogs" element={<Blogs />} />
               <Route path="/blogs/:id" element={<BlogPost />} />
               <Route path="/admin" element={<AdminLogin />} />

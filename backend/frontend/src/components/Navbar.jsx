@@ -1,6 +1,6 @@
 import React, { useState, useContext, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, Home, Heart, ShoppingCart, History as HistoryIcon, MapPin, Globe, BookOpen, Info, ChevronDown } from "lucide-react";
+import { Menu, X, Home, Heart, ShoppingCart, History as HistoryIcon, MapPin, Globe, BookOpen, Info, ChevronDown, LayoutDashboard } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AppContext } from "../context/AppContext.jsx";
 import { assets } from "../assets/assets.js";
@@ -424,6 +424,18 @@ const Navbar = () => {
         </ul>
         {(user || isAdmin) ? (
           <div className="flex items-center gap-4">
+            {!isAdmin && (
+              <Link
+                to="/dashboard"
+                className={`inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                  location.pathname.startsWith("/dashboard")
+                    ? "bg-orange-50 text-orange-700"
+                    : "text-gray-700 hover:bg-gray-100 hover:text-orange-600"
+                }`}
+              >
+                Dashboard
+              </Link>
+            )}
             <div className="relative group">
               <img src={assets.user} alt="profile" width={40} />
               <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-12 p-2 bg-black text-white rounded opacity-0 group-hover:opacity-100 transition-opacity text-xs">
@@ -546,6 +558,12 @@ const Navbar = () => {
                           <p className="text-xs text-gray-500 truncate">{user?.email || ''}</p>
                         </div>
                       </div>
+                      <DrawerLink
+                        to="/dashboard"
+                        icon={<LayoutDashboard className="w-5 h-5" />}
+                        label="Dashboard"
+                        onClick={() => setMenuOpen(false)}
+                      />
                       <DrawerLink
                         to="/favorites"
                         icon={<Heart className="w-5 h-5" />}

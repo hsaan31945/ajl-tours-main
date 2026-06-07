@@ -4,7 +4,7 @@
  */
 
 // Wrap all imports in try-catch to identify which module is failing
-let connectDB, setCORSHeaders, errorHandler, tourController, bookingController, authController, emailController, Division, Tour, Booking, User;
+let connectDB, setCORSHeaders, errorHandler, tourController, bookingController, authController, emailController, customerController, Division, Tour, Booking, User, getPasswordPolicyMessage;
 
 try {
   connectDB = require('../src/config/database').connectDB;
@@ -14,6 +14,8 @@ try {
   bookingController = require('../src/controllers/bookingController');
   authController = require('../src/controllers/authController');
   emailController = require('../src/controllers/emailController');
+  customerController = require('../src/controllers/customerController');
+  getPasswordPolicyMessage = require('../src/utils/passwordPolicy').getPasswordPolicyMessage;
   Division = require('../models/Division');
   Tour = require('../models/Tour');
   Booking = require('../models/Booking');
@@ -50,7 +52,7 @@ module.exports = async (req, res) => {
     await connectDB();
     
     // Parse body for POST/PUT requests
-    if ((req.method === 'POST' || req.method === 'PUT') && !req.body) {
+    if ((req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH' || req.method === 'DELETE') && !req.body) {
       const chunks = [];
       for await (const chunk of req) chunks.push(chunk);
       const bodyStr = Buffer.concat(chunks).toString() || '{}';
@@ -336,6 +338,16 @@ module.exports = async (req, res) => {
         return res.status(401).json({ success: false, error: 'Invalid login credentials' });
       }
 
+      user.lastLoginAt = new Date();
+      user.loginActivity = [
+        ...(Array.isArray(user.loginActivity) ? user.loginActivity : []),
+        {
+          occurredAt: user.lastLoginAt,
+          userAgent: String(req.headers['user-agent'] || '').slice(0, 300)
+        }
+      ].slice(-10);
+      await user.save();
+
       res.status(200).json(user);
     } else if (normalizedPath === '/admin/content' || normalizedPath.startsWith('/admin/content/')) {
       const adminController = require('../controllers/adminController');
@@ -390,19 +402,9 @@ module.exports = async (req, res) => {
           return res.status(400).json({ success: false, error: 'Email and new password are required' });
         }
 
-        const requirements = [
-          password.length >= 8,
-          /[A-Z]/.test(password),
-          /[a-z]/.test(password),
-          /\d/.test(password),
-          /[!@#$%^&*(),.?":{}|<>]/.test(password),
-        ];
-
-        if (!requirements.every(Boolean)) {
-          return res.status(400).json({
-            success: false,
-            error: 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.',
-          });
+        const passwordMessage = getPasswordPolicyMessage(password);
+        if (passwordMessage) {
+          return res.status(400).json({ success: false, error: passwordMessage });
         }
 
         const user = await User.findOne({ email, isActive: true });
@@ -411,6 +413,7 @@ module.exports = async (req, res) => {
         }
 
         user.password = password;
+        user.passwordChangedAt = new Date();
         await user.save();
 
         res.status(200).json({ success: true, message: 'Password reset successfully' });
@@ -420,6 +423,61 @@ module.exports = async (req, res) => {
         await asyncHandler(authController.createAdmin.bind(authController))(req, res);
       } else {
         res.status(404).json({ success: false, error: 'Route not found' });
+      }
+    } else if (normalizedPath.startsWith('/customer')) {
+      const customerPath = normalizedPath.replace(/^\/customer/, '') || '/';
+
+      if (customerPath === '/overview' && method === 'GET') {
+        await asyncHandler(customerController.getOverview.bind(customerController))(req, res);
+      } else if (customerPath === '/bookings' && method === 'GET') {
+        await asyncHandler(customerController.getBookings.bind(customerController))(req, res);
+      } else if (customerPath === '/profile' && method === 'GET') {
+        await asyncHandler(customerController.getProfile.bind(customerController))(req, res);
+      } else if (customerPath === '/profile' && method === 'PUT') {
+        await asyncHandler(customerController.updateProfile.bind(customerController))(req, res);
+      } else if (customerPath === '/profile/password' && method === 'PUT') {
+        await asyncHandler(customerController.changePassword.bind(customerController))(req, res);
+      } else if (customerPath === '/notifications' && method === 'GET') {
+        await asyncHandler(customerController.getNotifications.bind(customerController))(req, res);
+      } else if (customerPath === '/notifications/read-all' && method === 'PATCH') {
+        await asyncHandler(customerController.markAllNotificationsRead.bind(customerController))(req, res);
+      } else if (customerPath === '/payments' && method === 'GET') {
+        await asyncHandler(customerController.getPayments.bind(customerController))(req, res);
+      } else if (customerPath === '/support-tickets' && method === 'GET') {
+        await asyncHandler(customerController.getSupportTickets.bind(customerController))(req, res);
+      } else if (customerPath === '/support-tickets' && method === 'POST') {
+        await asyncHandler(customerController.createSupportTicket.bind(customerController))(req, res);
+      } else if (customerPath === '/wishlist' && method === 'GET') {
+        await asyncHandler(customerController.getWishlist.bind(customerController))(req, res);
+      } else if (customerPath === '/wishlist' && method === 'POST') {
+        await asyncHandler(customerController.addWishlistItem.bind(customerController))(req, res);
+      } else if (customerPath === '/security' && method === 'GET') {
+        await asyncHandler(customerController.getSecurity.bind(customerController))(req, res);
+      } else {
+        const bookingCancelMatch = customerPath.match(/^\/bookings\/([^/]+)\/cancel$/);
+        const bookingDetailMatch = customerPath.match(/^\/bookings\/([^/]+)$/);
+        const notificationReadMatch = customerPath.match(/^\/notifications\/([^/]+)\/read$/);
+        const supportTicketMatch = customerPath.match(/^\/support-tickets\/([^/]+)$/);
+        const wishlistDeleteMatch = customerPath.match(/^\/wishlist\/([^/]+)$/);
+
+        if (bookingCancelMatch && method === 'PUT') {
+          req.params = { id: decodeURIComponent(bookingCancelMatch[1]) };
+          await asyncHandler(customerController.cancelBooking.bind(customerController))(req, res);
+        } else if (bookingDetailMatch && method === 'GET') {
+          req.params = { id: decodeURIComponent(bookingDetailMatch[1]) };
+          await asyncHandler(customerController.getBookingById.bind(customerController))(req, res);
+        } else if (notificationReadMatch && method === 'PATCH') {
+          req.params = { id: decodeURIComponent(notificationReadMatch[1]) };
+          await asyncHandler(customerController.markNotificationRead.bind(customerController))(req, res);
+        } else if (supportTicketMatch && method === 'GET') {
+          req.params = { id: decodeURIComponent(supportTicketMatch[1]) };
+          await asyncHandler(customerController.getSupportTicketById.bind(customerController))(req, res);
+        } else if (wishlistDeleteMatch && method === 'DELETE') {
+          req.params = { tourId: decodeURIComponent(wishlistDeleteMatch[1]) };
+          await asyncHandler(customerController.removeWishlistItem.bind(customerController))(req, res);
+        } else {
+          res.status(404).json({ success: false, error: 'Route not found' });
+        }
       }
     } else if (normalizedPath === '/migrate-tours' && method === 'POST') {
       res.status(410).json({

@@ -15,6 +15,9 @@
     "stripe": "^18.4.0",
     "uuid": "^11.1.0"
   },
+  "scripts": {
+    "migrate:customer-dashboard": "node scripts/create-customer-dashboard-indexes.js"
+  },
   "devDependencies": {
     "nodemon": "^3.0.2"
   },
@@ -23,7 +26,6 @@
     "npm": ">=8.0.0"
   }
 }
-
 
 
 

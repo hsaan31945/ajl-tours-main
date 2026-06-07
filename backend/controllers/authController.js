@@ -1,5 +1,6 @@
 const supabase = require('../config/supabase');
 const User = require('../models/User');
+const { getPasswordPolicyMessage } = require('../src/utils/passwordPolicy');
 
 /**
  * Register a new user using Supabase Auth
@@ -88,19 +89,9 @@ const resetPassword = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Email and new password are required' });
     }
 
-    const requirements = [
-      password.length >= 8,
-      /[A-Z]/.test(password),
-      /[a-z]/.test(password),
-      /\d/.test(password),
-      /[!@#$%^&*(),.?":{}|<>]/.test(password),
-    ];
-
-    if (!requirements.every(Boolean)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.',
-      });
+    const passwordMessage = getPasswordPolicyMessage(password);
+    if (passwordMessage) {
+      return res.status(400).json({ success: false, error: passwordMessage });
     }
 
     const user = await User.findOne({ email, isActive: true });
@@ -109,6 +100,7 @@ const resetPassword = async (req, res) => {
     }
 
     user.password = password;
+    user.passwordChangedAt = new Date();
     await user.save();
 
     res.json({ success: true, message: 'Password reset successfully' });

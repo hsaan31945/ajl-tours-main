@@ -116,6 +116,18 @@ const bookingSchema = new mongoose.Schema({
   stripePaymentId: {
     type: String,
     trim: true
+  },
+  cancellationReason: {
+    type: String,
+    trim: true
+  },
+  cancelledAt: {
+    type: Date
+  },
+  cancelledBy: {
+    type: String,
+    enum: ['customer', 'admin', null],
+    default: null
   }
 }, {
   timestamps: true
