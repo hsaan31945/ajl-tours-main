@@ -25,10 +25,11 @@ const UserDetails = () => {
   const [email, setEmail] = useState(contact?.email || "");
   const [country, setCountry] = useState(contact?.country || DEFAULT_COUNTRY_CODE);
   const [phone, setPhone] = useState(contact?.phone || "");
+  const [pickupAddress, setPickupAddress] = useState(contact?.pickupAddress || contact?.address || "");
 
   useEffect(() => {
-    updateContact({ fullName, email, country, phone });
-  }, [fullName, email, country, phone, updateContact]);
+    updateContact({ fullName, email, country, phone, pickupAddress });
+  }, [fullName, email, country, phone, pickupAddress, updateContact]);
 
   useEffect(() => {
     if (!bookingTourId) return;
@@ -61,8 +62,8 @@ const UserDetails = () => {
   }, [bookingTourId, updateTour]);
 
   const handleGoToPayment = () => {
-    if (!fullName.trim() || !email.trim() || !phone.trim()) {
-      alert("Please fill in your name, email, and phone number before continuing.");
+    if (!fullName.trim() || !email.trim() || !phone.trim() || !pickupAddress.trim()) {
+      alert("Please fill in your name, email, phone number, and pickup address before continuing.");
       return;
     }
 
@@ -109,6 +110,8 @@ const UserDetails = () => {
       userName: fullName.trim(),
       userEmail: email.trim(),
       userPhone: phone.trim(),
+      pickupAddress: pickupAddress.trim(),
+      address: pickupAddress.trim(),
       country,
     }));
 
@@ -167,6 +170,16 @@ const UserDetails = () => {
             <div>
               <label className="block text-sm font-semibold mb-1">Mobile phone number*</label>
               <input type="tel" className="w-full border rounded px-3 py-2" value={phone} onChange={e => setPhone(e.target.value)} required />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-1">Pickup address*</label>
+              <input
+                type="text"
+                className="w-full border rounded px-3 py-2"
+                value={pickupAddress}
+                onChange={e => setPickupAddress(e.target.value)}
+                required
+              />
             </div>
             <div className="text-xs text-gray-500 mt-1">We'll only contact you with essential updates or changes to your booking</div>
             <button

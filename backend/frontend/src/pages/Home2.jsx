@@ -289,7 +289,7 @@ const Home2 = () => {
 
       {/* Hero Section - Full Width Background */}
       <section className="relative h-[70vh] sm:h-[60vh] md:h-screen w-full overflow-hidden bg-gray-900">
-        {/* Mobile Background: Static with Overlay */}
+        {/* Mobile Background */}
         <div className="md:hidden absolute inset-0 z-0">
           {heroImages.length > 0 && (
             <img
@@ -305,10 +305,9 @@ const Home2 = () => {
               className="absolute inset-0 h-full w-full object-cover object-top"
             />
           )}
-          <div className="absolute inset-0 bg-black/30"></div>
         </div>
 
-        {/* Desktop Background: Carousel with Overlay */}
+        {/* Desktop Background: Carousel */}
         <div className="hidden md:block absolute inset-0 z-0">
           <div 
             className="flex h-full transition-transform duration-1000 ease-in-out" 
@@ -340,7 +339,6 @@ const Home2 = () => {
               </div>
             ))}
           </div>
-          <div className="absolute inset-0 bg-black/40"></div>
         </div>
         {/* Hero Content */}
         <div className="absolute inset-0 z-20 flex items-center h-full">

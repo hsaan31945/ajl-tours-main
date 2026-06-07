@@ -21,6 +21,7 @@ const PaymentSuccess = () => {
         name: data.userName || data.name || user?.name || "Guest User",
         email: data.userEmail || userEmail,
         phone: data.userPhone || data.phone || "",
+        address: data.pickupAddress || data.address || "",
         tourId: data.tourId || "",
         tickets: data.tickets || 1,
         travelers: data.tickets || 1,
@@ -71,6 +72,7 @@ const PaymentSuccess = () => {
         tickets: Number(databaseBooking?.travelers ?? data.tickets ?? 1),
         bookingDate: new Date().toISOString(),
         tourId: data.tourId || "",
+        pickupAddress: databaseBooking?.address || data.pickupAddress || data.address || "",
         currency: databaseBooking?.paymentCurrency || data.tourCurrency || data.currency || "$",
         selectedDate: data.selectedDate || data.date || new Date().toISOString().split('T')[0],
         status: "Confirmed",
@@ -146,6 +148,8 @@ const PaymentSuccess = () => {
           userName: d.userName || d.name || '',
           userEmail: d.userEmail || d.email || '',
           userPhone: d.userPhone || d.phone || '',
+          pickupAddress: d.pickupAddress || d.address || '',
+          address: d.address || d.pickupAddress || '',
           specialRequests: d.specialRequests || '',
         };
       };

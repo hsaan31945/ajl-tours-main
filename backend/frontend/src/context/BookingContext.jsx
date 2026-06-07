@@ -18,7 +18,8 @@ export function BookingProvider({ children }) {
       fullName: "",
       email: "",
       country: DEFAULT_COUNTRY_CODE,
-      phone: ""
+      phone: "",
+      pickupAddress: ""
     }
   });
 

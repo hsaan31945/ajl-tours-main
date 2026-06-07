@@ -24,6 +24,7 @@ const UserDetails = () => {
   const [email, setEmail] = useState(contact?.email || "");
   const [country, setCountry] = useState(contact?.country || DEFAULT_COUNTRY_CODE);
   const [phone, setPhone] = useState(contact?.phone || "");
+  const [pickupAddress, setPickupAddress] = useState(contact?.pickupAddress || contact?.address || "");
   const bookingTourId = getTourId(bookingTour);
   
   // Validation state
@@ -61,12 +62,12 @@ const UserDetails = () => {
   }, [bookingTourId, updateTour]);
 
   useEffect(() => {
-    updateContact({ fullName, email, country, phone });
-  }, [fullName, email, country, phone, updateContact]);
+    updateContact({ fullName, email, country, phone, pickupAddress });
+  }, [fullName, email, country, phone, pickupAddress, updateContact]);
 
   // Validation functions
   const validateForm = () => {
-    console.log("Validating form with:", { fullName, email, phone }); // Debug log
+    console.log("Validating form with:", { fullName, email, phone, pickupAddress }); // Debug log
     
     const newErrors = {};
     
@@ -90,6 +91,10 @@ const UserDetails = () => {
     } else if (!/^[+]?[0-9\s\-()]{8,}$/.test(phone)) {
       newErrors.phone = "Please enter a valid phone number";
     }
+
+    if (!pickupAddress.trim()) {
+      newErrors.pickupAddress = "Pickup address is required";
+    }
     
     console.log("Validation errors:", newErrors); // Debug log
     setErrors(newErrors);
@@ -105,7 +110,7 @@ const UserDetails = () => {
     
     console.log("=== FORM SUBMISSION STARTED ===");
     console.log("Submit button clicked"); // Debug log
-    console.log("Current form values:", { fullName, email, phone }); // Debug log
+    console.log("Current form values:", { fullName, email, phone, pickupAddress }); // Debug log
     
     // Double-check validation
     const isValid = validateForm();
@@ -141,7 +146,13 @@ const UserDetails = () => {
         groupDiscount6Plus: tour.groupDiscount6Plus ?? null,
         date: date || new Date().toLocaleDateString(),
         time: time || "09:00",
-        flexibility: flexibility || "standard" // Include flexibility selection
+        flexibility: flexibility || "standard", // Include flexibility selection
+        userName: fullName.trim(),
+        userEmail: email.trim(),
+        userPhone: phone.trim(),
+        pickupAddress: pickupAddress.trim(),
+        address: pickupAddress.trim(),
+        country,
       };
       
       localStorage.setItem('recentTourData', JSON.stringify(tourDataForPayment));
@@ -264,15 +275,29 @@ const UserDetails = () => {
               />
               {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
             </div>
+            <div>
+              <label className="block text-sm font-semibold mb-1">Pickup address*</label>
+              <input
+                type="text"
+                id="pickupAddress"
+                name="pickupAddress"
+                className={`w-full border rounded px-3 py-2 ${errors.pickupAddress ? 'border-red-500' : 'border-gray-300'}`}
+                value={pickupAddress}
+                onChange={e => setPickupAddress(e.target.value)}
+                required
+                placeholder="Enter your pickup address"
+              />
+              {errors.pickupAddress && <p className="text-red-500 text-sm mt-1">{errors.pickupAddress}</p>}
+            </div>
             <div className="text-xs text-gray-500 mt-1">We'll only contact you with essential updates or changes to your booking</div>
             <button
               type="submit"
               className={`w-full font-bold py-3 rounded-xl mt-4 transition ${
-                isSubmitting || !fullName.trim() || !email.trim() || !phone.trim()
+                isSubmitting || !fullName.trim() || !email.trim() || !phone.trim() || !pickupAddress.trim()
                   ? 'bg-gray-400 cursor-not-allowed text-gray-600'
                   : 'bg-blue-600 hover:bg-blue-700 text-white'
               }`}
-              disabled={isSubmitting || !fullName.trim() || !email.trim() || !phone.trim()}
+              disabled={isSubmitting || !fullName.trim() || !email.trim() || !phone.trim() || !pickupAddress.trim()}
             >
               {isSubmitting ? "Validating..." : "Go to payment"}
             </button>
