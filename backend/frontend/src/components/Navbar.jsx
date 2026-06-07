@@ -280,7 +280,7 @@ const Navbar = () => {
       </div>
 
       {/* Menu for desktop */}
-      <div className="hidden sm:flex items-center gap-5">
+      <div className="hidden sm:flex items-center gap-4">
         <ul className="flex items-center gap-2 text-sm font-semibold">
           <li>
             <Link
@@ -397,13 +397,13 @@ const Navbar = () => {
             <Link
               to="/favorites"
               title="Favorites"
-              className={`inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
+              className={`inline-flex h-11 w-11 items-center justify-center rounded-full transition-colors ${
                 location.pathname === "/favorites"
                   ? "bg-orange-50 text-orange-700"
                   : "text-gray-600 hover:bg-gray-100 hover:text-orange-600"
               }`}
             >
-              <Heart className="w-5 h-5" />
+              <Heart className="h-6 w-6" />
               <span className="sr-only">Favorites</span>
             </Link>
           </li>
@@ -411,26 +411,28 @@ const Navbar = () => {
             <Link
               to="/checkout"
               title="Checkout"
-              className={`inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
+              className={`inline-flex h-11 w-11 items-center justify-center rounded-full transition-colors ${
                 location.pathname === "/checkout"
                   ? "bg-orange-50 text-orange-700"
                   : "text-gray-600 hover:bg-gray-100 hover:text-orange-600"
               }`}
             >
-              <ShoppingCart className="w-5 h-5" />
+              <ShoppingCart className="h-6 w-6" />
               <span className="sr-only">Checkout</span>
             </Link>
           </li>
         </ul>
         {(user || isAdmin) ? (
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <div className="relative group">
               {isAdmin ? (
-                <img src={assets.user} alt="profile" width={40} />
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-full hover:bg-gray-100">
+                  <img src={assets.user} alt="profile" className="h-7 w-7 object-contain" />
+                </span>
               ) : (
                 <Link
                   to="/dashboard"
-                  className={`inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
+                  className={`inline-flex h-11 w-11 items-center justify-center rounded-full transition-colors ${
                     location.pathname.startsWith("/dashboard")
                       ? "bg-orange-50"
                       : "hover:bg-gray-100"
@@ -438,7 +440,7 @@ const Navbar = () => {
                   aria-label="Open customer dashboard"
                   title="Dashboard"
                 >
-                  <img src={assets.user} alt="" width={40} />
+                  <img src={assets.user} alt="" className="h-7 w-7 object-contain" />
                 </Link>
               )}
               <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-12 p-2 bg-black text-white rounded opacity-0 group-hover:opacity-100 transition-opacity text-xs">
@@ -448,16 +450,16 @@ const Navbar = () => {
             {isAdmin ? (
               <button
                 onClick={disableAdmin}
-                className="button-31"
+                className="inline-flex h-11 items-center justify-center rounded-lg border-2 border-orange-600 px-6 text-base font-bold text-orange-600 transition-colors hover:bg-orange-600 hover:text-white"
               >
                 Logout
               </button>
             ) : (
-              <button onClick={logout} className="button-31">Logout</button>
+              <button onClick={logout} className="inline-flex h-11 items-center justify-center rounded-lg border-2 border-orange-600 px-6 text-base font-bold text-orange-600 transition-colors hover:bg-orange-600 hover:text-white">Logout</button>
             )}
           </div>
         ) : (
-          <Link to="/login" className="button-31">
+          <Link to="/login" className="inline-flex h-11 items-center justify-center rounded-lg border-2 border-orange-600 px-6 text-base font-bold text-orange-600 transition-colors hover:bg-orange-600 hover:text-white">
             Login
           </Link>
         )}

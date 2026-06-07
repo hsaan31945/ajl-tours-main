@@ -31,7 +31,6 @@ import {
 } from "@react-pdf/renderer";
 import { AppContext } from "../context/AppContext";
 import { apiUrl } from "../utils/api";
-import { fetchToursList } from "../services/toursApi";
 import { getTourId } from "../utils/tourId";
 
 const pdfStyles = StyleSheet.create({
@@ -211,7 +210,6 @@ const CustomerDashboard = () => {
   const [supportTickets, setSupportTickets] = useState([]);
   const [wishlist, setWishlist] = useState([]);
   const [security, setSecurity] = useState(null);
-  const [tours, setTours] = useState([]);
   const [filters, setFilters] = useState({
     q: "",
     status: "all",
@@ -242,7 +240,6 @@ const CustomerDashboard = () => {
     bookingId: "",
     message: "",
   });
-  const [selectedTourId, setSelectedTourId] = useState("");
 
   const email = user?.email || "";
 
@@ -355,11 +352,6 @@ const CustomerDashboard = () => {
     setSecurity(data);
   }, [requestCustomer]);
 
-  const loadTours = useCallback(async () => {
-    const list = await fetchToursList({ view: "search", limit: 100 });
-    setTours(Array.isArray(list) ? list : []);
-  }, []);
-
   const refreshAll = useCallback(async () => {
     if (!email) return;
     setLoading(true);
@@ -373,14 +365,13 @@ const CustomerDashboard = () => {
         loadSupportTickets(),
         loadWishlist(),
         loadSecurity(),
-        loadTours(),
       ]);
     } catch (err) {
       setError(err.message || "Could not load dashboard.");
     } finally {
       setLoading(false);
     }
-  }, [email, loadBookings, loadNotifications, loadOverview, loadPayments, loadSecurity, loadSupportTickets, loadTours, loadWishlist]);
+  }, [email, loadBookings, loadNotifications, loadOverview, loadPayments, loadSecurity, loadSupportTickets, loadWishlist]);
 
   useEffect(() => {
     if (!appLoading && !user) {
@@ -557,25 +548,6 @@ const CustomerDashboard = () => {
           { ...tour, id, _id: id },
         ];
     localStorage.setItem(key, JSON.stringify(next));
-  };
-
-  const addWishlistItem = async () => {
-    if (!selectedTourId) return;
-    const tour = tours.find((item) => String(getTourId(item) || item.id || item._id) === String(selectedTourId));
-    setActionLoading("wishlist");
-    setError("");
-    setSuccess("");
-    try {
-      await requestCustomer("/wishlist", { method: "POST", body: { tourId: selectedTourId } });
-      if (tour) syncLocalWishlist(tour, false);
-      setSelectedTourId("");
-      setSuccess("Tour saved to wishlist.");
-      await loadWishlist();
-    } catch (err) {
-      setError(err.message || "Could not save tour.");
-    } finally {
-      setActionLoading("");
-    }
   };
 
   const removeWishlistItem = async (item) => {
@@ -957,23 +929,6 @@ const CustomerDashboard = () => {
 
         {activeTab === "wishlist" && (
           <DashboardPanel title="Wishlist">
-            <div className="mb-6 flex flex-col gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4 md:flex-row md:items-end">
-              <Select value={selectedTourId} onChange={setSelectedTourId} label="Save a tour">
-                <option value="">Choose a tour</option>
-                {tours.map((tour) => {
-                  const id = getTourId(tour) || tour.id || tour._id;
-                  return id ? <option key={id} value={id}>{tour.name || tour.title}</option> : null;
-                })}
-              </Select>
-              <button
-                type="button"
-                onClick={addWishlistItem}
-                disabled={!selectedTourId || actionLoading === "wishlist"}
-                className="rounded-lg bg-orange-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-orange-700 disabled:opacity-60"
-              >
-                Save tour
-              </button>
-            </div>
             {wishlist.length ? (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {wishlist.map((item) => {
