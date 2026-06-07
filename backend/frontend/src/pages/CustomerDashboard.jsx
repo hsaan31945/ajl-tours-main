@@ -9,6 +9,7 @@ import {
   CreditCard,
   Download,
   Eye,
+  EyeOff,
   Heart,
   HelpCircle,
   Lock,
@@ -230,6 +231,11 @@ const CustomerDashboard = () => {
     newPassword: "",
     confirmPassword: "",
   });
+  const [showPasswordFields, setShowPasswordFields] = useState({
+    current: false,
+    next: false,
+    confirm: false,
+  });
   const [supportForm, setSupportForm] = useState({
     subject: "",
     category: "booking",
@@ -239,6 +245,17 @@ const CustomerDashboard = () => {
   const [selectedTourId, setSelectedTourId] = useState("");
 
   const email = user?.email || "";
+
+  const passwordRequirements = useMemo(() => {
+    const password = passwordForm.newPassword;
+    return {
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /\d/.test(password),
+      special: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+    };
+  }, [passwordForm.newPassword]);
 
   useEffect(() => {
     filtersRef.current = filters;
@@ -457,6 +474,10 @@ const CustomerDashboard = () => {
     event.preventDefault();
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       setError("New passwords do not match.");
+      return;
+    }
+    if (!Object.values(passwordRequirements).every(Boolean)) {
+      setError("New password must meet all requirements.");
       return;
     }
     setActionLoading("password");
@@ -706,16 +727,18 @@ const CustomerDashboard = () => {
         {activeTab === "bookings" && (
           <section className="space-y-5">
             <DashboardPanel title="My bookings">
-              <form onSubmit={applyBookingFilters} className="mb-5 grid grid-cols-1 gap-3 lg:grid-cols-[1.6fr_1fr_1fr_1fr_auto]">
-                <label className="relative">
-                  <span className="sr-only">Search bookings</span>
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <input
-                    value={filters.q}
-                    onChange={(event) => setFilters((current) => ({ ...current, q: event.target.value }))}
-                    className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100"
-                    placeholder="Search tour, pickup, payment ID"
-                  />
+              <form onSubmit={applyBookingFilters} className="mb-5 grid grid-cols-1 gap-3 lg:grid-cols-[1.6fr_1fr_1fr_1fr_auto] lg:items-end">
+                <label className="block">
+                  <span className="mb-1 block text-sm font-bold text-gray-700">Search bookings</span>
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <input
+                      value={filters.q}
+                      onChange={(event) => setFilters((current) => ({ ...current, q: event.target.value }))}
+                      className="h-11 w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100"
+                      placeholder="Search tour, pickup, payment ID"
+                    />
+                  </div>
                 </label>
                 <Select value={filters.status} onChange={(value) => setFilters((current) => ({ ...current, status: value }))} label="Booking status">
                   <option value="all">All statuses</option>
@@ -739,7 +762,7 @@ const CustomerDashboard = () => {
                   <option value="amountHigh">Amount high to low</option>
                   <option value="amountLow">Amount low to high</option>
                 </Select>
-                <button className="rounded-lg bg-orange-600 px-4 py-2 text-sm font-bold text-white hover:bg-orange-700" type="submit">
+                <button className="h-11 rounded-lg bg-orange-600 px-5 text-sm font-bold text-white hover:bg-orange-700" type="submit">
                   Apply
                 </button>
               </form>
@@ -998,10 +1021,34 @@ const CustomerDashboard = () => {
         {activeTab === "security" && (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <DashboardPanel title="Change password">
-              <form onSubmit={handlePasswordSubmit} className="space-y-4">
-                <PasswordInput label="Current password" value={passwordForm.currentPassword} onChange={(value) => setPasswordForm((current) => ({ ...current, currentPassword: value }))} />
-                <PasswordInput label="New password" value={passwordForm.newPassword} onChange={(value) => setPasswordForm((current) => ({ ...current, newPassword: value }))} />
-                <PasswordInput label="Confirm new password" value={passwordForm.confirmPassword} onChange={(value) => setPasswordForm((current) => ({ ...current, confirmPassword: value }))} />
+              <form onSubmit={handlePasswordSubmit} className="space-y-5">
+                <PasswordInput
+                  label="Current password"
+                  value={passwordForm.currentPassword}
+                  onChange={(value) => setPasswordForm((current) => ({ ...current, currentPassword: value }))}
+                  visible={showPasswordFields.current}
+                  onToggle={() => setShowPasswordFields((current) => ({ ...current, current: !current.current }))}
+                  autoComplete="current-password"
+                />
+                <div>
+                  <PasswordInput
+                    label="New password"
+                    value={passwordForm.newPassword}
+                    onChange={(value) => setPasswordForm((current) => ({ ...current, newPassword: value }))}
+                    visible={showPasswordFields.next}
+                    onToggle={() => setShowPasswordFields((current) => ({ ...current, next: !current.next }))}
+                    autoComplete="new-password"
+                  />
+                  <PasswordRequirementList requirements={passwordRequirements} />
+                </div>
+                <PasswordInput
+                  label="Confirm new password"
+                  value={passwordForm.confirmPassword}
+                  onChange={(value) => setPasswordForm((current) => ({ ...current, confirmPassword: value }))}
+                  visible={showPasswordFields.confirm}
+                  onToggle={() => setShowPasswordFields((current) => ({ ...current, confirm: !current.confirm }))}
+                  autoComplete="new-password"
+                />
                 <button disabled={actionLoading === "password"} className="rounded-lg bg-orange-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-orange-700 disabled:opacity-60">
                   {actionLoading === "password" ? "Changing..." : "Change password"}
                 </button>
@@ -1201,12 +1248,12 @@ const NotificationList = ({ notifications, onRead, actionLoading }) => (
 );
 
 const Select = ({ label, value, onChange, children }) => (
-  <label>
+  <label className="block">
     <span className="mb-1 block text-sm font-bold text-gray-700">{label}</span>
     <select
       value={value}
       onChange={(event) => onChange(event.target.value)}
-      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100"
+      className="h-11 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100"
     >
       {children}
     </select>
@@ -1226,20 +1273,58 @@ const TextInput = ({ label, value, onChange, required, readOnly }) => (
   </label>
 );
 
-const PasswordInput = ({ label, value, onChange }) => (
-  <label>
-    <span className="mb-1 block text-sm font-bold text-gray-700">{label}</span>
+const PasswordInput = ({ label, value, onChange, visible, onToggle, autoComplete }) => (
+  <label className="block">
+    <span className="mb-1.5 block text-sm font-bold text-gray-700">{label}</span>
     <div className="relative">
       <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
       <input
-        type="password"
+        type={visible ? "text" : "password"}
         value={value}
         required
+        autoComplete={autoComplete}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100"
+        className="h-11 w-full rounded-lg border border-gray-300 py-2 pl-9 pr-11 text-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100"
       />
+      <button
+        type="button"
+        onClick={onToggle}
+        className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-100"
+        aria-label={visible ? `Hide ${label}` : `Show ${label}`}
+      >
+        {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
     </div>
   </label>
+);
+
+const passwordRequirementLabels = [
+  { key: "length", label: "At least 8 characters" },
+  { key: "uppercase", label: "One uppercase letter" },
+  { key: "lowercase", label: "One lowercase letter" },
+  { key: "number", label: "One number" },
+  { key: "special", label: "One special character" },
+];
+
+const PasswordRequirementList = ({ requirements }) => (
+  <div className="mt-3 rounded-lg bg-gray-50 p-4">
+    <p className="mb-3 text-sm font-bold text-gray-700">Password requirements</p>
+    <div className="space-y-2">
+      {passwordRequirementLabels.map((item) => {
+        const isMet = Boolean(requirements[item.key]);
+        return (
+          <div key={item.key} className={`flex items-center gap-2 text-sm font-semibold ${isMet ? "text-green-600" : "text-gray-500"}`}>
+            {isMet ? (
+              <CheckCircle className="h-4 w-4 shrink-0" />
+            ) : (
+              <span className="h-4 w-4 shrink-0 rounded-full bg-gray-300" aria-hidden="true" />
+            )}
+            <span>{item.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  </div>
 );
 
 const TableHead = ({ children }) => (

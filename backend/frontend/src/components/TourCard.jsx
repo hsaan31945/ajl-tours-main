@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Heart, MapPin, Plane, Star } from "lucide-react";
 import { useCurrency } from "../context/CurrencyContext";
 import { useAdmin } from "../context/AdminContext";
+import { AppContext } from "../context/AppContext";
 import EditableField from "./EditableField";
 import { getTourId } from "../utils/tourId";
 import { apiUrl } from "../utils/api";
@@ -12,12 +13,103 @@ import { getDiscountPrice } from "../utils/bookingPricing";
 
 const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
   const { symbol, rate } = useCurrency();
+  const { user } = useContext(AppContext);
   const { isAdmin, passcodeHeader } = useAdmin();
   const navigate = useNavigate();
   const [imageFailed, setImageFailed] = useState(false);
+  const [localFavorite, setLocalFavorite] = useState(false);
 
   const tourId = getTourId(tour);
   const tourName = cleanDisplayName(tour?.name || tour?.title || "Tour");
+  const effectiveFavorite = isFavorite ?? localFavorite;
+
+  const getFavoriteKey = () => `favorites_${user?.email || 'guest'}`;
+
+  const getFavoriteId = (item) => String(getTourId(item) || item?.id || item?._id || '');
+
+  const getStoredFavorites = () => {
+    try {
+      const saved = localStorage.getItem(getFavoriteKey());
+      return saved ? JSON.parse(saved) : [];
+    } catch (error) {
+      console.error('Error reading favorites:', error);
+      return [];
+    }
+  };
+
+  const buildFavoriteTour = () => ({
+    id: String(tourId),
+    _id: String(tourId),
+    title: tour.name || tour.title,
+    name: tour.name || tour.title,
+    photo: tour.images?.[0] || tour.photo,
+    price: tour.price,
+    discountEnabled: Boolean(tour.discountEnabled),
+    discountPrice: tour.discountPrice ?? null,
+    description: tour.description,
+    city: tour.destination || tour.city,
+    avgRating: tour.rating || tour.avgRating,
+    rating: tour.rating || tour.avgRating,
+    reviews: tour.reviews,
+    images: tour.images || [],
+    address: tour.address || tour.startLocation,
+    startLocation: tour.startLocation,
+    endLocation: tour.endLocation,
+    features: tour.features,
+    destination: tour.destination,
+    currency: tour.currency || 'CHF',
+    metadata: tour.metadata || {},
+  });
+
+  const saveLocalFavorite = (nextFavorite) => {
+    if (!tourId) return;
+    const id = String(tourId);
+    const favoritesList = getStoredFavorites().filter((item) => getFavoriteId(item) !== id);
+    const nextList = nextFavorite ? [...favoritesList, buildFavoriteTour()] : favoritesList;
+    localStorage.setItem(getFavoriteKey(), JSON.stringify(nextList));
+    setLocalFavorite(nextFavorite);
+    window.dispatchEvent(new Event('ajl:favorites-updated'));
+  };
+
+  const syncWishlist = async (nextFavorite) => {
+    if (!user?.email || !tourId) return;
+
+    try {
+      const response = await fetch(apiUrl(nextFavorite ? '/api/customer/wishlist' : `/api/customer/wishlist/${tourId}`), {
+        method: nextFavorite ? 'POST' : 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: user.email,
+          tourId,
+        }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || payload.message || 'Wishlist sync failed');
+      }
+    } catch (error) {
+      console.error('Wishlist sync failed:', error);
+    }
+  };
+
+  const handleFavoriteClick = async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!tourId) return;
+
+    const nextFavorite = !effectiveFavorite;
+
+    if (onFavoriteToggle) {
+      onFavoriteToggle(tour);
+      setLocalFavorite(nextFavorite);
+    } else {
+      saveLocalFavorite(nextFavorite);
+    }
+
+    await syncWishlist(nextFavorite);
+  };
   
   const handleSaveField = async (field, value) => {
     if (!tourId) return false;
@@ -91,6 +183,26 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
     setImageFailed(false);
   }, [displayImage]);
 
+  useEffect(() => {
+    if (!tourId) {
+      setLocalFavorite(false);
+      return;
+    }
+
+    const refreshFavoriteState = () => {
+      const id = String(tourId);
+      setLocalFavorite(getStoredFavorites().some((item) => getFavoriteId(item) === id));
+    };
+
+    refreshFavoriteState();
+    window.addEventListener('storage', refreshFavoriteState);
+    window.addEventListener('ajl:favorites-updated', refreshFavoriteState);
+    return () => {
+      window.removeEventListener('storage', refreshFavoriteState);
+      window.removeEventListener('ajl:favorites-updated', refreshFavoriteState);
+    };
+  }, [tourId, user?.email]);
+
   return (
     <div 
       className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full cursor-pointer group"
@@ -125,15 +237,15 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
         
         {/* Favorite Button */}
         <button 
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (onFavoriteToggle) onFavoriteToggle(tour);
-          }}
+          type="button"
+          onClick={handleFavoriteClick}
           className="absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-white transition-colors z-10"
+          aria-pressed={effectiveFavorite}
+          aria-label={effectiveFavorite ? "Remove from wishlist" : "Add to wishlist"}
+          title={effectiveFavorite ? "Remove from wishlist" : "Add to wishlist"}
         >
           <Heart 
-            className={`w-5 h-5 ${isFavorite ? "text-red-500 fill-current" : "text-gray-600"}`} 
+            className={`w-5 h-5 ${effectiveFavorite ? "text-red-500 fill-current" : "text-gray-600"}`} 
           />
         </button>
 

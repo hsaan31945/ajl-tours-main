@@ -1,6 +1,6 @@
 import React, { useState, useContext, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, Home, Heart, ShoppingCart, History as HistoryIcon, MapPin, Globe, BookOpen, Info, ChevronDown, LayoutDashboard } from "lucide-react";
+import { Menu, X, Home, Heart, ShoppingCart, History as HistoryIcon, MapPin, Globe, BookOpen, Info, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AppContext } from "../context/AppContext.jsx";
 import { assets } from "../assets/assets.js";
@@ -424,20 +424,23 @@ const Navbar = () => {
         </ul>
         {(user || isAdmin) ? (
           <div className="flex items-center gap-4">
-            {!isAdmin && (
-              <Link
-                to="/dashboard"
-                className={`inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
-                  location.pathname.startsWith("/dashboard")
-                    ? "bg-orange-50 text-orange-700"
-                    : "text-gray-700 hover:bg-gray-100 hover:text-orange-600"
-                }`}
-              >
-                Dashboard
-              </Link>
-            )}
             <div className="relative group">
-              <img src={assets.user} alt="profile" width={40} />
+              {isAdmin ? (
+                <img src={assets.user} alt="profile" width={40} />
+              ) : (
+                <Link
+                  to="/dashboard"
+                  className={`inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
+                    location.pathname.startsWith("/dashboard")
+                      ? "bg-orange-50"
+                      : "hover:bg-gray-100"
+                  }`}
+                  aria-label="Open customer dashboard"
+                  title="Dashboard"
+                >
+                  <img src={assets.user} alt="" width={40} />
+                </Link>
+              )}
               <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-12 p-2 bg-black text-white rounded opacity-0 group-hover:opacity-100 transition-opacity text-xs">
                 {isAdmin ? 'Admin is logged in' : `Hi, ${user?.name || 'User'}`}
               </div>
@@ -551,19 +554,17 @@ const Navbar = () => {
                   
                   {user || isAdmin ? (
                     <>
-                      <div className="px-6 py-4 flex items-center gap-3 border-b border-gray-100">
-                        <img src={assets.user} alt="profile" className="w-10 h-10 rounded-full border border-gray-200" />
+                      <Link
+                        to={isAdmin ? "/admin/dashboard" : "/dashboard"}
+                        onClick={() => setMenuOpen(false)}
+                        className="px-6 py-4 flex items-center gap-3 border-b border-gray-100 hover:bg-gray-50"
+                      >
+                        <img src={assets.user} alt="" className="w-10 h-10 rounded-full border border-gray-200" />
                         <div>
                           <p className="font-bold text-gray-900 line-clamp-1">{isAdmin ? 'Admin' : (user?.name || 'User')}</p>
                           <p className="text-xs text-gray-500 truncate">{user?.email || ''}</p>
                         </div>
-                      </div>
-                      <DrawerLink
-                        to="/dashboard"
-                        icon={<LayoutDashboard className="w-5 h-5" />}
-                        label="Dashboard"
-                        onClick={() => setMenuOpen(false)}
-                      />
+                      </Link>
                       <DrawerLink
                         to="/favorites"
                         icon={<Heart className="w-5 h-5" />}
