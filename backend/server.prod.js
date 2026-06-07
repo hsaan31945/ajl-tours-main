@@ -52,11 +52,15 @@ app.locals.models = {
 const adminRoutes = require('./routes/admin');
 const contentRoutes = require('./routes/content');
 const tourRoutes = require('./routes/tours');
+const { sendResetOtp } = require('./src/controllers/emailController');
+const { resetPassword } = require('./controllers/authController');
 
 // API routes
 app.use('/api/admin', adminRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/tours', tourRoutes);
+app.post('/api/auth/send-reset-otp', sendResetOtp);
+app.post('/api/auth/reset-password', resetPassword);
 
 // Stripe payment endpoints
 app.post('/api/create-payment-intent', async (req, res) => {
@@ -193,4 +197,3 @@ const startServer = async () => {
 };
 
 startServer();
-

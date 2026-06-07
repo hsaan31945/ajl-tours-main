@@ -382,6 +382,38 @@ module.exports = async (req, res) => {
     } else if (normalizedPath.startsWith('/auth')) {
       if (normalizedPath === '/auth/send-reset-otp' && method === 'POST') {
         await asyncHandler(emailController.sendResetOtp.bind(emailController))(req, res);
+      } else if (normalizedPath === '/auth/reset-password' && method === 'POST') {
+        const email = String(req.body?.email || '').trim().toLowerCase();
+        const password = String(req.body?.password || '');
+
+        if (!email || !password) {
+          return res.status(400).json({ success: false, error: 'Email and new password are required' });
+        }
+
+        const requirements = [
+          password.length >= 8,
+          /[A-Z]/.test(password),
+          /[a-z]/.test(password),
+          /\d/.test(password),
+          /[!@#$%^&*(),.?":{}|<>]/.test(password),
+        ];
+
+        if (!requirements.every(Boolean)) {
+          return res.status(400).json({
+            success: false,
+            error: 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.',
+          });
+        }
+
+        const user = await User.findOne({ email, isActive: true });
+        if (!user) {
+          return res.status(404).json({ success: false, error: "Account with this email doesn't exist." });
+        }
+
+        user.password = password;
+        await user.save();
+
+        res.status(200).json({ success: true, message: 'Password reset successfully' });
       } else if (normalizedPath.includes('/admin/login') && method === 'POST') {
         await asyncHandler(authController.adminLogin.bind(authController))(req, res);
       } else if (normalizedPath.includes('/admin/create') && method === 'POST') {

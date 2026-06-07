@@ -79,17 +79,42 @@ const login = async (req, res) => {
   }
 };
 
-/**
- * Reset password (Stub - usually handled via Supabase direct links)
- */
 const resetPassword = async (req, res) => {
   try {
-    const { email } = req.body;
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
-    if (error) throw error;
-    res.json({ success: true, message: 'Password reset email sent' });
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const password = String(req.body?.password || '');
+
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: 'Email and new password are required' });
+    }
+
+    const requirements = [
+      password.length >= 8,
+      /[A-Z]/.test(password),
+      /[a-z]/.test(password),
+      /\d/.test(password),
+      /[!@#$%^&*(),.?":{}|<>]/.test(password),
+    ];
+
+    if (!requirements.every(Boolean)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.',
+      });
+    }
+
+    const user = await User.findOne({ email, isActive: true });
+    if (!user) {
+      return res.status(404).json({ success: false, error: "Account with this email doesn't exist." });
+    }
+
+    user.password = password;
+    await user.save();
+
+    res.json({ success: true, message: 'Password reset successfully' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Reset password error:', error);
+    res.status(500).json({ success: false, error: error.message || 'Failed to reset password' });
   }
 };
 

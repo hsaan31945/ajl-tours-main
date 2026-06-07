@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Lock, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
+import { apiUrl } from '../utils/api';
 
 const ResetPassword = () => {
   const [formData, setFormData] = useState({
@@ -67,8 +68,8 @@ const ResetPassword = () => {
       return false;
     }
     
-    if (passwordStrength < 3) {
-      setError('Password must meet at least 3 requirements');
+    if (passwordStrength < 5) {
+      setError('Password must meet all requirements');
       return false;
     }
     
@@ -91,7 +92,7 @@ const ResetPassword = () => {
 
     try {
       // Call backend API to reset password
-      const response = await axios.post('/api/auth/reset-password', {
+      const response = await axios.post(apiUrl('/api/auth/reset-password'), {
         email,
         password: formData.password
       });
@@ -108,8 +109,8 @@ const ResetPassword = () => {
       }
     } catch (error) {
       console.error('Error resetting password:', error);
-      if (error.response?.data?.message) {
-        setError(error.response.data.message);
+      if (error.response?.data?.message || error.response?.data?.error) {
+        setError(error.response.data.message || error.response.data.error);
       } else {
         setError('An error occurred. Please try again.');
       }
