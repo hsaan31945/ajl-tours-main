@@ -32,6 +32,7 @@ import {
 import { AppContext } from "../context/AppContext";
 import { apiUrl } from "../utils/api";
 import { getTourId } from "../utils/tourId";
+import { useCurrency } from "../context/CurrencyContext";
 
 const pdfStyles = StyleSheet.create({
   page: { padding: 32, fontSize: 11, color: "#111827" },
@@ -88,12 +89,6 @@ const formatDateTime = (value) => {
   });
 };
 
-const formatMoney = (amount, currency = "CHF") =>
-  `${currency} ${Number(amount || 0).toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-
 const bookingId = (booking) => booking?._id || booking?.id || booking?.bookingId || "";
 const bookingTour = (booking) => booking?.tourId || booking?.tour || {};
 const tourIdFromBooking = (booking) => {
@@ -121,8 +116,7 @@ const EmptyState = ({ icon: Icon, title, text, action }) => (
   </div>
 );
 
-const InvoicePDF = ({ booking }) => {
-  const currency = booking?.paymentCurrency || bookingTour(booking)?.currency || "CHF";
+const InvoicePDF = ({ booking, formatPrice }) => {
   return (
     <Document>
       <Page size="A4" style={pdfStyles.page}>
@@ -146,7 +140,7 @@ const InvoicePDF = ({ booking }) => {
         <View style={pdfStyles.section}>
           <View style={pdfStyles.row}><Text style={pdfStyles.label}>Booking status</Text><Text style={pdfStyles.value}>{booking?.status || "pending"}</Text></View>
           <View style={pdfStyles.row}><Text style={pdfStyles.label}>Payment status</Text><Text style={pdfStyles.value}>{booking?.paymentStatus || "pending"}</Text></View>
-          <View style={pdfStyles.row}><Text style={pdfStyles.label}>Total</Text><Text style={pdfStyles.value}>{formatMoney(booking?.totalPrice, currency)}</Text></View>
+          <View style={pdfStyles.row}><Text style={pdfStyles.label}>Total</Text><Text style={pdfStyles.value}>{formatPrice(booking?.totalPrice)}</Text></View>
         </View>
       </Page>
     </Document>
@@ -173,7 +167,8 @@ const TicketPDF = ({ booking }) => (
 );
 
 const DownloadPdfButton = ({ type, booking }) => {
-  const document = type === "ticket" ? <TicketPDF booking={booking} /> : <InvoicePDF booking={booking} />;
+  const { formatPrice } = useCurrency();
+  const document = type === "ticket" ? <TicketPDF booking={booking} /> : <InvoicePDF booking={booking} formatPrice={formatPrice} />;
   const fileName = `ajl-${type}-${String(bookingId(booking)).slice(-8) || "booking"}.pdf`;
   return (
     <PDFDownloadLink document={document} fileName={fileName}>
@@ -196,6 +191,7 @@ const DetailRow = ({ label, value }) => (
 
 const CustomerDashboard = () => {
   const { user, setUser, loading: appLoading } = useContext(AppContext);
+  const { formatPrice } = useCurrency();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
   const [loading, setLoading] = useState(false);
@@ -653,7 +649,7 @@ const CustomerDashboard = () => {
           <section className="space-y-6">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
               <StatCard icon={Ticket} label="Total bookings" value={stats.totalBookings || 0} />
-              <StatCard icon={CreditCard} label="Total spent" value={formatMoney(stats.totalSpent || 0)} />
+              <StatCard icon={CreditCard} label="Total spent" value={formatPrice(stats.totalSpent || 0)} />
               <StatCard icon={Clock} label="Pending payments" value={stats.pendingPayments || 0} />
               <StatCard icon={CalendarDays} label="Upcoming" value={stats.upcomingBookings || 0} />
               <StatCard icon={Shield} label="Account status" value={overview?.account?.status || "Active"} />
@@ -829,7 +825,7 @@ const CustomerDashboard = () => {
               <StatCard icon={CreditCard} label="Paid bookings" value={payments.summary?.paid || 0} />
               <StatCard icon={Clock} label="Pending" value={payments.summary?.pending || 0} />
               <StatCard icon={RefreshCw} label="Refunded" value={payments.summary?.refunded || 0} />
-              <StatCard icon={CheckCircle} label="Total paid" value={formatMoney(payments.summary?.totalPaid || 0)} />
+              <StatCard icon={CheckCircle} label="Total paid" value={formatPrice(payments.summary?.totalPaid || 0)} />
             </div>
             {payments.payments?.length ? (
               <div className="overflow-x-auto">
@@ -851,7 +847,7 @@ const CustomerDashboard = () => {
                         <tr key={payment.id}>
                           <TableCell>{payment.invoiceNumber}</TableCell>
                           <TableCell>{payment.tourTitle}</TableCell>
-                          <TableCell>{formatMoney(payment.amount, payment.currency)}</TableCell>
+                          <TableCell>{formatPrice(payment.amount)}</TableCell>
                           <TableCell><StatusBadge value={payment.paymentStatus} /></TableCell>
                           <TableCell>{payment.refundStatus}</TableCell>
                           <TableCell>{booking ? <DownloadPdfButton type="invoice" booking={booking} /> : "Unavailable"}</TableCell>
@@ -948,7 +944,7 @@ const CustomerDashboard = () => {
                       </div>
                       <div className="p-4">
                         <h3 className="line-clamp-2 font-bold text-gray-900">{tour.name || "Saved tour"}</h3>
-                        <p className="mt-2 text-sm text-gray-600">{formatMoney(tour.price, tour.currency)}</p>
+                        <p className="mt-2 text-sm text-gray-600">{formatPrice(tour.price)}</p>
                         <div className="mt-4 flex flex-wrap gap-2">
                           <button onClick={() => id && navigate(`/switzerland/${id}/checkout-sw`, { state: { tour } })} className="rounded-lg bg-orange-600 px-3 py-2 text-sm font-bold text-white hover:bg-orange-700">
                             View tour
@@ -1092,6 +1088,7 @@ const BookingList = ({ bookings, onSelect }) => (
 
 const BookingCard = ({ booking, onDetails, onCancel, onRebook, canCancel, actionLoading }) => {
   const id = bookingId(booking);
+  const { formatPrice } = useCurrency();
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -1100,7 +1097,7 @@ const BookingCard = ({ booking, onDetails, onCancel, onRebook, canCancel, action
           <div className="mt-2 flex flex-wrap gap-2 text-sm text-gray-600">
             <span className="inline-flex items-center gap-1"><CalendarDays className="h-4 w-4" /> {formatDate(booking.tripDate)}</span>
             <span className="inline-flex items-center gap-1"><MapPin className="h-4 w-4" /> {booking.address || "Pickup not set"}</span>
-            <span>{formatMoney(booking.totalPrice, booking.paymentCurrency || bookingTour(booking)?.currency)}</span>
+            <span>{formatPrice(booking.totalPrice)}</span>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             <StatusBadge value={booking.status} />
@@ -1134,6 +1131,8 @@ const BookingCard = ({ booking, onDetails, onCancel, onRebook, canCancel, action
 };
 
 const BookingDetails = ({ booking, onRebook }) => {
+  const { formatPrice } = useCurrency();
+
   if (!booking) {
     return <EmptyState icon={Ticket} title="No booking selected" text="Select a booking to view its details." />;
   }
@@ -1163,7 +1162,7 @@ const BookingDetails = ({ booking, onRebook }) => {
         <DetailRow label="Payment status" value={booking.paymentStatus} />
         <DetailRow label="Invoice number" value={`AJL-${String(bookingId(booking)).slice(-8).toUpperCase()}`} />
         <DetailRow label="Payment reference" value={booking.stripePaymentId} />
-        <DetailRow label="Total" value={formatMoney(booking.totalPrice, booking.paymentCurrency || tour?.currency)} />
+        <DetailRow label="Total" value={formatPrice(booking.totalPrice)} />
         <DetailRow label="Start location" value={tour?.startLocation} />
         <DetailRow label="End location" value={tour?.endLocation} />
         <DetailRow label="Special requests" value={booking.specialRequests} />

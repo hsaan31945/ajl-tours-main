@@ -89,7 +89,7 @@ const Booking = () => {
   const navigate = useNavigate();
   const { user, addBooking } = useContext(AppContext);
   const tour = location.state?.tour || null;
-  const { symbol, rate } = useCurrency();
+  const { formatPrice } = useCurrency();
 
   const { title = tour?.name || "Selected Tour", price = 0 } = tour || {};
   const today = new Date().toISOString().split("T")[0];
@@ -105,7 +105,6 @@ const Booking = () => {
     lat: null,
     lng: null,
   });
-  const [totalPrice, setTotalPrice] = useState(price);
   const pricing = calculateBookingPricing({ tour, tickets: formData.travelers, selectedDate: formData.tripDate, fallbackPrice: price });
 
   const handleChange = (e) => {
@@ -155,10 +154,6 @@ const Booking = () => {
       toast.error("Booking failed: " + (err.response?.data?.message || err.message));
     }
   };
-
-  React.useEffect(() => {
-    setTotalPrice((pricing.total * rate).toFixed(2));
-  }, [pricing.total, rate]);
 
   if (!tour || !user) {
     return <Navigate to="/login" replace />;
@@ -290,7 +285,7 @@ const Booking = () => {
           />
         </div>
         <div>
-          <h3 className="text-lg font-semibold">Total Price: {symbol}{totalPrice}</h3>
+          <h3 className="text-lg font-semibold">Total Price: {formatPrice(pricing.total)}</h3>
         </div>
         <Button
           type="submit"

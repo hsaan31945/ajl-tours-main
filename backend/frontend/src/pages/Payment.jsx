@@ -9,6 +9,7 @@ import { apiUrl } from "../utils/api";
 import { getTourId } from "../utils/tourId";
 import { calculateBookingPricing, getGroupDiscountLabel } from "../utils/bookingPricing";
 import { cleanDisplayName } from "../utils/textFormatting";
+import { useCurrency } from "../context/CurrencyContext";
 
 const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
 if (!publishableKey) {
@@ -22,6 +23,7 @@ const PaymentForm = ({ clientSecret, paymentSummary }) => {
   const { tour, tickets = 1, date, time, contact, flexibility } = booking || {};
   const stripe = useStripe();
   const elements = useElements();
+  const { formatPrice } = useCurrency();
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -29,7 +31,6 @@ const PaymentForm = ({ clientSecret, paymentSummary }) => {
   const displayPricing = paymentSummary || calculateBookingPricing({ tour, tickets, selectedDate: date, flexibility });
   const totalPrice = Number(displayPricing.total || displayPricing.amount || 0);
   const displayTickets = Number(displayPricing.tickets || tickets || 1);
-  const displayCurrency = displayPricing.currency || tour?.currency || "CHF";
   const tourName = cleanDisplayName(tour?.title || tour?.name || "Tour");
 
   const handleSubmit = async (event) => {
@@ -110,10 +111,10 @@ const PaymentForm = ({ clientSecret, paymentSummary }) => {
             <div className="mb-6 p-4 bg-gray-50 rounded-lg">
               <h3 className="font-bold">{tourName}</h3>
               <p className="text-gray-600">{date} • {time}</p>
-              <p className="text-gray-600">{displayTickets} adult{displayTickets > 1 ? "s" : ""} • {displayCurrency}{totalPrice.toFixed(2)}</p>
+              <p className="text-gray-600">{displayTickets} adult{displayTickets > 1 ? "s" : ""} • {formatPrice(totalPrice)}</p>
               {displayPricing.hasGroupDiscount && (
                 <p className="text-sm font-semibold text-green-700">
-                  {getGroupDiscountLabel(displayPricing, displayTickets)}: -{displayCurrency}{Number(displayPricing.groupDiscountTotal || 0).toFixed(2)}
+                  {getGroupDiscountLabel(displayPricing, displayTickets)}: -{formatPrice(displayPricing.groupDiscountTotal || 0)}
                 </p>
               )}
               </div>
@@ -150,7 +151,7 @@ const PaymentForm = ({ clientSecret, paymentSummary }) => {
               ) : (
                 <>
                   <Lock className="w-5 h-5" />
-                  Pay {displayCurrency}{totalPrice.toFixed(2)}
+                  Pay {formatPrice(totalPrice)}
                 </>
               )}
             </button>

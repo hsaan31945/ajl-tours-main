@@ -7,6 +7,7 @@ import { assets } from "../assets/assets.js";
 import { useAdmin } from "../context/AdminContext";
 import { getTourId } from "../utils/tourId";
 import { fetchToursList } from "../services/toursApi";
+import CurrencySelector from "./CurrencySelector";
 
 const Navbar = () => {
   const { user, logout } = useContext(AppContext);
@@ -422,6 +423,7 @@ const Navbar = () => {
             </Link>
           </li>
         </ul>
+        <CurrencySelector compact />
         {(user || isAdmin) ? (
           <div className="flex items-center gap-3">
             <div className="relative group">
@@ -605,11 +607,7 @@ const Navbar = () => {
                 {/* Additional Sections matching reference */}
                 <div className="mt-4 border-t border-gray-100 pt-2">
                    <div className="px-6 py-4 flex items-center justify-between text-gray-700 hover:bg-gray-50 transition-colors">
-                     <div className="flex items-center gap-3">
-                       <span className="w-5 h-5 flex items-center justify-center font-bold text-sm border-2 border-gray-500 rounded-full">$</span>
-                       <span className="font-medium">Currency</span>
-                     </div>
-                     <span className="text-sm text-gray-500 flex items-center gap-1">CHF <ChevronRight className="w-4 h-4" /></span>
+                     <CurrencySelector className="w-full justify-between rounded-lg border-0 px-0 py-0 hover:text-gray-700" />
                    </div>
                    <div className="px-6 py-4 flex items-center justify-between text-gray-700 hover:bg-gray-50 transition-colors">
                      <div className="flex items-center gap-3">

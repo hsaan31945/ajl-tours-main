@@ -1,14 +1,11 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Heart, MapPin, Star, ArrowLeft } from "lucide-react";
+import { Heart, ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import { AppContext } from "../context/AppContext";
-import { useCurrency } from "../context/CurrencyContext";
 import TourCard from "../components/TourCard";
 
 const Favorites = () => {
   const { user } = useContext(AppContext);
-  const { symbol, rate } = useCurrency();
   const navigate = useNavigate();
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -117,6 +114,5 @@ const Favorites = () => {
 };
 
 export default Favorites;
-
 
 

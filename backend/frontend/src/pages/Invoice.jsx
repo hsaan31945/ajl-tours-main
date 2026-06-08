@@ -19,7 +19,7 @@ const styles = StyleSheet.create({
   label: { fontWeight: "bold" },
 });
 
-const InvoicePDF = ({ booking, symbol }) => (
+const InvoicePDF = ({ booking, formatPrice }) => (
   <Document>
     <Page size="A4" style={styles.page}>
       <Text style={styles.title}>Booking Invoice</Text>
@@ -34,9 +34,9 @@ const InvoicePDF = ({ booking, symbol }) => (
         <Text>Tour: {booking.tourTitle}</Text>
         <Text>Number of Travelers: {booking.travelers}</Text>
         {Number(booking.groupDiscountTotal || 0) > 0 && (
-          <Text>{getGroupDiscountLabel(booking, booking.tickets || booking.travelers)}: -{symbol}{Number(booking.groupDiscountTotal).toFixed(2)}</Text>
+          <Text>{getGroupDiscountLabel(booking, booking.tickets || booking.travelers)}: -{formatPrice(booking.groupDiscountTotal)}</Text>
         )}
-        <Text>Total Price: {symbol}{Number(booking.totalPrice).toFixed(2)}</Text>
+        <Text>Total Price: {formatPrice(booking.totalPrice)}</Text>
       </View>
     </Page>
   </Document>
@@ -45,7 +45,7 @@ const InvoicePDF = ({ booking, symbol }) => (
 const Invoice = () => {
   const location = useLocation();
   const booking = location.state?.booking;
-  const { symbol } = useCurrency();
+  const { formatPrice } = useCurrency();
 
   if (!booking) {
     return (
@@ -87,17 +87,17 @@ const Invoice = () => {
         </p>
         {Number(booking.groupDiscountTotal || 0) > 0 && (
           <p>
-            <strong>{getGroupDiscountLabel(booking, booking.tickets || booking.travelers)}:</strong> -{symbol}{Number(booking.groupDiscountTotal).toFixed(2)}
+            <strong>{getGroupDiscountLabel(booking, booking.tickets || booking.travelers)}:</strong> -{formatPrice(booking.groupDiscountTotal)}
           </p>
         )}
         <p>
-          <strong>Total Price:</strong> {symbol}{Number(booking.totalPrice).toFixed(2)}
+          <strong>Total Price:</strong> {formatPrice(booking.totalPrice)}
         </p>
       </div>
       <div className="mt-6">
         {booking ? (
           <PDFDownloadLink
-            document={<InvoicePDF booking={booking} symbol={symbol} />}
+            document={<InvoicePDF booking={booking} formatPrice={formatPrice} />}
             fileName="booking_invoice.pdf"
           >
             {({ blob, url, loading, error }) =>

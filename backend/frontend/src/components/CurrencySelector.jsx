@@ -1,26 +1,32 @@
 import React from "react";
+import { ChevronDown, CircleDollarSign } from "lucide-react";
 import { useCurrency } from "../context/CurrencyContext";
 
-const CurrencySelector = () => {
-  const { currency, setCurrency, SUPPORTED_CURRENCIES, loading } = useCurrency();
+const CurrencySelector = ({ compact = false, className = "" }) => {
+  const { currency, setCurrency, SUPPORTED_CURRENCIES } = useCurrency();
 
   return (
-    <div className="w-full flex justify-center items-center py-2 bg-gray-100 border-b">
-      <label htmlFor="currency-select" className="mr-2 font-medium">Currency:</label>
+    <label
+      className={`relative inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:border-orange-300 hover:text-orange-600 ${className}`}
+      title="Select currency"
+    >
+      <CircleDollarSign className="h-4 w-4" aria-hidden="true" />
+      {!compact && <span className="text-xs text-gray-500">Currency</span>}
       <select
-        id="currency-select"
         value={currency}
-        onChange={e => setCurrency(e.target.value)}
-        className="border rounded px-2 py-1"
-        disabled={loading}
+        onChange={(event) => setCurrency(event.target.value)}
+        className="appearance-none bg-transparent pr-5 font-bold text-gray-800 outline-none cursor-pointer"
+        aria-label="Select currency"
       >
-        {SUPPORTED_CURRENCIES.map(cur => (
-          <option key={cur.code} value={cur.code}>{cur.code} ({cur.symbol})</option>
+        {SUPPORTED_CURRENCIES.map((item) => (
+          <option key={item.code} value={item.code}>
+            {item.code}
+          </option>
         ))}
       </select>
-      {loading && <span className="ml-3 text-sm text-gray-500">Updating rate...</span>}
-    </div>
+      <ChevronDown className="pointer-events-none absolute right-2 h-4 w-4 text-gray-400" aria-hidden="true" />
+    </label>
   );
 };
 
-export default CurrencySelector; 
+export default CurrencySelector;

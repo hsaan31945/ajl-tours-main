@@ -18,6 +18,7 @@ import PaymentSection from "../components/PaymentSection";
 import { calculateBookingPricing } from "../utils/bookingPricing";
 import TourReviews, { getTourReviewSummary } from "../components/TourReviews";
 import { Star } from "lucide-react";
+import { useCurrency } from "../context/CurrencyContext";
 
 function ItineraryAccordion({ itinerary = [], adminOn = false, onSave, onAddDraft }) {
   const itineraryList = Array.isArray(itinerary) ? itinerary : [];
@@ -247,6 +248,7 @@ const Checkout = () => {
   const { id } = useParams();
   const { user } = useContext(AppContext);
   const { isAdmin, passcodeHeader } = useAdmin();
+  const { formatPrice } = useCurrency();
   const legacyIsAdmin = user?.isAdmin || false;
   const adminOn = isAdmin || legacyIsAdmin;
   const [tour, setTour] = useState(null);
@@ -681,7 +683,7 @@ const Checkout = () => {
           <span className="text-xs text-gray-500">Price</span>
           {pricing.hasDiscount && (
             <span className="text-sm font-semibold text-gray-400 line-through">
-              {pricing.currency}{pricing.originalBaseUnitPrice.toFixed(2)}
+              {formatPrice(pricing.originalBaseUnitPrice)}
             </span>
           )}
           {effectiveEditMode ? (
@@ -697,7 +699,7 @@ const Checkout = () => {
             />
           ) : (
             <span className="text-lg font-bold text-red-600">
-              From {pricing.currency}{pricePerTicket.toFixed(2)}
+              From {formatPrice(pricePerTicket)}
             </span>
           )}
         </div>
@@ -1121,10 +1123,10 @@ const Checkout = () => {
               <span className="text-red-700 font-semibold">
                 {pricing.hasDiscount && (
                   <span className="mr-2 text-gray-400 line-through">
-                    {pricing.currency}{pricing.originalBaseUnitPrice.toFixed(2)}
+                    {formatPrice(pricing.originalBaseUnitPrice)}
                   </span>
                 )}
-                {pricing.currency}{pricePerTicket.toFixed(2)}
+                {formatPrice(pricePerTicket)}
               </span>
             </div>
           )}

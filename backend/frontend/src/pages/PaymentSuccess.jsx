@@ -5,11 +5,13 @@ import { useContext } from "react";
 import { AppContext } from "../context/AppContext";
 import { apiUrl } from "../utils/api";
 import { calculateBookingPricing, getGroupDiscountLabel } from "../utils/bookingPricing";
+import { useCurrency } from "../context/CurrencyContext";
 
 const PaymentSuccess = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useContext(AppContext);
+  const { formatPrice } = useCurrency();
   const [bookingData, setBookingData] = useState(null);
   const [bookingId, setBookingId] = useState("");
 
@@ -233,13 +235,13 @@ const PaymentSuccess = () => {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Amount Paid:</span>
-              <span className="font-semibold">{bookingData?.currency || "CHF"}{Number(bookingData?.amount || 0).toFixed(2)}</span>
+              <span className="font-semibold">{formatPrice(bookingData?.amount || 0)}</span>
             </div>
             {bookingData?.hasGroupDiscount && (
               <div className="flex justify-between">
                 <span className="text-gray-600">{getGroupDiscountLabel(bookingData, bookingData?.tickets)}:</span>
                 <span className="font-semibold text-green-700">
-                  -{bookingData?.currency || "CHF"}{Number(bookingData?.groupDiscountTotal || 0).toFixed(2)}
+                  -{formatPrice(bookingData?.groupDiscountTotal || 0)}
                 </span>
               </div>
             )}

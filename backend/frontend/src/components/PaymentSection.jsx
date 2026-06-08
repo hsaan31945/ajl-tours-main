@@ -7,6 +7,7 @@ import { calculateBookingPricing, getGroupDiscountLabel } from "../utils/booking
 import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Users } from "lucide-react";
 import EditableField from "./EditableField";
 import ParticipantStepper from "./ParticipantStepper";
+import { useCurrency } from "../context/CurrencyContext";
 
 const monthLabel = (date) => date.toLocaleString("default", { month: "long", year: "numeric" });
 
@@ -190,6 +191,7 @@ function PaymentSection({
   const navigate = useNavigate();
   const { setBooking } = useBooking();
   const { isAdmin, passcodeHeader } = useAdmin();
+  const { formatPrice } = useCurrency();
   const [editingMinTickets, setEditingMinTickets] = useState(false);
   const [minTicketsInput, setMinTicketsInput] = useState(tour?.minTicketsPerBooking || 1);
   
@@ -242,7 +244,7 @@ function PaymentSection({
           <div className="font-bold text-orange-600 text-right">
             {pricing.hasDiscount && (
               <div className="text-sm font-semibold text-gray-400 line-through">
-                {currency || "CHF"}{pricing.originalBaseUnitPrice.toFixed(2)}
+                {isAdmin ? `${currency || "CHF"}${pricing.originalBaseUnitPrice.toFixed(2)}` : formatPrice(pricing.originalBaseUnitPrice)}
               </div>
             )}
             {isAdmin ? (
@@ -255,7 +257,7 @@ function PaymentSection({
                 onUpdated={onPriceUpdated}
               />
             ) : (
-              <span>{currency || "CHF"}{pricing.baseUnitPrice.toFixed(2)}</span>
+              <span>{formatPrice(pricing.baseUnitPrice)}</span>
             )}
           </div>
         </div>
@@ -265,7 +267,7 @@ function PaymentSection({
               {getGroupDiscountLabel(pricing)}
             </span>
             <span className="font-bold text-green-700">
-              -{pricing.currency}{pricing.groupDiscountTotal.toFixed(2)}
+              -{formatPrice(pricing.groupDiscountTotal)}
             </span>
           </div>
         )}

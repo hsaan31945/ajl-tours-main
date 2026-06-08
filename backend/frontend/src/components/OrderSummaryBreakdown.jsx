@@ -1,7 +1,6 @@
 import React from "react";
 import { getGroupDiscountLabel } from "../utils/bookingPricing";
-
-const money = (currency, value) => `${currency}${Number(value || 0).toFixed(2)}`;
+import { useCurrency } from "../context/CurrencyContext";
 
 const formatPercent = (value) => {
   const percent = Number(value || 0);
@@ -20,9 +19,10 @@ const SummaryLine = ({ label, value, tone = "default", bold = false }) => {
 };
 
 const OrderSummaryBreakdown = ({ pricing, travelers }) => {
+  const { formatPrice } = useCurrency();
+
   if (!pricing) return null;
 
-  const currency = pricing.currency || "CHF";
   const count = Number(travelers || pricing.tickets || 1);
   const hasTourDiscount = Number(pricing.standardDiscountTotal || 0) > 0;
   const hasGroupDiscount = Boolean(pricing.hasGroupDiscount);
@@ -32,20 +32,20 @@ const OrderSummaryBreakdown = ({ pricing, travelers }) => {
   return (
     <div className="border-y py-4 space-y-3 text-sm">
       <SummaryLine
-        label={`Base price (${money(currency, pricing.originalBaseUnitPrice)} x ${count})`}
-        value={money(currency, pricing.originalSubtotal)}
+        label={`Base price (${formatPrice(pricing.originalBaseUnitPrice)} x ${count})`}
+        value={formatPrice(pricing.originalSubtotal)}
       />
 
       {hasTourDiscount && (
         <>
           <SummaryLine
             label={`Tour discount${tourDiscountPercent ? ` ${tourDiscountPercent}` : ""}`}
-            value={`-${money(currency, pricing.standardDiscountTotal)}`}
+            value={`-${formatPrice(pricing.standardDiscountTotal)}`}
             tone="discount"
           />
           <SummaryLine
-            label={`Discounted price (${money(currency, pricing.saleUnitPrice)} x ${count})`}
-            value={money(currency, pricing.saleSubtotal)}
+            label={`Discounted price (${formatPrice(pricing.saleUnitPrice)} x ${count})`}
+            value={formatPrice(pricing.saleSubtotal)}
           />
         </>
       )}
@@ -53,7 +53,7 @@ const OrderSummaryBreakdown = ({ pricing, travelers }) => {
       {hasGroupDiscount && (
         <SummaryLine
           label={getGroupDiscountLabel(pricing, count)}
-          value={`-${money(currency, pricing.groupDiscountTotal)}`}
+          value={`-${formatPrice(pricing.groupDiscountTotal)}`}
           tone="discount"
         />
       )}
@@ -61,14 +61,14 @@ const OrderSummaryBreakdown = ({ pricing, travelers }) => {
       {(hasTourDiscount || hasGroupDiscount) && (
         <SummaryLine
           label="Subtotal after discounts"
-          value={money(currency, pricing.subtotalAfterDiscounts)}
+          value={formatPrice(pricing.subtotalAfterDiscounts)}
         />
       )}
 
       {hasFlexibilityUpgrade && (
         <SummaryLine
           label="Flexibility upgrade"
-          value={`+${money(currency, pricing.flexibilityUpgradeTotal)}`}
+          value={`+${formatPrice(pricing.flexibilityUpgradeTotal)}`}
         />
       )}
     </div>

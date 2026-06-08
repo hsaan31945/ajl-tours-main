@@ -1,9 +1,11 @@
 import React, { useContext, useEffect, useState } from "react";
 import { AppContext } from "../context/AppContext";
 import { getGroupDiscountLabel } from "../utils/bookingPricing";
+import { useCurrency } from "../context/CurrencyContext";
 
 const BookingHistory = () => {
   const { user } = useContext(AppContext);
+  const { formatPrice } = useCurrency();
   const [bookingHistory, setBookingHistory] = useState([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
 
@@ -55,10 +57,10 @@ const BookingHistory = () => {
                       <h3 className="font-semibold text-lg text-gray-800">{booking.tourName}</h3>
                       <div className="text-sm text-gray-600 mt-1">
                         <span className="mr-4">📅 {new Date(booking.bookingDate).toLocaleDateString()}</span>
-                        <span className="mr-4">💰 {booking.currency || "$"}{Number(booking.amount || 0).toFixed(2)}</span>
+                        <span className="mr-4">💰 {formatPrice(booking.amount || 0)}</span>
                         {Number(booking.groupDiscountTotal || 0) > 0 && (
                           <span className="mr-4 text-green-700">
-                            {getGroupDiscountLabel(booking, booking.tickets)} -{booking.currency || "$"}{Number(booking.groupDiscountTotal).toFixed(2)}
+                            {getGroupDiscountLabel(booking, booking.tickets)} -{formatPrice(booking.groupDiscountTotal)}
                           </span>
                         )}
                         <span className="mr-4">👥 {booking.tickets} {booking.tickets > 1 ? 'people' : 'person'}</span>
@@ -87,4 +89,3 @@ const BookingHistory = () => {
 };
 
 export default BookingHistory;
-

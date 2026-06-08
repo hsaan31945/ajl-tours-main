@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchToursList } from "../services/toursApi";
-import { useCurrency } from "../context/CurrencyContext";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getTourId } from "../utils/tourId";
 import TourCard from "./TourCard";
@@ -9,7 +8,6 @@ import TourCardSkeleton from "./TourCardSkeleton";
 
 const TopDealsSection = () => {
   const navigate = useNavigate();
-  const { symbol, rate } = useCurrency();
   const [topSwissTours, setTopSwissTours] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

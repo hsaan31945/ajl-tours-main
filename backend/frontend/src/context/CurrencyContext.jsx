@@ -1,61 +1,111 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
-const CurrencyContext = createContext();
+export const BASE_CURRENCY = "CHF";
+export const CURRENCY_STORAGE_KEY = "ajl:selectedCurrency";
 
-const SUPPORTED_CURRENCIES = [
-  { code: "USD", symbol: "$" },
-  { code: "CHF", symbol: "CHF" },
+export const SUPPORTED_CURRENCIES = [
+  {
+    code: "CHF",
+    name: "Swiss Franc",
+    symbol: "CHF",
+    rateFromChf: 1,
+  },
+  {
+    code: "EUR",
+    name: "Euro",
+    symbol: "€",
+    rateFromChf: 1.06,
+  },
 ];
 
+const currencyByCode = SUPPORTED_CURRENCIES.reduce((acc, currency) => {
+  acc[currency.code] = currency;
+  return acc;
+}, {});
+
+const getStoredCurrency = () => {
+  if (typeof window === "undefined") return BASE_CURRENCY;
+  const storedCurrency = window.localStorage.getItem(CURRENCY_STORAGE_KEY);
+  return currencyByCode[storedCurrency] ? storedCurrency : BASE_CURRENCY;
+};
+
+const CurrencyContext = createContext(null);
+
 export const CurrencyProvider = ({ children }) => {
-  const [currency, setCurrency] = useState("CHF");
-  const [rate, setRate] = useState(1); // 1 CHF = 1 CHF by default
-  const [symbol, setSymbol] = useState("CHF");
-  const [loading, setLoading] = useState(false);
+  const [currency, setCurrencyState] = useState(getStoredCurrency);
+
+  const setCurrency = useCallback((nextCurrency) => {
+    const safeCurrency = currencyByCode[nextCurrency] ? nextCurrency : BASE_CURRENCY;
+    setCurrencyState(safeCurrency);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(CURRENCY_STORAGE_KEY, safeCurrency);
+    }
+  }, []);
 
   useEffect(() => {
-    console.log("Currency changed to:", currency);
-    const fetchRate = async () => {
-      setLoading(true);
-      if (currency === "CHF") {
-        setRate(1);
-        setSymbol("CHF");
-        setLoading(false);
-        return;
-      }
-      try {
-        const res = await fetch(
-          `https://open.er-api.com/v6/latest/CHF`
-        );
-        const data = await res.json();
-        console.log("API response:", data);
-        if (data && data.result === "success" && data.rates && data.rates["USD"]) {
-          setRate(data.rates["USD"]);
-          setSymbol("$");
-          console.log("Fetched rate:", data.rates["USD"]);
-        } else {
-          throw new Error(data.error || "Invalid API response");
-        }
-      } catch (e) {
-        console.error("Error fetching exchange rate:", e);
-        setRate(1);
-        setSymbol("CHF");
-      } finally {
-        setLoading(false);
+    const handleStorage = (event) => {
+      if (event.key === CURRENCY_STORAGE_KEY && currencyByCode[event.newValue]) {
+        setCurrencyState(event.newValue);
       }
     };
-    fetchRate();
-  }, [currency]);
 
-  useEffect(() => {
-    console.log("CurrencyProvider render:", { currency, rate, symbol });
-  });
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  const selectedCurrency = currencyByCode[currency] || currencyByCode[BASE_CURRENCY];
+  const rate = selectedCurrency.rateFromChf;
+  const symbol = selectedCurrency.symbol;
+
+  const convertFromChf = useCallback(
+    (amount) => {
+      const number = Number(amount);
+      return Number.isFinite(number) ? number * rate : 0;
+    },
+    [rate]
+  );
+
+  const formatPrice = useCallback(
+    (amount, options = {}) => {
+      const converted = convertFromChf(amount);
+      const decimals = options.decimals ?? 2;
+      const value = converted.toLocaleString(undefined, {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      });
+      return selectedCurrency.code === "CHF"
+        ? `${selectedCurrency.symbol}${value}`
+        : `${selectedCurrency.symbol}${value}`;
+    },
+    [convertFromChf, selectedCurrency]
+  );
+
+  const value = useMemo(
+    () => ({
+      currency,
+      selectedCurrency,
+      setCurrency,
+      rate,
+      symbol,
+      convertFromChf,
+      formatPrice,
+      SUPPORTED_CURRENCIES,
+      baseCurrency: BASE_CURRENCY,
+    }),
+    [currency, selectedCurrency, setCurrency, rate, symbol, convertFromChf, formatPrice]
+  );
 
   return (
-    <CurrencyContext.Provider value={{ currency, setCurrency, rate, symbol, loading, SUPPORTED_CURRENCIES }}>
+    <CurrencyContext.Provider value={value}>
       {children}
     </CurrencyContext.Provider>
   );
 };
 
-export const useCurrency = () => useContext(CurrencyContext); 
+export const useCurrency = () => {
+  const context = useContext(CurrencyContext);
+  if (!context) {
+    throw new Error("useCurrency must be used within a CurrencyProvider");
+  }
+  return context;
+};

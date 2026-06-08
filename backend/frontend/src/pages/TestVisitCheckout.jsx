@@ -2,9 +2,11 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchToursList } from "../services/toursApi";
 import { getTourId } from "../utils/tourId";
+import { useCurrency } from "../context/CurrencyContext";
 
 const TestVisitCheckout = () => {
   const navigate = useNavigate();
+  const { formatPrice } = useCurrency();
   const [tours, setTours] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -38,7 +40,7 @@ const TestVisitCheckout = () => {
             ) : tours.map((tour) => (
               <div key={getTourId(tour)} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
                 <h3 className="text-lg font-semibold mb-2">{tour.name}</h3>
-                <p className="text-orange-600 font-bold text-xl mb-4">{tour.currency || "CHF"} {tour.price}</p>
+                <p className="text-orange-600 font-bold text-xl mb-4">{formatPrice(tour.price)}</p>
                 <button
                   onClick={() => navigate(`/switzerland/${getTourId(tour)}/checkout-sw`, {
                     state: { tour }

@@ -6,10 +6,12 @@ import { getTourId } from '../utils/tourId';
 import { apiUrl } from '../utils/api';
 import TourReviews, { getTourReviewSummary } from '../components/TourReviews';
 import { getDiscountPrice } from '../utils/bookingPricing';
+import { useCurrency } from '../context/CurrencyContext';
 
 const TourDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { formatPrice } = useCurrency();
   const [tour, setTour] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -200,9 +202,9 @@ const TourDetails = () => {
             <div className="border-t border-b py-4">
               <div className="text-3xl font-bold text-gray-900">
                 {discountPrice !== null && (
-                  <span className="mr-3 text-xl text-gray-400 line-through">${tour.price}</span>
+                  <span className="mr-3 text-xl text-gray-400 line-through">{formatPrice(tour.price)}</span>
                 )}
-                ${discountPrice ?? tour.price}
+                {formatPrice(discountPrice ?? tour.price)}
                 <span className="text-lg font-normal text-gray-600"> per person</span>
               </div>
             </div>

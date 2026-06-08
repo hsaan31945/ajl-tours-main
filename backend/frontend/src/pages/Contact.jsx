@@ -8,10 +8,12 @@ import { calculateBookingPricing } from "../utils/bookingPricing";
 import { COUNTRY_CODES, DEFAULT_COUNTRY_CODE } from "../utils/countryCodes";
 import { cleanDisplayName } from "../utils/textFormatting";
 import OrderSummaryBreakdown from "../components/OrderSummaryBreakdown";
+import { useCurrency } from "../context/CurrencyContext";
 
 const UserDetails = () => {
   const navigate = useNavigate();
   const { booking, updateContact, updateTour } = useBooking();
+  const { formatPrice } = useCurrency();
   const { tour: bookingTour, tickets = 1, date, time, contact, flexibility } = booking || {};
   const [freshTour, setFreshTour] = useState(null);
   const bookingTourId = getTourId(bookingTour);
@@ -222,7 +224,7 @@ const UserDetails = () => {
           <OrderSummaryBreakdown pricing={pricing} travelers={currentTickets} />
           <div className="flex justify-between items-center mt-4 font-bold text-lg">
             <span>Total</span>
-            <span>{pricing.currency}{pricing.total.toFixed(2)}</span>
+            <span>{formatPrice(pricing.total)}</span>
           </div>
           <div className="text-xs text-gray-500 text-right">All taxes and fees included</div>
         </div>
