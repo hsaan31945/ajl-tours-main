@@ -8,12 +8,14 @@ import { cleanDisplayName } from "../utils/textFormatting";
 import ParticipantStepper from "../components/ParticipantStepper";
 import OrderSummaryBreakdown from "../components/OrderSummaryBreakdown";
 import { useCurrency } from "../context/CurrencyContext";
+import { useI18n } from "../i18n";
 
 const Flexibility = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { booking, updateFlexibility, updateTickets, updateTour, updateDateTime } = useBooking();
   const { formatPrice } = useCurrency();
+  const { t } = useI18n();
   
   // Use tour data from location state if available, otherwise from booking context
   const tourData = location.state?.tour || location.state?.tourData || booking?.tour;
@@ -118,16 +120,18 @@ const Flexibility = () => {
   if (!tour) {
     return (
       <div className="text-center mt-20 text-xl text-red-600">
-        <div>No tour selected for flexibility. Please go back and try again.</div>
+        <div>{t("booking.noTour")}</div>
         <div className="text-sm mt-2 text-gray-500">
-          Debug: Location state has {location.state ? 'data' : 'no data'}, 
-          Tour data: {tourData ? 'exists' : 'missing'}
+          {t("booking.debugLocation", {
+            state: location.state ? t("booking.data") : t("booking.noData"),
+            tour: tourData ? t("booking.exists") : t("booking.missing"),
+          })}
         </div>
       </div>
     );
   }
 
-  const steps = ["Flexibility", "User Details", "Payment"];
+  const steps = [t("booking.flexibility"), t("booking.userDetails"), t("booking.payment")];
   const currentStep = 1;
 
   const handleTicketsChange = (val) => {
@@ -170,17 +174,17 @@ const Flexibility = () => {
           <div className="mb-6">
             <div className="block mb-4 border rounded-xl p-4 flex flex-col gap-2 transition-all duration-200 border-blue-500 bg-blue-50">
               <div className="flex items-center gap-2">
-                <span className="font-bold">Standard ticket only</span>
+                <span className="font-bold">{t("booking.standardTicket")}</span>
               </div>
               <ul className="text-green-700 ml-6 list-disc space-y-1 text-sm">
-                <li>Cancel up to 24 hours before start and get <b>{formatPrice(pricePerTicket)}</b> back</li>
-                <li>Cancel for any reason, no questions asked</li>
+                <li>{t("booking.cancel24", { amount: formatPrice(pricePerTicket) })}</li>
+                <li>{t("booking.cancelAnyReason")}</li>
               </ul>
               <div className="text-right font-bold text-lg mt-2">{formatPrice(pricePerTicket)}</div>
             </div>
           </div>
           <div className="flex justify-between items-center mt-4 mb-2">
-            <span className="font-semibold">Adults:</span>
+            <span className="font-semibold">{t("booking.adultsLabel")}</span>
             <ParticipantStepper
               value={localTicketCount}
               min={minTickets}
@@ -188,13 +192,13 @@ const Flexibility = () => {
             />
           </div>
           {minTickets > 1 && (
-            <p className="text-xs text-gray-500 text-right">Minimum {minTickets} adults required</p>
+            <p className="text-xs text-gray-500 text-right">{t("booking.minimumAdults", { count: minTickets })}</p>
           )}
           {!ticketsMeetMinimum && (
-            <p className="text-xs text-red-600 text-right font-semibold">Increase adults to continue.</p>
+            <p className="text-xs text-red-600 text-right font-semibold">{t("booking.increaseAdults")}</p>
           )}
           <div className="flex justify-between items-center mt-2 font-bold text-lg">
-            <span>Total</span>
+            <span>{t("common.total")}</span>
             <span>{formatPrice(totalPrice)}</span>
           </div>
           <button
@@ -214,7 +218,7 @@ const Flexibility = () => {
               }
             }}
           >
-            Continue
+            {t("common.continue")}
           </button>
         </div>
 
@@ -230,20 +234,20 @@ const Flexibility = () => {
           </div>
           <div className="border-b pb-2 mb-2">
             <div className="text-sm">{tour.address || tour.location || ""}</div>
-            <div className="text-sm">{date || "Date not selected"} • {time || "Time not selected"}</div>
-            <div className="text-sm">{localTicketCount} adult{localTicketCount > 1 ? "s" : ""}</div>
-            <button className="text-blue-600 underline text-xs mt-1">Change date or participants</button>
+            <div className="text-sm">{date || t("common.dateNotSelected")} • {time || t("common.timeNotSelected")}</div>
+            <div className="text-sm">{localTicketCount} {localTicketCount > 1 ? t("common.adults") : t("common.adult")}</div>
+            <button className="text-blue-600 underline text-xs mt-1">{t("booking.changeDateParticipants")}</button>
           </div>
           <div className="flex flex-col gap-1 text-sm">
-            <span className="text-green-700">Free cancellation</span>
-            <span className="text-green-700">Great value</span>
+            <span className="text-green-700">{t("common.freeCancellation")}</span>
+            <span className="text-green-700">{t("common.greatValue")}</span>
           </div>
           <OrderSummaryBreakdown pricing={pricing} travelers={localTicketCount} />
           <div className="flex justify-between items-center mt-4 font-bold text-lg">
-            <span>Total</span>
+            <span>{t("common.total")}</span>
             <span>{formatPrice(totalPrice)}</span>
           </div>
-          <div className="text-xs text-gray-500 text-right">All taxes and fees included</div>
+          <div className="text-xs text-gray-500 text-right">{t("common.allTaxesIncluded")}</div>
         </div>
       </div>
     </div>

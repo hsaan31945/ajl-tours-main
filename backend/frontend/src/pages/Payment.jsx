@@ -10,6 +10,7 @@ import { getTourId } from "../utils/tourId";
 import { calculateBookingPricing, getGroupDiscountLabel } from "../utils/bookingPricing";
 import { cleanDisplayName } from "../utils/textFormatting";
 import { useCurrency } from "../context/CurrencyContext";
+import { useI18n } from "../i18n";
 
 const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
 if (!publishableKey) {
@@ -24,6 +25,7 @@ const PaymentForm = ({ clientSecret, paymentSummary }) => {
   const stripe = useStripe();
   const elements = useElements();
   const { formatPrice } = useCurrency();
+  const { t } = useI18n();
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -39,7 +41,7 @@ const PaymentForm = ({ clientSecret, paymentSummary }) => {
     setError(null);
 
     if (!stripe || !elements) {
-      setError('Payment system not ready. Please try again.');
+      setError(t("payment.notReady"));
       setLoading(false);
       return;
     }
@@ -75,7 +77,7 @@ const PaymentForm = ({ clientSecret, paymentSummary }) => {
         return;
       }
     } catch (err) {
-      setError('Payment processing failed. Please try again.');
+      setError(t("payment.failed"));
       setLoading(false);
     }
   };
@@ -84,14 +86,14 @@ const PaymentForm = ({ clientSecret, paymentSummary }) => {
     return (
       <div className="min-h-screen bg-neutral-100 py-8 px-2 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">No Tour Selected</h2>
-          <p className="text-gray-600 mb-6">Please choose a MongoDB tour before starting payment.</p>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">{t("payment.noTourTitle")}</h2>
+          <p className="text-gray-600 mb-6">{t("payment.noTourText")}</p>
           <button
             type="button"
             onClick={() => navigate("/switzerland")}
             className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-xl transition"
           >
-            View Tours
+            {t("common.viewTours")}
           </button>
         </div>
       </div>
@@ -101,11 +103,11 @@ const PaymentForm = ({ clientSecret, paymentSummary }) => {
   return (
     <div className="min-h-screen bg-neutral-100 py-8 px-2">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-center mb-8">Payment</h1>
+        <h1 className="text-3xl font-bold text-center mb-8">{t("payment.title")}</h1>
         
         <div className="bg-white rounded-xl shadow p-6">
           <div className="mb-6">
-            <h2 className="text-2xl font-bold mb-4">Payment Details</h2>
+            <h2 className="text-2xl font-bold mb-4">{t("payment.details")}</h2>
             
             {/* Tour Info */}
             <div className="mb-6 p-4 bg-gray-50 rounded-lg">
@@ -122,7 +124,7 @@ const PaymentForm = ({ clientSecret, paymentSummary }) => {
             {/* Payment Form */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Payment Information
+                {t("payment.information")}
               </label>
               <div className="border border-gray-300 rounded-lg p-4">
                 <PaymentElement />
@@ -146,12 +148,12 @@ const PaymentForm = ({ clientSecret, paymentSummary }) => {
               {loading ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  Processing Payment...
+                  {t("payment.processing")}
                 </>
               ) : (
                 <>
                   <Lock className="w-5 h-5" />
-                  Pay {formatPrice(totalPrice)}
+                  {t("common.pay")} {formatPrice(totalPrice)}
                 </>
               )}
             </button>
@@ -159,7 +161,7 @@ const PaymentForm = ({ clientSecret, paymentSummary }) => {
             {/* Security Notice */}
             <div className="mt-4 text-xs text-gray-500 flex items-center gap-2">
               <Lock className="w-4 h-4" />
-              Your payment will be processed securely by Stripe. We never store your card details.
+              {t("payment.secureNotice")}
             </div>
           </div>
         </div>
@@ -176,6 +178,7 @@ const Payment = () => {
   const [tourRefreshComplete, setTourRefreshComplete] = useState(false);
   const [paymentSummary, setPaymentSummary] = useState(null);
   const { booking, updateTour } = useBooking();
+  const { t } = useI18n();
   const { tour: bookingTour, tickets = 1, date, flexibility } = booking || {};
   const tour = freshTour || bookingTour;
   const bookingTourId = getTourId(bookingTour);
@@ -288,9 +291,9 @@ const Payment = () => {
     return (
       <div className="min-h-screen bg-neutral-100 py-8 px-2 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Payment Configuration Error</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">{t("payment.configError")}</h2>
           <p className="text-gray-600 mb-6">
-            Stripe publishable key is missing. Set VITE_STRIPE_PUBLISHABLE_KEY in your environment.
+            {t("payment.configText")}
           </p>
         </div>
       </div>
@@ -302,7 +305,7 @@ const Payment = () => {
       <div className="min-h-screen bg-neutral-100 py-8 px-2 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Initializing payment system...</p>
+          <p className="text-gray-600">{t("payment.initializing")}</p>
         </div>
       </div>
     );
@@ -313,20 +316,20 @@ const Payment = () => {
       <div className="min-h-screen bg-neutral-100 py-8 px-2 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto">
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Payment System Error</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">{t("payment.systemError")}</h2>
           <p className="text-gray-600 mb-6">{error}</p>
           <div className="space-y-3">
             <button 
               onClick={() => window.location.reload()} 
               className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-xl transition"
             >
-              Try Again
+              {t("payment.tryAgain")}
             </button>
             <button 
               onClick={() => window.history.back()} 
               className="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-xl transition"
             >
-              Go Back
+              {t("common.goBack")}
             </button>
           </div>
         </div>
@@ -339,13 +342,13 @@ const Payment = () => {
       <div className="min-h-screen bg-neutral-100 py-8 px-2 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto">
           <div className="text-red-500 text-6xl mb-4">❌</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Payment Setup Failed</h2>
-          <p className="text-gray-600 mb-6">Unable to initialize payment system. Please check your tour selection and try again.</p>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">{t("payment.setupFailed")}</h2>
+          <p className="text-gray-600 mb-6">{t("payment.setupFailedText")}</p>
           <button 
             onClick={() => window.history.back()} 
             className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-xl transition"
           >
-            Go Back
+            {t("common.goBack")}
           </button>
         </div>
       </div>

@@ -8,10 +8,13 @@ import { useAdmin } from "../context/AdminContext";
 import { getTourId } from "../utils/tourId";
 import { fetchToursList } from "../services/toursApi";
 import CurrencySelector from "./CurrencySelector";
+import LanguageSelector from "./LanguageSelector";
+import { useI18n } from "../i18n";
 
 const Navbar = () => {
   const { user, logout } = useContext(AppContext);
   const { isAdmin, disableAdmin } = useAdmin();
+  const { t } = useI18n();
   const navigate = useNavigate();
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -220,14 +223,14 @@ const Navbar = () => {
                     setShowSearchDropdown(true);
                   }
                 }}
-                placeholder="Find places and things to do"
+                placeholder={t("nav.searchPlaceholder")}
                 className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-400 focus:outline-none min-w-0 truncate"
               />
               <button
                 type="submit"
                 className="px-6 py-2 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white rounded-full text-sm font-semibold transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-100"
               >
-                Search
+                {t("nav.search")}
               </button>
             </form>
 
@@ -292,7 +295,7 @@ const Navbar = () => {
                   : "text-gray-700 hover:bg-gray-100 hover:text-orange-600"
               }`}
             >
-              Home
+              {t("nav.home")}
             </Link>
           </li>
 
@@ -314,7 +317,7 @@ const Navbar = () => {
                   : "text-gray-700 hover:bg-gray-100 hover:text-orange-600"
               }`}
             >
-              Destinations
+              {t("nav.destinations")}
               <ChevronDown className={`h-4 w-4 transition-transform ${destinationsOpen ? "rotate-180" : ""}`} />
             </button>
 
@@ -332,7 +335,7 @@ const Navbar = () => {
                     className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-bold text-gray-900 transition hover:bg-orange-50 hover:text-orange-700"
                   >
                     <MapPin className="h-4 w-4 text-orange-600" />
-                    Switzerland
+                    {t("nav.switzerland")}
                   </Link>
                   <Link
                     to="/srilanka"
@@ -340,7 +343,7 @@ const Navbar = () => {
                     className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-bold text-gray-900 transition hover:bg-orange-50 hover:text-orange-700"
                   >
                     <MapPin className="h-4 w-4 text-orange-600" />
-                    Srilanka
+                    {t("nav.srilanka")}
                   </Link>
                 </div>
               </div>
@@ -355,7 +358,7 @@ const Navbar = () => {
                   : "text-gray-700 hover:bg-gray-100 hover:text-orange-600"
               }`}
             >
-              Tours
+              {t("nav.tours")}
             </Link>
           </li>
           <li>
@@ -367,7 +370,7 @@ const Navbar = () => {
                   : "text-gray-700 hover:bg-gray-100 hover:text-orange-600"
               }`}
             >
-              Blogs
+              {t("nav.blogs")}
             </Link>
           </li>
           <li>
@@ -379,7 +382,7 @@ const Navbar = () => {
                   : "text-gray-700 hover:bg-gray-100 hover:text-orange-600"
               }`}
             >
-              About
+              {t("nav.about")}
             </Link>
           </li>
           <li>
@@ -391,13 +394,13 @@ const Navbar = () => {
                   : "text-gray-700 hover:bg-gray-100 hover:text-orange-600"
               }`}
             >
-              Contact
+              {t("nav.contact")}
             </Link>
           </li>
           <li>
             <Link
               to="/favorites"
-              title="Favorites"
+              title={t("nav.favorites")}
               className={`inline-flex h-11 w-11 items-center justify-center rounded-full transition-colors ${
                 location.pathname === "/favorites"
                   ? "bg-orange-50 text-orange-700"
@@ -405,13 +408,13 @@ const Navbar = () => {
               }`}
             >
               <Heart className="h-6 w-6" />
-              <span className="sr-only">Favorites</span>
+              <span className="sr-only">{t("nav.favorites")}</span>
             </Link>
           </li>
           <li>
             <Link
               to="/checkout"
-              title="Checkout"
+              title={t("nav.checkout")}
               className={`inline-flex h-11 w-11 items-center justify-center rounded-full transition-colors ${
                 location.pathname === "/checkout"
                   ? "bg-orange-50 text-orange-700"
@@ -419,10 +422,11 @@ const Navbar = () => {
               }`}
             >
               <ShoppingCart className="h-6 w-6" />
-              <span className="sr-only">Checkout</span>
+              <span className="sr-only">{t("nav.checkout")}</span>
             </Link>
           </li>
         </ul>
+        <LanguageSelector compact />
         <CurrencySelector compact />
         {(user || isAdmin) ? (
           <div className="flex items-center gap-3">
@@ -440,7 +444,7 @@ const Navbar = () => {
                       : "hover:bg-gray-100"
                   }`}
                   aria-label="Open customer dashboard"
-                  title="Dashboard"
+                  title={t("nav.dashboard")}
                 >
                   <img src={assets.user} alt="" className="h-7 w-7 object-contain" />
                 </Link>
@@ -454,15 +458,15 @@ const Navbar = () => {
                 onClick={disableAdmin}
                 className="inline-flex h-11 items-center justify-center rounded-lg border-2 border-orange-600 px-6 text-base font-bold text-orange-600 transition-colors hover:bg-orange-600 hover:text-white"
               >
-                Logout
+                {t("nav.logout")}
               </button>
             ) : (
-              <button onClick={logout} className="inline-flex h-11 items-center justify-center rounded-lg border-2 border-orange-600 px-6 text-base font-bold text-orange-600 transition-colors hover:bg-orange-600 hover:text-white">Logout</button>
+              <button onClick={logout} className="inline-flex h-11 items-center justify-center rounded-lg border-2 border-orange-600 px-6 text-base font-bold text-orange-600 transition-colors hover:bg-orange-600 hover:text-white">{t("nav.logout")}</button>
             )}
           </div>
         ) : (
           <Link to="/login" className="inline-flex h-11 items-center justify-center rounded-lg border-2 border-orange-600 px-6 text-base font-bold text-orange-600 transition-colors hover:bg-orange-600 hover:text-white">
-            Login
+            {t("nav.login")}
           </Link>
         )}
       </div>
@@ -504,57 +508,57 @@ const Navbar = () => {
                   <DrawerLink
                     to="/"
                     icon={<Home className="w-5 h-5" />}
-                    label="Home"
+                    label={t("nav.home")}
                     onClick={() => setMenuOpen(false)}
                   />
 
                   <h3 className="px-6 pt-5 pb-2 text-xs font-bold uppercase tracking-wide text-gray-400">
-                    Destinations
+                    {t("nav.destinations")}
                   </h3>
                   <DrawerLink
                     to="/switzerland"
                     icon={<MapPin className="w-5 h-5" />}
-                    label="Switzerland"
+                    label={t("nav.switzerland")}
                     onClick={() => setMenuOpen(false)}
                   />
                   <DrawerLink
                     to="/srilanka"
                     icon={<MapPin className="w-5 h-5" />}
-                    label="Srilanka"
+                    label={t("nav.srilanka")}
                     onClick={() => setMenuOpen(false)}
                   />
 
                   <h3 className="px-6 pt-5 pb-2 text-xs font-bold uppercase tracking-wide text-gray-400">
-                    Menu
+                    {t("nav.menu")}
                   </h3>
                   <DrawerLink
                     to="/tours"
                     icon={<ShoppingCart className="w-5 h-5" />}
-                    label="Tours"
+                    label={t("nav.tours")}
                     onClick={() => setMenuOpen(false)}
                   />
                   <DrawerLink
                     to="/blogs"
                     icon={<BookOpen className="w-5 h-5" />}
-                    label="Blogs"
+                    label={t("nav.blogs")}
                     onClick={() => setMenuOpen(false)}
                   />
                   <DrawerLink
                     to="/about"
                     icon={<Info className="w-5 h-5" />}
-                    label="About Us"
+                    label={t("nav.about")}
                     onClick={() => setMenuOpen(false)}
                   />
                   <DrawerLink
                     to="/contact"
                     icon={<Globe className="w-5 h-5" />}
-                    label="Contact Us"
+                    label={t("nav.contact")}
                     onClick={() => setMenuOpen(false)}
                   />
                 </div>
 
                 <div className="mt-6">
-                  <h3 className="px-6 text-xl font-bold text-[#ff6b35] mb-4">Profile</h3>
+                  <h3 className="px-6 text-xl font-bold text-[#ff6b35] mb-4">{t("nav.profile")}</h3>
                   
                   {user || isAdmin ? (
                     <>
@@ -572,13 +576,13 @@ const Navbar = () => {
                       <DrawerLink
                         to="/favorites"
                         icon={<Heart className="w-5 h-5" />}
-                        label="Favorites"
+                        label={t("nav.favorites")}
                         onClick={() => setMenuOpen(false)}
                       />
                       <DrawerLink
                         to="/history"
                         icon={<HistoryIcon className="w-5 h-5" />}
-                        label="History"
+                        label={t("nav.history")}
                         onClick={() => setMenuOpen(false)}
                       />
                       <div className="px-6 py-4">
@@ -589,7 +593,7 @@ const Navbar = () => {
                           }}
                           className="w-full button-31 py-2 text-sm"
                         >
-                          Logout
+                          {t("nav.logout")}
                         </button>
                       </div>
                     </>
@@ -597,7 +601,7 @@ const Navbar = () => {
                     <DrawerLink
                       to="/login"
                       icon={<Menu className="w-5 h-5" />}
-                      label="Log in or sign up"
+                      label={t("nav.logInOrSignUp")}
                       onClick={() => setMenuOpen(false)}
                     />
                   )
@@ -607,14 +611,10 @@ const Navbar = () => {
                 {/* Additional Sections matching reference */}
                 <div className="mt-4 border-t border-gray-100 pt-2">
                    <div className="px-6 py-4 flex items-center justify-between text-gray-700 hover:bg-gray-50 transition-colors">
-                     <CurrencySelector className="w-full justify-between rounded-lg border-0 px-0 py-0 hover:text-gray-700" />
+                     <LanguageSelector className="w-full justify-between rounded-lg border-0 px-0 py-0 hover:text-gray-700" />
                    </div>
                    <div className="px-6 py-4 flex items-center justify-between text-gray-700 hover:bg-gray-50 transition-colors">
-                     <div className="flex items-center gap-3">
-                        <Globe className="w-5 h-5" />
-                       <span className="font-medium">Language</span>
-                     </div>
-                     <span className="text-sm text-gray-500 flex items-center gap-1">English <ChevronRight className="w-4 h-4" /></span>
+                     <CurrencySelector className="w-full justify-between rounded-lg border-0 px-0 py-0 hover:text-gray-700" />
                    </div>
                 </div>
               </div>

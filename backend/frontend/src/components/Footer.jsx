@@ -1,37 +1,40 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { assets } from "../assets/assets";
+import { useI18n } from "../i18n";
 
 const Footer = () => {
+  const { t } = useI18n();
+
   return (
     <footer className="bg-white border-t-2 border-red-500 shadow-inner mt-12">
       <div className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
         <div>
           <img src="/logoTravel.png" width={120} height={34} alt="AJL Tours logo" className="mb-4" />
-          <p className="text-gray-600 text-sm">AJL Tours is your trusted partner for unforgettable travel experiences. Explore the world with us!</p>
+          <p className="text-gray-600 text-sm">{t("footer.description")}</p>
         </div>
         <div>
-          <h3 className="text-lg font-semibold mb-2 text-black">Quick Links</h3>
+          <h3 className="text-lg font-semibold mb-2 text-black">{t("footer.quickLinks")}</h3>
           <ul className="text-gray-600 text-sm space-y-1">
-            <li><Link to="/" className="hover:text-red-600">Home</Link></li>
-            <li><Link to="/about" className="hover:text-red-600">About</Link></li>
-            <li><Link to="/blogs" className="hover:text-red-600">Blogs</Link></li>
-            <li><Link to="/switzerland" className="hover:text-red-600">Switzerland Tours</Link></li>
-            <li><Link to="/srilanka" className="hover:text-red-600">Srilanka Tours</Link></li>
-            <li><Link to="/contact" className="hover:text-red-600">Contact Us</Link></li>
-            <li><Link to="/flexibility" className="hover:text-red-600">Flexibility Policy</Link></li>
+            <li><Link to="/" className="hover:text-red-600">{t("nav.home")}</Link></li>
+            <li><Link to="/about" className="hover:text-red-600">{t("nav.about")}</Link></li>
+            <li><Link to="/blogs" className="hover:text-red-600">{t("nav.blogs")}</Link></li>
+            <li><Link to="/switzerland" className="hover:text-red-600">{t("footer.switzerlandTours")}</Link></li>
+            <li><Link to="/srilanka" className="hover:text-red-600">{t("footer.srilankaTours")}</Link></li>
+            <li><Link to="/contact" className="hover:text-red-600">{t("footer.contactUs")}</Link></li>
+            <li><Link to="/flexibility" className="hover:text-red-600">{t("footer.flexibilityPolicy")}</Link></li>
           </ul>
         </div>
         <div>
-          <h3 className="text-lg font-semibold mb-2 text-black">Contact Info</h3>
+          <h3 className="text-lg font-semibold mb-2 text-black">{t("footer.contactInfo")}</h3>
           <ul className="text-gray-600 text-sm space-y-1">
-            <li>Email: contact@ajltransfer.com</li>
-            <li>Phone: +41 78 207 89 02</li>
-            <li>Address: Plattenstrasse 7, 8152 Opfikon, Switzerland</li>
+            <li>{t("footer.email")}: contact@ajltransfer.com</li>
+            <li>{t("footer.phone")}: +41 78 207 89 02</li>
+            <li>{t("footer.address")}: Plattenstrasse 7, 8152 Opfikon, Switzerland</li>
           </ul>
         </div>
         <div>
-          <h3 className="text-lg font-semibold mb-2 text-black">Follow Us</h3>
+          <h3 className="text-lg font-semibold mb-2 text-black">{t("footer.followUs")}</h3>
           <div className="flex gap-3 mt-2">
             <a
               href="https://www.instagram.com/ajltransfer?igsh=MXdheGhmcTc3MGxkZA=="
@@ -45,7 +48,7 @@ const Footer = () => {
         </div>
       </div>
       <div className="text-center text-gray-500 text-xs py-4 border-t border-gray-200">
-        &copy; 2026 AJL Tours. All Rights Reserved.
+        &copy; 2026 AJL Tours. {t("footer.rights")}
       </div>
     </footer>
   );

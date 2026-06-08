@@ -6,12 +6,14 @@ import { AppContext } from "../context/AppContext";
 import { apiUrl } from "../utils/api";
 import { calculateBookingPricing, getGroupDiscountLabel } from "../utils/bookingPricing";
 import { useCurrency } from "../context/CurrencyContext";
+import { useI18n } from "../i18n";
 
 const PaymentSuccess = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useContext(AppContext);
   const { formatPrice } = useCurrency();
+  const { t } = useI18n();
   const [bookingData, setBookingData] = useState(null);
   const [bookingId, setBookingId] = useState("");
 
@@ -217,24 +219,24 @@ const PaymentSuccess = () => {
           <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="w-12 h-12 text-green-600" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Payment Successful!</h1>
-          <p className="text-gray-600">Your booking has been confirmed and payment processed.</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t("success.paymentSuccessful")}</h1>
+          <p className="text-gray-600">{t("success.confirmedText")}</p>
         </div>
 
         {/* Booking Details */}
         <div className="bg-white rounded-xl shadow p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">Booking Confirmation</h2>
+          <h2 className="text-xl font-semibold mb-4">{t("success.bookingConfirmation")}</h2>
           <div className="text-left space-y-3">
             <div className="flex justify-between">
-              <span className="text-gray-600">Tour Name:</span>
+              <span className="text-gray-600">{t("success.tourName")}</span>
               <span className="font-semibold">{bookingData?.tourName || "Tour"}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Booking ID:</span>
+              <span className="text-gray-600">{t("success.bookingId")}</span>
               <span className="font-semibold">#{bookingId}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Amount Paid:</span>
+              <span className="text-gray-600">{t("success.amountPaid")}</span>
               <span className="font-semibold">{formatPrice(bookingData?.amount || 0)}</span>
             </div>
             {bookingData?.hasGroupDiscount && (
@@ -246,35 +248,35 @@ const PaymentSuccess = () => {
               </div>
             )}
             <div className="flex justify-between">
-              <span className="text-gray-600">Tickets:</span>
+              <span className="text-gray-600">{t("success.tickets")}</span>
               <span className="font-semibold">{bookingData?.tickets || 1}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Status:</span>
-              <span className="text-green-600 font-semibold">Confirmed</span>
+              <span className="text-gray-600">{t("success.status")}</span>
+              <span className="text-green-600 font-semibold">{t("common.confirmed")}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Payment Method:</span>
-              <span className="font-semibold">Credit Card</span>
+              <span className="text-gray-600">{t("success.paymentMethod")}</span>
+              <span className="font-semibold">{t("success.creditCard")}</span>
             </div>
           </div>
         </div>
 
         {/* Next Steps */}
         <div className="bg-white rounded-xl shadow p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">What's Next?</h2>
+          <h2 className="text-xl font-semibold mb-4">{t("success.next")}</h2>
           <div className="space-y-4 text-left">
             <div className="flex items-start gap-3">
               <Mail className="w-5 h-5 text-orange-600 mt-1" />
               <div>
-                <h3 className="font-semibold">Confirmation Email</h3>
-                <p className="text-sm text-gray-600">You'll receive a confirmation email with all booking details within the next few minutes.</p>
+                <h3 className="font-semibold">{t("success.confirmationEmail")}</h3>
+                <p className="text-sm text-gray-600">{t("success.confirmationEmailText")}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Download className="w-5 h-5 text-orange-600 mt-1" />
               <div>
-                <h3 className="font-semibold">Download Receipt</h3>
+                <h3 className="font-semibold">{t("success.downloadReceipt")}</h3>
                 <p className="text-sm text-gray-600">Your receipt has been sent to your email address for your records.</p>
               </div>
             </div>

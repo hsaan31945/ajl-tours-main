@@ -14,6 +14,7 @@ import { CurrencyProvider } from "./context/CurrencyContext";
 import { EditModeProvider } from "./context/EditModeContext";
 import Home2 from "./pages/Home2";
 import { useAdmin } from "./context/AdminContext";
+import { useI18n } from "./i18n";
 
 const Tour = lazy(() => import("./pages/Tour"));
 const TourDetails = lazy(() => import("./pages/TourDetails"));
@@ -62,6 +63,7 @@ const App = () => {
   const location = useLocation();
   const { isAdmin } = useContext(AppContext);
   const { isAdmin: isAuthenticatedAdmin } = useAdmin();
+  const { t } = useI18n();
   const [showPasscodePrompt, setShowPasscodePrompt] = useState(false);
   const [passcode, setPasscode] = useState("");
   const [error, setError] = useState("");
@@ -124,13 +126,13 @@ const App = () => {
           {loading && <Preloader />}
           {!loading && (
           <div className="flex flex-col min-h-screen bg-neutral-100">
-          {routeLoading && <PlaneLoader label="Opening page" />}
+          {routeLoading && <PlaneLoader label={t("common.loading")} />}
           <ToastContainer theme="dark" position="bottom-right" autoClose={1000} />
           {location.pathname.startsWith("/admin") && (isAdmin || isAuthenticatedAdmin)
             ? <AdminNavbar />
             : <Navbar />}
           <main className="flex-1">
-            <Suspense fallback={<PlaneLoader label="Loading page" />}>
+            <Suspense fallback={<PlaneLoader label={t("common.loading")} />}>
             <Routes>
               <Route path="/" element={<Home2 />} />
               <Route path="/tours" element={<Tour />} />

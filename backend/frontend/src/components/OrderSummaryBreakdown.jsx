@@ -1,6 +1,7 @@
 import React from "react";
 import { getGroupDiscountLabel } from "../utils/bookingPricing";
 import { useCurrency } from "../context/CurrencyContext";
+import { useI18n } from "../i18n";
 
 const formatPercent = (value) => {
   const percent = Number(value || 0);
@@ -20,6 +21,7 @@ const SummaryLine = ({ label, value, tone = "default", bold = false }) => {
 
 const OrderSummaryBreakdown = ({ pricing, travelers }) => {
   const { formatPrice } = useCurrency();
+  const { t } = useI18n();
 
   if (!pricing) return null;
 
@@ -32,19 +34,19 @@ const OrderSummaryBreakdown = ({ pricing, travelers }) => {
   return (
     <div className="border-y py-4 space-y-3 text-sm">
       <SummaryLine
-        label={`Base price (${formatPrice(pricing.originalBaseUnitPrice)} x ${count})`}
+        label={t("summary.basePrice", { unit: formatPrice(pricing.originalBaseUnitPrice), count })}
         value={formatPrice(pricing.originalSubtotal)}
       />
 
       {hasTourDiscount && (
         <>
           <SummaryLine
-            label={`Tour discount${tourDiscountPercent ? ` ${tourDiscountPercent}` : ""}`}
+            label={t("summary.tourDiscount", { percent: tourDiscountPercent ? ` ${tourDiscountPercent}` : "" })}
             value={`-${formatPrice(pricing.standardDiscountTotal)}`}
             tone="discount"
           />
           <SummaryLine
-            label={`Discounted price (${formatPrice(pricing.saleUnitPrice)} x ${count})`}
+            label={t("summary.discountedPrice", { unit: formatPrice(pricing.saleUnitPrice), count })}
             value={formatPrice(pricing.saleSubtotal)}
           />
         </>
@@ -60,14 +62,14 @@ const OrderSummaryBreakdown = ({ pricing, travelers }) => {
 
       {(hasTourDiscount || hasGroupDiscount) && (
         <SummaryLine
-          label="Subtotal after discounts"
+          label={t("summary.subtotalAfterDiscounts")}
           value={formatPrice(pricing.subtotalAfterDiscounts)}
         />
       )}
 
       {hasFlexibilityUpgrade && (
         <SummaryLine
-          label="Flexibility upgrade"
+          label={t("summary.flexibilityUpgrade")}
           value={`+${formatPrice(pricing.flexibilityUpgradeTotal)}`}
         />
       )}

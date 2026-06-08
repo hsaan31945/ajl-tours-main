@@ -10,9 +10,11 @@ import { apiUrl } from "../utils/api";
 import { clearToursCache } from "../services/toursApi";
 import { cleanDisplayName } from "../utils/textFormatting";
 import { getDiscountPrice } from "../utils/bookingPricing";
+import { useI18n } from "../i18n";
 
 const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
   const { formatPrice } = useCurrency();
+  const { t } = useI18n();
   const { user } = useContext(AppContext);
   const { isAdmin, passcodeHeader } = useAdmin();
   const navigate = useNavigate();
@@ -210,7 +212,7 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
       onKeyDown={handleCardKeyDown}
       role="button"
       tabIndex={0}
-      aria-label={`View details for ${tourName}`}
+      aria-label={`${t("common.viewDetails")} ${tourName}`}
     >
       {/* Image Section */}
       <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
@@ -231,7 +233,7 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
               <Plane className="w-7 h-7" />
             </div>
             <span className="text-sm font-semibold text-gray-800">AJL Tour</span>
-            <span className="text-xs text-gray-500 mt-1">Image coming soon</span>
+            <span className="text-xs text-gray-500 mt-1">{t("common.imageComingSoon")}</span>
           </div>
         )}
         
@@ -241,8 +243,8 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
           onClick={handleFavoriteClick}
           className="absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-white transition-colors z-10"
           aria-pressed={effectiveFavorite}
-          aria-label={effectiveFavorite ? "Remove from wishlist" : "Add to wishlist"}
-          title={effectiveFavorite ? "Remove from wishlist" : "Add to wishlist"}
+          aria-label={effectiveFavorite ? t("common.removeFromWishlist") : t("common.addToWishlist")}
+          title={effectiveFavorite ? t("common.removeFromWishlist") : t("common.addToWishlist")}
         >
           <Heart 
             className={`w-5 h-5 ${effectiveFavorite ? "text-red-500 fill-current" : "text-gray-600"}`} 
@@ -252,7 +254,7 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
         {/* Badge (Optional - e.g. Luxury) */}
         {tour.price > 20000 && (
           <div className="absolute top-3 left-3 bg-yellow-500 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm">
-            Luxury
+            {t("common.luxury")}
           </div>
         )}
       </div>
@@ -284,7 +286,7 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
               <span className="ml-1 font-bold text-gray-900">{ratingValue}</span>
             </div>
             {reviewsValue > 0 && (
-              <span className="ml-2 text-gray-500 text-sm">({reviewsValue} reviews)</span>
+              <span className="ml-2 text-gray-500 text-sm">({reviewsValue} {t(reviewsValue === 1 ? "common.review" : "common.reviews")})</span>
             )}
           </div>
         )}
@@ -292,7 +294,7 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
         {/* Bottom Row: Price and Button */}
         <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
           <div className="flex flex-col" onClick={stopAdminFieldClick}>
-            <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">From</span>
+            <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">{t("common.from")}</span>
             {hasDiscount && (
               <span className="text-sm font-semibold text-gray-400 line-through">
                 {formatPrice(originalPrice)}
@@ -317,7 +319,7 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
               ) : (
                 <span className="text-2xl font-black text-red-600">{formatPrice(originalPrice)}</span>
               )}
-              <span className="text-sm text-gray-500 ml-1">/person</span>
+              <span className="text-sm text-gray-500 ml-1">/{t("common.perPerson")}</span>
             </div>
           </div>
           
@@ -329,7 +331,7 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
               handleCardClick();
             }}
           >
-            View Details
+            {t("common.viewDetails")}
           </button>
         </div>
       </div>

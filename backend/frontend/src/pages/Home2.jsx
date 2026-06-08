@@ -8,6 +8,7 @@ import { fetchToursList } from "../services/toursApi";
 import { getTourId } from "../utils/tourId";
 import { cleanDisplayName } from "../utils/textFormatting";
 import { Search, MapPin, Compass, Users, ChevronDown, CheckCircle, Star, Quote, Car, Map, Clock, ShieldCheck, HeartPulse } from "lucide-react";
+import { useI18n } from "../i18n";
 import hero4 from "../assets/images/optimized/hero4-1600.webp";
 import hero5 from "../assets/images/optimized/hero5-1600.webp";
 import hero6 from "../assets/images/optimized/hero6-1600.webp";
@@ -55,6 +56,7 @@ const DeferredSection = ({ children, rootMargin = "700px" }) => {
 const Home2 = () => {
   const navigate = useNavigate();
   const { passcodeHeader, isAdmin } = useAdmin();
+  const { t } = useI18n();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const defaultHeroImages = [hero4, hero5, hero6, hero7];
 
@@ -280,8 +282,8 @@ const Home2 = () => {
   return (
     <div className="min-h-screen">
       <SEO
-        title="AJL Tours | Private Switzerland Tours"
-        description="Book premium private Switzerland tours with AJL Tours, including luxury vehicles, flexible itineraries, local guides, and seamless pickup."
+        title={t("seo.homeTitle")}
+        description={t("seo.homeDescription")}
       />
       {/* Admin Control Panel */}
       <AdminControlPanel />
@@ -344,11 +346,11 @@ const Home2 = () => {
         <div className="absolute inset-0 z-20 flex items-center h-full">
           <div className="text-white ml-4 sm:ml-8 md:ml-16 lg:ml-24 px-4 sm:px-0 w-full max-w-4xl">
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-6 drop-shadow-2xl leading-tight">
-              The Top Choice for Private & <span className="text-orange-500">Premium Tours</span> in Switzerland
+              {t("home.heroTitle")}
             </h1>
             
             <p className="text-lg sm:text-xl md:text-2xl text-white/95 mb-10 max-w-2xl font-medium leading-relaxed drop-shadow-lg">
-              Enjoy a Seamless Experience with Personalised Tours, Private Tour Guides and Luxury Vehicles
+              {t("home.heroSubtitle")}
             </p>
 
             {/* Search Destination Bar */}
@@ -358,7 +360,7 @@ const Home2 = () => {
                 <input
                   type="text"
                   className="flex-1 bg-transparent outline-none text-sm sm:text-lg text-black placeholder-gray-500 min-w-0"
-                  placeholder="Find places and things to do"
+                  placeholder={t("nav.searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
                   onFocus={() => searchQuery.trim() !== "" && setShowDropdown(true)}
@@ -368,7 +370,7 @@ const Home2 = () => {
                   className="bg-orange-600 hover:bg-black text-white font-bold px-4 sm:px-10 py-2 sm:py-4 rounded-full transition-all duration-300 text-sm sm:text-lg whitespace-nowrap flex-shrink-0 shadow-lg ml-1"
                   onClick={handleSearchButtonClick}
                 >
-                  Search
+                  {t("nav.search")}
                 </button>
               </div>
               
@@ -376,7 +378,7 @@ const Home2 = () => {
                 <div className="absolute top-full left-0 right-0 mt-4 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 max-h-80 overflow-y-auto">
                   {searchLoading ? (
                     <div className="px-6 py-6 text-gray-500 text-center font-medium">
-                      Loading tours...
+                      {t("nav.loadingTours")}
                     </div>
                   ) : searchResults.length > 0 ? (
                     searchResults.map((result, index) => (
@@ -399,7 +401,7 @@ const Home2 = () => {
                     ))
                   ) : searchQuery.trim() !== "" ? (
                     <div className="px-6 py-6 text-gray-500 text-center font-medium">
-                      No matches found
+                      {t("nav.noMatches")}
                     </div>
                   ) : null}
                 </div>
@@ -415,21 +417,18 @@ const Home2 = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
               <h2 className="text-4xl sm:text-5xl font-extrabold text-[#1A2B47] mb-8 leading-tight">
-                Experience Switzerland, <span className="text-orange-600 italic">Privately and Seamlessly</span>
+                {t("home.introTitle")}
               </h2>
               <div className="space-y-6 text-lg text-gray-700 leading-relaxed font-medium">
                 <p>
-                  Discover Switzerland the way you want to, from carefully tailored itineraries 
-                  to the breathtaking alpines located within the heart of Switzerland, every tour 
-                  is expertly guided, seamlessly planned and tailored to the clients personal 
-                  interests to create truly unforgettable and exceptional memories.
+                  {t("home.introText")}
                 </p>
                 <div className="bg-orange-50 p-8 rounded-3xl border-l-8 border-orange-500 shadow-sm relative overflow-hidden">
                   <Quote className="absolute top-4 right-4 w-12 h-12 text-orange-200" />
                   <p className="text-2xl font-bold text-[#1A2B47] italic mb-4 relative z-10 font-serif">
-                    “We always return with renewed delight to the magnificent mountains.”
+                    “{t("home.quote")}”
                   </p>
-                  <p className="text-orange-600 font-bold uppercase tracking-widest text-sm">— Johann Wolfgang Von Goethe</p>
+                  <p className="text-orange-600 font-bold uppercase tracking-widest text-sm">— {t("home.quoteAuthor")}</p>
                 </div>
               </div>
             </div>
@@ -452,7 +451,7 @@ const Home2 = () => {
                   </div>
                   <div>
                     <div className="text-2xl font-extrabold text-black">100%</div>
-                    <div className="text-sm text-gray-500 font-bold uppercase tracking-wider">Premium Experience</div>
+                    <div className="text-sm text-gray-500 font-bold uppercase tracking-wider">{t("home.premiumExperience")}</div>
                   </div>
                 </div>
               </div>
@@ -481,58 +480,58 @@ const Home2 = () => {
       <section className="py-24 px-6 sm:px-12 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
-            <h4 className="text-orange-600 font-bold uppercase tracking-[0.3em] mb-4">Exclusive Experience</h4>
-            <h2 className="text-4xl sm:text-5xl font-extrabold text-[#1A2B47]">Services that we offer</h2>
+            <h4 className="text-orange-600 font-bold uppercase tracking-[0.3em] mb-4">{t("home.exclusiveExperience")}</h4>
+            <h2 className="text-4xl sm:text-5xl font-extrabold text-[#1A2B47]">{t("home.servicesTitle")}</h2>
           </div>
           
           <div className="flex md:grid md:grid-cols-2 lg:grid-cols-3 gap-8 overflow-x-auto pb-8 snap-x snap-mandatory scrollbar-hide -mx-6 px-6 sm:mx-0 sm:px-0">
             <div className="min-w-[85%] md:min-w-0 snap-center">
               <ServiceCard 
                 icon={<Compass />}
-                title="Customisable itinerary"
-                description="We provide Ultimate Freedom based on your interests with flexibility to stop wherever and whenever you want as we bridge the gap between global luxury and local culture while offering insights into the hidden gems of Switzerland."
+                title={t("home.services.customItineraryTitle")}
+                description={t("home.services.customItineraryText")}
               />
             </div>
             <div className="min-w-[85%] md:min-w-0 snap-center">
               <ServiceCard 
                 icon={<Users />}
-                title="Personalised small and private group tours"
-                description="Whether travelling with a small group or on a private journey, whether you seek a scenic road trip or a bespoke mountain tour, you remain in full control of your itinerary and the destinations you explore across Switzerland."
+                title={t("home.services.privateToursTitle")}
+                description={t("home.services.privateToursText")}
               />
             </div>
             <div className="min-w-[85%] md:min-w-0 snap-center">
               <ServiceCard 
                 icon={<Car />}
-                title="High end vehicles at your service"
-                description="From high-end sedans to chauffeured SUVs, we offer a full range of premium and luxury transportation, tailored to your group size and needs. Each car is meticulously maintained for safety and comfort."
+                title={t("home.services.vehiclesTitle")}
+                description={t("home.services.vehiclesText")}
               />
             </div>
             <div className="min-w-[85%] md:min-w-0 snap-center">
               <ServiceCard 
                 icon={<ShieldCheck />}
-                title="Team of Experienced chauffeurs"
-                description="Your high-end vehicle is driven by our dedicated and experienced chauffeurs, providing timely and professional service with trusted local knowledge and a commitment to excellence."
+                title={t("home.services.chauffeursTitle")}
+                description={t("home.services.chauffeursText")}
               />
             </div>
             <div className="min-w-[85%] md:min-w-0 snap-center">
               <ServiceCard 
                 icon={<Map />}
-                title="Expert local and tour guides"
-                description="Our expert local tour guides share genuine knowledge and cultural insight, creating personalised experiences that make every destination meaningful and memorable."
+                title={t("home.services.guidesTitle")}
+                description={t("home.services.guidesText")}
               />
             </div>
             <div className="min-w-[85%] md:min-w-0 snap-center">
               <ServiceCard 
                 icon={<Clock />}
-                title="Transfers and VIP Pickup"
-                description="Enjoy easy and seamless travel from arrival to departure. Carefully planned routes ensure a zero-hassle experience, creating memories that last a lifetime."
+                title={t("home.services.pickupTitle")}
+                description={t("home.services.pickupText")}
               />
             </div>
             <div className="min-w-[85%] md:min-w-0 snap-center">
               <ServiceCard 
                 icon={<HeartPulse />}
-                title="Seasonal and special tours"
-                description="From festive holiday experiences to exclusive Alpine getaways, discover Christmas markets, winter celebrations, and scenic mountain escapes with personalised service."
+                title={t("home.services.seasonalTitle")}
+                description={t("home.services.seasonalText")}
               />
             </div>
           </div>
@@ -544,24 +543,15 @@ const Home2 = () => {
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-20">
             <div>
-              <h2 className="text-4xl font-extrabold mb-8 text-orange-500 whitespace-nowrap">Who We Are</h2>
+              <h2 className="text-4xl font-extrabold mb-8 text-orange-500 whitespace-nowrap">{t("home.whoWeAre")}</h2>
               <p className="text-lg text-gray-300 leading-relaxed font-medium">
-                At AJL Tours, we believe that travel is more than just seeing places, it’s about 
-                creating moments that stay with you forever. Based in Switzerland, we design 
-                tailored private and small‑group tours that showcase the country’s most 
-                beautiful landscapes, rich culture and hidden gems. Every itinerary is 
-                personalised to your interests and pace, whether you’re exploring alpine 
-                villages, iconic cities or scenic mountain roads.
+                {t("home.whoWeAreText")}
               </p>
             </div>
             <div>
-              <h2 className="text-4xl font-extrabold mb-8 text-orange-500 whitespace-nowrap">Our Mission</h2>
+              <h2 className="text-4xl font-extrabold mb-8 text-orange-500 whitespace-nowrap">{t("home.ourMission")}</h2>
               <p className="text-lg text-gray-300 leading-relaxed font-medium">
-                At AJL Tours, our main mission is to redefine travel in Switzerland through our 
-                premium services. We are dedicated to providing private and small-group based 
-                journeys that are crafted around our clients' own unique vision, combining 
-                all the necessary ingredients of an amazing trip into one. Our purpose is simple; 
-                we value the highest standard of personalised travelling experience.
+                {t("home.missionText")}
               </p>
             </div>
           </div>
@@ -592,15 +582,15 @@ const Home2 = () => {
             </div>
             <div className="lg:w-1/2 order-1 lg:order-2">
               <h2 className="text-4xl sm:text-5xl font-extrabold text-[#1A2B47] mb-8 leading-tight">
-                Why Choose <span className="text-orange-600">Us?</span>
+                {t("home.whyChooseUs")}
               </h2>
               <div className="space-y-8">
-                <FeatureItem title="Authenticity" text="We blend global luxury with local culture, revealing Switzerland’s hidden gems." />
-                <FeatureItem title="Excellence" text="Our fleet of high-end, meticulously maintained vehicles ensures comfort, safety, and punctuality." />
-                <FeatureItem title="Personalisation" text="Every itinerary is flexible—whether a scenic road trip or a private mountain tour, you are in control." />
-                <FeatureItem title="Passionate Guides" text="Our expert local guides bring each destination to life with insight and care." />
-                <FeatureItem title="Seamless Travel" text="From airport pickup to your final destination, we take care of every detail." />
-                <FeatureItem title="Lasting Memories" text="Every journey is crafted to create unforgettable experiences you will cherish forever." />
+                <FeatureItem title={t("home.features.authenticityTitle")} text={t("home.features.authenticityText")} />
+                <FeatureItem title={t("home.features.excellenceTitle")} text={t("home.features.excellenceText")} />
+                <FeatureItem title={t("home.features.personalisationTitle")} text={t("home.features.personalisationText")} />
+                <FeatureItem title={t("home.features.guidesTitle")} text={t("home.features.guidesText")} />
+                <FeatureItem title={t("home.features.travelTitle")} text={t("home.features.travelText")} />
+                <FeatureItem title={t("home.features.memoriesTitle")} text={t("home.features.memoriesText")} />
               </div>
             </div>
           </div>
@@ -612,8 +602,8 @@ const Home2 = () => {
         <div className="absolute top-0 right-0 w-96 h-96 bg-orange-100 rounded-full blur-[100px] -mr-48 -mt-48 opacity-50" />
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center mb-20">
-            <h4 className="text-orange-600 font-bold uppercase tracking-[0.3em] mb-4">Guest Experiences</h4>
-            <h2 className="text-4xl sm:text-5xl font-extrabold text-[#1A2B47]">Testimonials</h2>
+            <h4 className="text-orange-600 font-bold uppercase tracking-[0.3em] mb-4">{t("home.guestExperiences")}</h4>
+            <h2 className="text-4xl sm:text-5xl font-extrabold text-[#1A2B47]">{t("home.testimonials")}</h2>
           </div>
           
           <div className="flex md:grid md:grid-cols-2 gap-8 overflow-x-auto pb-8 snap-x snap-mandatory scrollbar-hide -mx-6 px-6 sm:mx-0 sm:px-0">
@@ -653,68 +643,68 @@ const Home2 = () => {
       <section className="py-24 px-6 sm:px-12 bg-gray-50">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-extrabold text-[#1A2B47] mb-4">FAQ’s</h2>
-            <p className="text-lg text-gray-600">Everything you need to know about AJL Tours</p>
+            <h2 className="text-4xl sm:text-5xl font-extrabold text-[#1A2B47] mb-4">{t("home.faqTitle")}</h2>
+            <p className="text-lg text-gray-600">{t("home.faqSubtitle")}</p>
           </div>
           
           <div className="space-y-4">
             <FaqItem 
-              question="Q1:- Are your tours group based or private based?"
-              answer="Whilst most of our tours are private and personalised, we provide small group based tours as well for guests who enjoy a shared experience. For private based tours, you can tailor the entire tour to your interests."
+              question={t("home.faq.q1")}
+              answer={t("home.faq.a1")}
               isOpen={openFaq === 0}
               toggle={() => setOpenFaq(openFaq === 0 ? null : 0)}
             />
             <FaqItem 
-              question="Q2:- Can I customise my tour?"
-              answer="Yes, our specialisation lies in the area of personalisation and tailor made tours, where guests can adjust the entire schedule, including the destinations they visit, timings, vehicles and much more, to one's own interests."
+              question={t("home.faq.q2")}
+              answer={t("home.faq.a2")}
               isOpen={openFaq === 1}
               toggle={() => setOpenFaq(openFaq === 1 ? null : 1)}
             />
             <FaqItem 
-              question="Q3:- What is included in the tour price?"
-              answer="The tour price typically covers all costs including the tour guide, the private transportation, chauffeurs and a customised itinerary. Special additions may also vary from tour to tour."
+              question={t("home.faq.q3")}
+              answer={t("home.faq.a3")}
               isOpen={openFaq === 2}
               toggle={() => setOpenFaq(openFaq === 2 ? null : 2)}
             />
              <FaqItem 
-              question="Q4:- Do you provide airport or hotel pickup?"
-              answer="Yes, we provide hassle free airport, hotels and train station pick-ups and drop-offs to ensure a seamless experience."
+              question={t("home.faq.q4")}
+              answer={t("home.faq.a4")}
               isOpen={openFaq === 3}
               toggle={() => setOpenFaq(openFaq === 3 ? null : 3)}
             />
              <FaqItem 
-              question="Q5:- What languages do your guides speak?"
-              answer="Our guides speak a variety of languages including English, French, Italian and many other major languages. Please let us know your language preference at the time of booking."
+              question={t("home.faq.q5")}
+              answer={t("home.faq.a5")}
               isOpen={openFaq === 4}
               toggle={() => setOpenFaq(openFaq === 4 ? null : 4)}
             />
              <FaqItem 
-              question="Q6:- How far in advance should I book?"
-              answer="We recommend bookings to be done at least 1 - 2 weeks in advance prior to the trip in order to secure specific dates, especially during peak travel seasons."
+              question={t("home.faq.q6")}
+              answer={t("home.faq.a6")}
               isOpen={openFaq === 5}
               toggle={() => setOpenFaq(openFaq === 5 ? null : 5)}
             />
              <FaqItem 
-              question="Q7:- Are your tours Family Friendly?"
-              answer="Absolutely, our trips are family friendly and can be personalised to accommodate seniors or children, for a much more seamless experience with the family on board."
+              question={t("home.faq.q7")}
+              answer={t("home.faq.a7")}
               isOpen={openFaq === 6}
               toggle={() => setOpenFaq(openFaq === 6 ? null : 6)}
             />
              <FaqItem 
-              question="Q8:- Do you provide multi-day tours?"
-              answer="Depending upon your choice, we can provide both single and multi-day private and small-group based tours of Switzerland."
+              question={t("home.faq.q8")}
+              answer={t("home.faq.a8")}
               isOpen={openFaq === 7}
               toggle={() => setOpenFaq(openFaq === 7 ? null : 7)}
             />
              <FaqItem 
-              question="Q9:- What happens in case of bad/extreme weather?"
-              answer="In case of bad weather, alternatives including the change of date, time or destination is available when possible, at AJL Tours."
+              question={t("home.faq.q9")}
+              answer={t("home.faq.a9")}
               isOpen={openFaq === 8}
               toggle={() => setOpenFaq(openFaq === 8 ? null : 8)}
             />
              <FaqItem 
-              question="Q10:- How do I book a tour with AJL Tours?"
-              answer="Bookings can be made directly through our website or contact us to customise and modify your itinerary. Our team will guide you throughout the process of your booking with AJL Tours."
+              question={t("home.faq.q10")}
+              answer={t("home.faq.a10")}
               isOpen={openFaq === 9}
               toggle={() => setOpenFaq(openFaq === 9 ? null : 9)}
             />
@@ -726,15 +716,15 @@ const Home2 = () => {
       <section className="py-24 px-6 sm:px-12 bg-[#ff6b35] text-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-extrabold mb-4">How to Book Your Experience</h2>
-            <p className="text-xl text-white/90">Booking with AJL Tours is simple, seamless, and fully tailored to your needs</p>
+            <h2 className="text-4xl sm:text-5xl font-extrabold mb-4">{t("home.howToBook")}</h2>
+            <p className="text-xl text-white/90">{t("home.howToBookText")}</p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <BookingStep number="1" title="Passenger Details" text="Let us know passengers and luggage so we recommend the ideal vehicle." />
-            <BookingStep number="2" title="Destination" text="Choose Swiss destinations and share your interests for a custom itinerary." />
-            <BookingStep number="3" title="Stops & Requests" text="Include scenic stops or unique experiences to make your journey personal." />
-            <BookingStep number="4" title="Hotel Bookings" text="We can arrange luxury or boutique hotel accommodation for you." />
+            <BookingStep number="1" title={t("home.bookingSteps.passengersTitle")} text={t("home.bookingSteps.passengersText")} />
+            <BookingStep number="2" title={t("home.bookingSteps.destinationTitle")} text={t("home.bookingSteps.destinationText")} />
+            <BookingStep number="3" title={t("home.bookingSteps.requestsTitle")} text={t("home.bookingSteps.requestsText")} />
+            <BookingStep number="4" title={t("home.bookingSteps.hotelsTitle")} text={t("home.bookingSteps.hotelsText")} />
           </div>
         </div>
       </section>

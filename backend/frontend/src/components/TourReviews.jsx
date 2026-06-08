@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import { apiUrl } from "../utils/api";
 import { getTourId } from "../utils/tourId";
+import { useI18n } from "../i18n";
 
 const getUserId = (user) => user?.id || user?._id || null;
 
@@ -22,6 +23,7 @@ export const getTourReviewSummary = (tour) => {
 function TourReviews({ tour, onTourUpdated }) {
   const navigate = useNavigate();
   const { user } = useContext(AppContext);
+  const { t } = useI18n();
   const userId = getUserId(user);
   const { reviews, reviewCount, reviewAverage } = getTourReviewSummary(tour);
   const [rating, setRating] = useState(0);
@@ -53,7 +55,7 @@ function TourReviews({ tour, onTourUpdated }) {
     }
 
     if (!rating) {
-      setError("Please select a star rating.");
+      setError(t("booking.selectStarRating"));
       return;
     }
 
@@ -81,15 +83,15 @@ function TourReviews({ tour, onTourUpdated }) {
 
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error(data.error || data.message || "Could not save your review.");
+        throw new Error(data.error || data.message || t("booking.reviewSaveFailed"));
       }
 
       if (data.tour && onTourUpdated) {
         onTourUpdated(data.tour);
       }
-      setMessage(currentUserReview ? "Your review was updated." : "Your review was saved.");
+      setMessage(currentUserReview ? t("booking.reviewUpdated") : t("booking.reviewSaved"));
     } catch (submitError) {
-      setError(submitError.message || "Could not save your review.");
+      setError(submitError.message || t("booking.reviewSaveFailed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -100,14 +102,14 @@ function TourReviews({ tour, onTourUpdated }) {
       <div className="border-t border-gray-200 pt-8">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
           <div>
-            <h2 className="text-3xl font-bold">Reviews</h2>
+            <h2 className="text-3xl font-bold">{t("common.reviews")}</h2>
             <div className="flex items-center gap-2 mt-2 text-gray-700">
               <Star className="w-5 h-5 text-yellow-400 fill-current" aria-hidden="true" />
               <span className="font-semibold">
-                {reviewCount ? `${reviewAverage.toFixed(1)} / 5` : "No ratings yet"}
+                {reviewCount ? `${reviewAverage.toFixed(1)} / 5` : t("common.noRatingsYet")}
               </span>
               <span className="text-sm text-gray-500">
-                {reviewCount} review{reviewCount === 1 ? "" : "s"}
+                {reviewCount} {t(reviewCount === 1 ? "common.review" : "common.reviews")}
               </span>
             </div>
           </div>
@@ -117,7 +119,7 @@ function TourReviews({ tour, onTourUpdated }) {
               onClick={() => navigate("/login")}
               className="self-start sm:self-auto border border-orange-600 text-orange-600 font-semibold px-5 py-2 rounded-lg hover:bg-orange-50 transition"
             >
-              Log in to write a review
+              {t("booking.loginToReview")}
             </button>
           )}
         </div>
@@ -125,7 +127,7 @@ function TourReviews({ tour, onTourUpdated }) {
         {userId && (
           <form onSubmit={handleSubmit} className="mb-8 bg-gray-50 border border-gray-200 rounded-lg p-5">
             <div className="mb-4">
-              <label className="block text-sm font-semibold mb-2">Star rating*</label>
+              <label className="block text-sm font-semibold mb-2">{t("booking.starRating")}</label>
               <div className="flex gap-1">
                 {[1, 2, 3, 4, 5].map((starValue) => {
                   const active = starValue <= (hoverRating || rating);
@@ -149,13 +151,13 @@ function TourReviews({ tour, onTourUpdated }) {
               </div>
             </div>
             <div className="mb-4">
-              <label className="block text-sm font-semibold mb-2">Description</label>
+              <label className="block text-sm font-semibold mb-2">{t("booking.description")}</label>
               <textarea
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
                 rows={4}
                 maxLength={1000}
-                placeholder="Share what stood out about the tour"
+                placeholder={t("booking.reviewPlaceholder")}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
             </div>
@@ -166,7 +168,7 @@ function TourReviews({ tour, onTourUpdated }) {
               disabled={isSubmitting}
               className="bg-orange-600 hover:bg-orange-700 disabled:bg-gray-300 disabled:text-gray-500 text-white font-bold px-6 py-3 rounded-lg transition"
             >
-              {isSubmitting ? "Saving review..." : currentUserReview ? "Update review" : "Submit review"}
+              {isSubmitting ? t("booking.savingReview") : currentUserReview ? t("booking.updateReview") : t("booking.submitReview")}
             </button>
           </form>
         )}
@@ -200,7 +202,7 @@ function TourReviews({ tour, onTourUpdated }) {
               </article>
             ))
           ) : (
-            <p className="text-gray-500">No reviews yet. Be the first to review this tour.</p>
+            <p className="text-gray-500">{t("booking.noReviewsYet")}</p>
           )}
         </div>
       </div>

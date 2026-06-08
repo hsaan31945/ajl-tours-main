@@ -33,6 +33,7 @@ import { AppContext } from "../context/AppContext";
 import { apiUrl } from "../utils/api";
 import { getTourId } from "../utils/tourId";
 import { useCurrency } from "../context/CurrencyContext";
+import { useI18n } from "../i18n";
 
 const pdfStyles = StyleSheet.create({
   page: { padding: 32, fontSize: 11, color: "#111827" },
@@ -44,15 +45,15 @@ const pdfStyles = StyleSheet.create({
 });
 
 const tabs = [
-  { id: "overview", label: "Overview", icon: CalendarDays },
-  { id: "bookings", label: "My Bookings", icon: Ticket },
-  { id: "details", label: "Booking Details", icon: Eye },
-  { id: "profile", label: "Profile", icon: User },
-  { id: "notifications", label: "Notifications", icon: Bell },
-  { id: "payments", label: "Payments", icon: CreditCard },
-  { id: "support", label: "Support", icon: HelpCircle },
-  { id: "wishlist", label: "Wishlist", icon: Heart },
-  { id: "security", label: "Security", icon: Shield },
+  { id: "overview", labelKey: "dashboard.overview", icon: CalendarDays },
+  { id: "bookings", labelKey: "dashboard.myBookings", icon: Ticket },
+  { id: "details", labelKey: "dashboard.bookingDetails", icon: Eye },
+  { id: "profile", labelKey: "dashboard.profile", icon: User },
+  { id: "notifications", labelKey: "dashboard.notifications", icon: Bell },
+  { id: "payments", labelKey: "dashboard.payments", icon: CreditCard },
+  { id: "support", labelKey: "dashboard.support", icon: HelpCircle },
+  { id: "wishlist", labelKey: "dashboard.wishlist", icon: Heart },
+  { id: "security", labelKey: "dashboard.security", icon: Shield },
 ];
 
 const statusStyles = {
@@ -101,11 +102,17 @@ const getStatusClass = (value) => {
   return statusStyles[key] || "bg-gray-50 text-gray-700 border-gray-200";
 };
 
-const StatusBadge = ({ value }) => (
-  <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-bold capitalize ${getStatusClass(value)}`}>
-    {String(value || "pending").replace("_", " ")}
-  </span>
-);
+const StatusBadge = ({ value }) => {
+  const { t } = useI18n();
+  const key = String(value || "pending").toLowerCase();
+  const translated = t(`common.${key}`);
+  const label = translated === `common.${key}` ? String(value || "pending").replace("_", " ") : translated;
+  return (
+    <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-bold capitalize ${getStatusClass(value)}`}>
+      {label}
+    </span>
+  );
+};
 
 const EmptyState = ({ icon: Icon, title, text, action }) => (
   <div className="flex min-h-[220px] flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center">
@@ -116,14 +123,14 @@ const EmptyState = ({ icon: Icon, title, text, action }) => (
   </div>
 );
 
-const InvoicePDF = ({ booking, formatPrice }) => {
+const InvoicePDF = ({ booking, formatPrice, labels }) => {
   return (
     <Document>
       <Page size="A4" style={pdfStyles.page}>
-        <Text style={pdfStyles.title}>AJL Tours Invoice</Text>
+        <Text style={pdfStyles.title}>AJL Tours {labels.invoice}</Text>
         <View style={pdfStyles.section}>
-          <View style={pdfStyles.row}><Text style={pdfStyles.label}>Invoice</Text><Text style={pdfStyles.value}>AJL-{String(bookingId(booking)).slice(-8).toUpperCase()}</Text></View>
-          <View style={pdfStyles.row}><Text style={pdfStyles.label}>Booking ID</Text><Text style={pdfStyles.value}>{bookingId(booking)}</Text></View>
+          <View style={pdfStyles.row}><Text style={pdfStyles.label}>{labels.invoice}</Text><Text style={pdfStyles.value}>AJL-{String(bookingId(booking)).slice(-8).toUpperCase()}</Text></View>
+          <View style={pdfStyles.row}><Text style={pdfStyles.label}>{labels.bookingId}</Text><Text style={pdfStyles.value}>{bookingId(booking)}</Text></View>
           <View style={pdfStyles.row}><Text style={pdfStyles.label}>Created</Text><Text style={pdfStyles.value}>{formatDate(booking?.createdAt)}</Text></View>
         </View>
         <View style={pdfStyles.section}>
@@ -133,33 +140,33 @@ const InvoicePDF = ({ booking, formatPrice }) => {
         </View>
         <View style={pdfStyles.section}>
           <View style={pdfStyles.row}><Text style={pdfStyles.label}>Tour</Text><Text style={pdfStyles.value}>{booking?.tourTitle || bookingTour(booking)?.name || ""}</Text></View>
-          <View style={pdfStyles.row}><Text style={pdfStyles.label}>Travel date</Text><Text style={pdfStyles.value}>{formatDate(booking?.tripDate)}</Text></View>
-          <View style={pdfStyles.row}><Text style={pdfStyles.label}>Participants</Text><Text style={pdfStyles.value}>{booking?.travelers || 1}</Text></View>
-          <View style={pdfStyles.row}><Text style={pdfStyles.label}>Pickup</Text><Text style={pdfStyles.value}>{booking?.address || "Not provided"}</Text></View>
+          <View style={pdfStyles.row}><Text style={pdfStyles.label}>{labels.travelDate}</Text><Text style={pdfStyles.value}>{formatDate(booking?.tripDate)}</Text></View>
+          <View style={pdfStyles.row}><Text style={pdfStyles.label}>{labels.participants}</Text><Text style={pdfStyles.value}>{booking?.travelers || 1}</Text></View>
+          <View style={pdfStyles.row}><Text style={pdfStyles.label}>Pickup</Text><Text style={pdfStyles.value}>{booking?.address || labels.notProvided}</Text></View>
         </View>
         <View style={pdfStyles.section}>
           <View style={pdfStyles.row}><Text style={pdfStyles.label}>Booking status</Text><Text style={pdfStyles.value}>{booking?.status || "pending"}</Text></View>
           <View style={pdfStyles.row}><Text style={pdfStyles.label}>Payment status</Text><Text style={pdfStyles.value}>{booking?.paymentStatus || "pending"}</Text></View>
-          <View style={pdfStyles.row}><Text style={pdfStyles.label}>Total</Text><Text style={pdfStyles.value}>{formatPrice(booking?.totalPrice)}</Text></View>
+          <View style={pdfStyles.row}><Text style={pdfStyles.label}>{labels.total}</Text><Text style={pdfStyles.value}>{formatPrice(booking?.totalPrice)}</Text></View>
         </View>
       </Page>
     </Document>
   );
 };
 
-const TicketPDF = ({ booking }) => (
+const TicketPDF = ({ booking, labels }) => (
   <Document>
     <Page size="A4" style={pdfStyles.page}>
       <Text style={pdfStyles.title}>AJL Tours Ticket</Text>
       <View style={pdfStyles.section}>
-        <View style={pdfStyles.row}><Text style={pdfStyles.label}>Booking ID</Text><Text style={pdfStyles.value}>{bookingId(booking)}</Text></View>
+        <View style={pdfStyles.row}><Text style={pdfStyles.label}>{labels.bookingId}</Text><Text style={pdfStyles.value}>{bookingId(booking)}</Text></View>
         <View style={pdfStyles.row}><Text style={pdfStyles.label}>Tour</Text><Text style={pdfStyles.value}>{booking?.tourTitle || bookingTour(booking)?.name || ""}</Text></View>
-        <View style={pdfStyles.row}><Text style={pdfStyles.label}>Travel date</Text><Text style={pdfStyles.value}>{formatDate(booking?.tripDate)}</Text></View>
-        <View style={pdfStyles.row}><Text style={pdfStyles.label}>Participants</Text><Text style={pdfStyles.value}>{booking?.travelers || 1}</Text></View>
+        <View style={pdfStyles.row}><Text style={pdfStyles.label}>{labels.travelDate}</Text><Text style={pdfStyles.value}>{formatDate(booking?.tripDate)}</Text></View>
+        <View style={pdfStyles.row}><Text style={pdfStyles.label}>{labels.participants}</Text><Text style={pdfStyles.value}>{booking?.travelers || 1}</Text></View>
       </View>
       <View style={pdfStyles.section}>
         <View style={pdfStyles.row}><Text style={pdfStyles.label}>Guest</Text><Text style={pdfStyles.value}>{booking?.name || ""}</Text></View>
-        <View style={pdfStyles.row}><Text style={pdfStyles.label}>Pickup</Text><Text style={pdfStyles.value}>{booking?.address || "Not provided"}</Text></View>
+        <View style={pdfStyles.row}><Text style={pdfStyles.label}>Pickup</Text><Text style={pdfStyles.value}>{booking?.address || labels.notProvided}</Text></View>
         <View style={pdfStyles.row}><Text style={pdfStyles.label}>Status</Text><Text style={pdfStyles.value}>{booking?.status || "pending"}</Text></View>
       </View>
     </Page>
@@ -168,30 +175,43 @@ const TicketPDF = ({ booking }) => (
 
 const DownloadPdfButton = ({ type, booking }) => {
   const { formatPrice } = useCurrency();
-  const document = type === "ticket" ? <TicketPDF booking={booking} /> : <InvoicePDF booking={booking} formatPrice={formatPrice} />;
+  const { t } = useI18n();
+  const labels = {
+    invoice: t("dashboard.invoice"),
+    bookingId: t("success.bookingId").replace(":", ""),
+    travelDate: t("dashboard.travelDate"),
+    participants: t("dashboard.participants"),
+    total: t("dashboard.total"),
+    notProvided: t("common.notProvided"),
+  };
+  const document = type === "ticket" ? <TicketPDF booking={booking} labels={labels} /> : <InvoicePDF booking={booking} formatPrice={formatPrice} labels={labels} />;
   const fileName = `ajl-${type}-${String(bookingId(booking)).slice(-8) || "booking"}.pdf`;
   return (
     <PDFDownloadLink document={document} fileName={fileName}>
       {({ loading }) => (
         <span className="inline-flex items-center gap-2 rounded-lg border border-orange-200 px-3 py-2 text-sm font-bold text-orange-700 transition hover:bg-orange-50">
           <Download className="h-4 w-4" aria-hidden="true" />
-          {loading ? "Preparing" : type === "ticket" ? "Ticket" : "Invoice"}
+          {loading ? t("dashboard.preparing") : type === "ticket" ? t("dashboard.ticket") : t("dashboard.invoice")}
         </span>
       )}
     </PDFDownloadLink>
   );
 };
 
-const DetailRow = ({ label, value }) => (
-  <div className="flex flex-col gap-1 rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
-    <span className="text-xs font-bold uppercase tracking-wide text-gray-500">{label}</span>
-    <span className="break-words text-sm font-semibold text-gray-900">{value || "Not provided"}</span>
-  </div>
-);
+const DetailRow = ({ label, value }) => {
+  const { t } = useI18n();
+  return (
+    <div className="flex flex-col gap-1 rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
+      <span className="text-xs font-bold uppercase tracking-wide text-gray-500">{label}</span>
+      <span className="break-words text-sm font-semibold text-gray-900">{value || t("common.notProvided")}</span>
+    </div>
+  );
+};
 
 const CustomerDashboard = () => {
   const { user, setUser, loading: appLoading } = useContext(AppContext);
   const { formatPrice } = useCurrency();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
   const [loading, setLoading] = useState(false);
@@ -585,7 +605,7 @@ const CustomerDashboard = () => {
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="mx-auto h-10 w-10 animate-spin rounded-full border-b-2 border-orange-600" />
-          <p className="mt-4 font-semibold text-gray-700">Loading account...</p>
+          <p className="mt-4 font-semibold text-gray-700">{t("dashboard.loadingAccount")}</p>
         </div>
       </div>
     );
@@ -597,8 +617,8 @@ const CustomerDashboard = () => {
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-sm font-bold uppercase tracking-wide text-orange-600">Customer Account</p>
-              <h1 className="mt-1 text-3xl font-bold text-gray-900">Welcome, {user?.name || "AJL guest"}</h1>
+              <p className="text-sm font-bold uppercase tracking-wide text-orange-600">{t("dashboard.customerAccount")}</p>
+              <h1 className="mt-1 text-3xl font-bold text-gray-900">{t("dashboard.welcome", { name: user?.name || t("dashboard.guest") })}</h1>
               <p className="mt-1 text-sm text-gray-600">{email}</p>
             </div>
             <button
@@ -607,7 +627,7 @@ const CustomerDashboard = () => {
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-bold text-gray-700 transition hover:border-orange-300 hover:text-orange-700 disabled:opacity-60"
             >
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} aria-hidden="true" />
-              Refresh
+              {t("dashboard.refresh")}
             </button>
           </div>
 
@@ -627,7 +647,7 @@ const CustomerDashboard = () => {
                   }`}
                 >
                   <Icon className="h-4 w-4" aria-hidden="true" />
-                  {tab.label}
+                  {t(tab.labelKey)}
                 </button>
               );
             })}
@@ -648,23 +668,23 @@ const CustomerDashboard = () => {
         {activeTab === "overview" && (
           <section className="space-y-6">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
-              <StatCard icon={Ticket} label="Total bookings" value={stats.totalBookings || 0} />
-              <StatCard icon={CreditCard} label="Total spent" value={formatPrice(stats.totalSpent || 0)} />
-              <StatCard icon={Clock} label="Pending payments" value={stats.pendingPayments || 0} />
-              <StatCard icon={CalendarDays} label="Upcoming" value={stats.upcomingBookings || 0} />
-              <StatCard icon={Shield} label="Account status" value={overview?.account?.status || "Active"} />
-              <StatCard icon={Bell} label="Unread alerts" value={stats.unreadNotifications || 0} />
+              <StatCard icon={Ticket} label={t("dashboard.totalBookings")} value={stats.totalBookings || 0} />
+              <StatCard icon={CreditCard} label={t("dashboard.totalSpent")} value={formatPrice(stats.totalSpent || 0)} />
+              <StatCard icon={Clock} label={t("dashboard.pendingPayments")} value={stats.pendingPayments || 0} />
+              <StatCard icon={CalendarDays} label={t("dashboard.upcoming")} value={stats.upcomingBookings || 0} />
+              <StatCard icon={Shield} label={t("dashboard.accountStatus")} value={overview?.account?.status || t("common.active")} />
+              <StatCard icon={Bell} label={t("dashboard.unreadAlerts")} value={stats.unreadNotifications || 0} />
             </div>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <DashboardPanel title="Upcoming bookings">
+              <DashboardPanel title={t("dashboard.upcomingBookings")}>
                 {overview?.upcomingBookings?.length ? (
                   <BookingList bookings={overview.upcomingBookings} onSelect={(booking) => { setSelectedBooking(booking); setActiveTab("details"); }} />
                 ) : (
-                  <EmptyState icon={CalendarDays} title="No upcoming bookings" text="Confirmed future bookings will appear here." />
+                  <EmptyState icon={CalendarDays} title={t("dashboard.noUpcomingBookings")} text={t("dashboard.noUpcomingBookingsText")} />
                 )}
               </DashboardPanel>
-              <DashboardPanel title="Recent notifications">
+              <DashboardPanel title={t("dashboard.recentNotifications")}>
                 {overview?.recentNotifications?.length ? (
                   <NotificationList
                     notifications={overview.recentNotifications}
@@ -672,20 +692,20 @@ const CustomerDashboard = () => {
                     actionLoading={actionLoading}
                   />
                 ) : (
-                  <EmptyState icon={Bell} title="No notifications" text="Booking, payment, support, and account updates will appear here." />
+                  <EmptyState icon={Bell} title={t("dashboard.noNotifications")} text={t("dashboard.noNotificationsText")} />
                 )}
               </DashboardPanel>
             </div>
 
-            <DashboardPanel title="Recent bookings">
+            <DashboardPanel title={t("dashboard.recentBookings")}>
               {overview?.recentBookings?.length ? (
                 <BookingList bookings={overview.recentBookings} onSelect={(booking) => { setSelectedBooking(booking); setActiveTab("details"); }} />
               ) : (
                 <EmptyState
                   icon={Ticket}
-                  title="No bookings yet"
-                  text="Your completed checkout bookings will be listed here."
-                  action={<Link to="/tours" className="mt-4 rounded-lg bg-orange-600 px-4 py-2 text-sm font-bold text-white hover:bg-orange-700">Explore tours</Link>}
+                  title={t("dashboard.noBookingsYet")}
+                  text={t("dashboard.noBookingsYetText")}
+                  action={<Link to="/tours" className="mt-4 rounded-lg bg-orange-600 px-4 py-2 text-sm font-bold text-white hover:bg-orange-700">{t("dashboard.exploreTours")}</Link>}
                 />
               )}
             </DashboardPanel>
@@ -694,44 +714,44 @@ const CustomerDashboard = () => {
 
         {activeTab === "bookings" && (
           <section className="space-y-5">
-            <DashboardPanel title="My bookings">
+            <DashboardPanel title={t("dashboard.myBookings")}>
               <form onSubmit={applyBookingFilters} className="mb-5 grid grid-cols-1 gap-3 lg:grid-cols-[1.6fr_1fr_1fr_1fr_auto] lg:items-end">
                 <label className="block">
-                  <span className="mb-1 block text-sm font-bold text-gray-700">Search bookings</span>
+                  <span className="mb-1 block text-sm font-bold text-gray-700">{t("dashboard.searchBookings")}</span>
                   <div className="relative">
                     <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                     <input
                       value={filters.q}
                       onChange={(event) => setFilters((current) => ({ ...current, q: event.target.value }))}
                       className="h-11 w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100"
-                      placeholder="Search tour, pickup, payment ID"
+                      placeholder={t("dashboard.searchBookingsPlaceholder")}
                     />
                   </div>
                 </label>
-                <Select value={filters.status} onChange={(value) => setFilters((current) => ({ ...current, status: value }))} label="Booking status">
-                  <option value="all">All statuses</option>
-                  <option value="pending">Pending</option>
-                  <option value="confirmed">Confirmed</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
+                <Select value={filters.status} onChange={(value) => setFilters((current) => ({ ...current, status: value }))} label={t("dashboard.bookingStatus")}>
+                  <option value="all">{t("dashboard.allStatuses")}</option>
+                  <option value="pending">{t("common.pending")}</option>
+                  <option value="confirmed">{t("common.confirmed")}</option>
+                  <option value="completed">{t("common.completed")}</option>
+                  <option value="cancelled">{t("common.cancelled")}</option>
                 </Select>
-                <Select value={filters.paymentStatus} onChange={(value) => setFilters((current) => ({ ...current, paymentStatus: value }))} label="Payment status">
-                  <option value="all">All payments</option>
-                  <option value="pending">Pending</option>
-                  <option value="paid">Paid</option>
-                  <option value="failed">Failed</option>
-                  <option value="refunded">Refunded</option>
+                <Select value={filters.paymentStatus} onChange={(value) => setFilters((current) => ({ ...current, paymentStatus: value }))} label={t("dashboard.paymentStatus")}>
+                  <option value="all">{t("dashboard.allPayments")}</option>
+                  <option value="pending">{t("common.pending")}</option>
+                  <option value="paid">{t("common.paid")}</option>
+                  <option value="failed">{t("common.failed")}</option>
+                  <option value="refunded">{t("common.refunded")}</option>
                 </Select>
-                <Select value={filters.sort} onChange={(value) => setFilters((current) => ({ ...current, sort: value }))} label="Sort bookings">
-                  <option value="newest">Newest</option>
-                  <option value="oldest">Oldest</option>
-                  <option value="travelDateAsc">Travel date ascending</option>
-                  <option value="travelDateDesc">Travel date descending</option>
-                  <option value="amountHigh">Amount high to low</option>
-                  <option value="amountLow">Amount low to high</option>
+                <Select value={filters.sort} onChange={(value) => setFilters((current) => ({ ...current, sort: value }))} label={t("dashboard.sortBookings")}>
+                  <option value="newest">{t("dashboard.newest")}</option>
+                  <option value="oldest">{t("dashboard.oldest")}</option>
+                  <option value="travelDateAsc">{t("dashboard.travelDateAsc")}</option>
+                  <option value="travelDateDesc">{t("dashboard.travelDateDesc")}</option>
+                  <option value="amountHigh">{t("dashboard.amountHigh")}</option>
+                  <option value="amountLow">{t("dashboard.amountLow")}</option>
                 </Select>
                 <button className="h-11 rounded-lg bg-orange-600 px-5 text-sm font-bold text-white hover:bg-orange-700" type="submit">
-                  Apply
+                  {t("dashboard.apply")}
                 </button>
               </form>
               {bookings.length ? (
@@ -749,7 +769,7 @@ const CustomerDashboard = () => {
                   ))}
                 </div>
               ) : (
-                <EmptyState icon={Ticket} title="No bookings found" text="Try adjusting your search or filter selection." />
+                <EmptyState icon={Ticket} title={t("dashboard.noBookingsFound")} text={t("dashboard.noBookingsFoundText")} />
               )}
             </DashboardPanel>
           </section>
@@ -760,7 +780,7 @@ const CustomerDashboard = () => {
         )}
 
         {activeTab === "profile" && (
-          <DashboardPanel title="Profile management">
+          <DashboardPanel title={t("dashboard.profileManagement")}>
             <form onSubmit={handleProfileSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_1fr]">
               <div className="flex flex-col items-center gap-4">
                 <div className="h-32 w-32 overflow-hidden rounded-full border border-gray-200 bg-gray-100">
@@ -773,18 +793,18 @@ const CustomerDashboard = () => {
                   )}
                 </div>
                 <label className="w-full cursor-pointer rounded-lg border border-orange-200 px-3 py-2 text-center text-sm font-bold text-orange-700 hover:bg-orange-50">
-                  Upload image
+                  {t("dashboard.uploadImage")}
                   <input type="file" accept="image/*" onChange={handleProfileImage} className="sr-only" />
                 </label>
               </div>
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <TextInput label="Full name" value={profileForm.name} onChange={(value) => setProfileForm((current) => ({ ...current, name: value }))} required />
-                <TextInput label="Email" value={email} readOnly />
-                <TextInput label="Phone" value={profileForm.phone} onChange={(value) => setProfileForm((current) => ({ ...current, phone: value }))} />
-                <TextInput label="Country" value={profileForm.country} onChange={(value) => setProfileForm((current) => ({ ...current, country: value }))} />
+                <TextInput label={t("auth.fullName")} value={profileForm.name} onChange={(value) => setProfileForm((current) => ({ ...current, name: value }))} required />
+                <TextInput label={t("auth.email")} value={email} readOnly />
+                <TextInput label={t("auth.phoneNumber")} value={profileForm.phone} onChange={(value) => setProfileForm((current) => ({ ...current, phone: value }))} />
+                <TextInput label={t("booking.country")} value={profileForm.country} onChange={(value) => setProfileForm((current) => ({ ...current, country: value }))} />
                 <label className="md:col-span-2">
-                  <span className="mb-1 block text-sm font-bold text-gray-700">Default pickup address</span>
+                  <span className="mb-1 block text-sm font-bold text-gray-700">{t("dashboard.defaultPickupAddress")}</span>
                   <textarea
                     value={profileForm.defaultPickupAddress}
                     onChange={(event) => setProfileForm((current) => ({ ...current, defaultPickupAddress: event.target.value }))}
@@ -794,7 +814,7 @@ const CustomerDashboard = () => {
                 </label>
                 <div className="md:col-span-2">
                   <button disabled={actionLoading === "profile"} className="rounded-lg bg-orange-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-orange-700 disabled:opacity-60">
-                    {actionLoading === "profile" ? "Saving..." : "Save profile"}
+                    {actionLoading === "profile" ? t("dashboard.saving") : t("dashboard.saveProfile")}
                   </button>
                 </div>
               </div>
@@ -804,40 +824,40 @@ const CustomerDashboard = () => {
 
         {activeTab === "notifications" && (
           <DashboardPanel
-            title="Notifications"
+            title={t("dashboard.notifications")}
             action={notifications.length ? (
               <button onClick={markAllNotificationsRead} disabled={actionLoading === "notifications"} className="rounded-lg border border-orange-200 px-3 py-2 text-sm font-bold text-orange-700 hover:bg-orange-50 disabled:opacity-60">
-                Mark all as read
+                {t("dashboard.markAllRead")}
               </button>
             ) : null}
           >
             {notifications.length ? (
               <NotificationList notifications={notifications} onRead={markNotificationRead} actionLoading={actionLoading} />
             ) : (
-              <EmptyState icon={Bell} title="No notifications" text="Your account notification center is clear." />
+              <EmptyState icon={Bell} title={t("dashboard.noNotifications")} text={t("dashboard.notificationsClear")} />
             )}
           </DashboardPanel>
         )}
 
         {activeTab === "payments" && (
-          <DashboardPanel title="Payments and invoices">
+          <DashboardPanel title={t("dashboard.paymentsInvoices")}>
             <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-4">
-              <StatCard icon={CreditCard} label="Paid bookings" value={payments.summary?.paid || 0} />
-              <StatCard icon={Clock} label="Pending" value={payments.summary?.pending || 0} />
-              <StatCard icon={RefreshCw} label="Refunded" value={payments.summary?.refunded || 0} />
-              <StatCard icon={CheckCircle} label="Total paid" value={formatPrice(payments.summary?.totalPaid || 0)} />
+              <StatCard icon={CreditCard} label={t("dashboard.paidBookings")} value={payments.summary?.paid || 0} />
+              <StatCard icon={Clock} label={t("common.pending")} value={payments.summary?.pending || 0} />
+              <StatCard icon={RefreshCw} label={t("common.refunded")} value={payments.summary?.refunded || 0} />
+              <StatCard icon={CheckCircle} label={t("dashboard.totalPaid")} value={formatPrice(payments.summary?.totalPaid || 0)} />
             </div>
             {payments.payments?.length ? (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 text-sm">
                   <thead className="bg-gray-50">
                     <tr>
-                      <TableHead>Invoice</TableHead>
+                      <TableHead>{t("dashboard.invoice")}</TableHead>
                       <TableHead>Tour</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Payment</TableHead>
-                      <TableHead>Refund</TableHead>
-                      <TableHead>Download</TableHead>
+                      <TableHead>{t("dashboard.amount")}</TableHead>
+                      <TableHead>{t("dashboard.paymentLabel")}</TableHead>
+                      <TableHead>{t("dashboard.refund")}</TableHead>
+                      <TableHead>{t("dashboard.download")}</TableHead>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
@@ -850,7 +870,7 @@ const CustomerDashboard = () => {
                           <TableCell>{formatPrice(payment.amount)}</TableCell>
                           <TableCell><StatusBadge value={payment.paymentStatus} /></TableCell>
                           <TableCell>{payment.refundStatus}</TableCell>
-                          <TableCell>{booking ? <DownloadPdfButton type="invoice" booking={booking} /> : "Unavailable"}</TableCell>
+                          <TableCell>{booking ? <DownloadPdfButton type="invoice" booking={booking} /> : t("common.unavailable")}</TableCell>
                         </tr>
                       );
                     })}
@@ -858,26 +878,26 @@ const CustomerDashboard = () => {
                 </table>
               </div>
             ) : (
-              <EmptyState icon={CreditCard} title="No payment history" text="Payments appear here after checkout." />
+              <EmptyState icon={CreditCard} title={t("dashboard.noPaymentHistory")} text={t("dashboard.noPaymentHistoryText")} />
             )}
           </DashboardPanel>
         )}
 
         {activeTab === "support" && (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1.2fr]">
-            <DashboardPanel title="Create support ticket">
+            <DashboardPanel title={t("dashboard.createSupportTicket")}>
               <form onSubmit={handleSupportSubmit} className="space-y-4">
-                <TextInput label="Subject" value={supportForm.subject} onChange={(value) => setSupportForm((current) => ({ ...current, subject: value }))} required />
-                <Select value={supportForm.category} onChange={(value) => setSupportForm((current) => ({ ...current, category: value }))} label="Category">
-                  <option value="booking">Booking</option>
-                  <option value="payment">Payment</option>
+                <TextInput label={t("dashboard.subject")} value={supportForm.subject} onChange={(value) => setSupportForm((current) => ({ ...current, subject: value }))} required />
+                <Select value={supportForm.category} onChange={(value) => setSupportForm((current) => ({ ...current, category: value }))} label={t("dashboard.category")}>
+                  <option value="booking">{t("dashboard.bookings")}</option>
+                  <option value="payment">{t("dashboard.payments")}</option>
                   <option value="tour">Tour</option>
                   <option value="account">Account</option>
-                  <option value="refund">Refund</option>
+                  <option value="refund">{t("dashboard.refund")}</option>
                   <option value="other">Other</option>
                 </Select>
-                <Select value={supportForm.bookingId} onChange={(value) => setSupportForm((current) => ({ ...current, bookingId: value }))} label="Related booking">
-                  <option value="">No booking selected</option>
+                <Select value={supportForm.bookingId} onChange={(value) => setSupportForm((current) => ({ ...current, bookingId: value }))} label={t("dashboard.relatedBooking")}>
+                  <option value="">{t("dashboard.noBookingSelected")}</option>
                   {bookings.map((booking) => (
                     <option key={bookingId(booking)} value={bookingId(booking)}>
                       {booking.tourTitle} - {formatDate(booking.tripDate)}
@@ -885,7 +905,7 @@ const CustomerDashboard = () => {
                   ))}
                 </Select>
                 <label>
-                  <span className="mb-1 block text-sm font-bold text-gray-700">Message</span>
+                  <span className="mb-1 block text-sm font-bold text-gray-700">{t("dashboard.message")}</span>
                   <textarea
                     value={supportForm.message}
                     onChange={(event) => setSupportForm((current) => ({ ...current, message: event.target.value }))}
@@ -895,11 +915,11 @@ const CustomerDashboard = () => {
                   />
                 </label>
                 <button disabled={actionLoading === "support"} className="rounded-lg bg-orange-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-orange-700 disabled:opacity-60">
-                  {actionLoading === "support" ? "Creating..." : "Create ticket"}
+                  {actionLoading === "support" ? t("dashboard.creating") : t("dashboard.createTicket")}
                 </button>
               </form>
             </DashboardPanel>
-            <DashboardPanel title="Ticket history">
+            <DashboardPanel title={t("dashboard.ticketHistory")}>
               {supportTickets.length ? (
                 <div className="space-y-3">
                   {supportTickets.map((ticketItem) => (
@@ -917,14 +937,14 @@ const CustomerDashboard = () => {
                   ))}
                 </div>
               ) : (
-                <EmptyState icon={HelpCircle} title="No support tickets" text="Tickets you create will appear here." />
+                <EmptyState icon={HelpCircle} title={t("dashboard.noSupportTickets")} text={t("dashboard.noSupportTicketsText")} />
               )}
             </DashboardPanel>
           </div>
         )}
 
         {activeTab === "wishlist" && (
-          <DashboardPanel title="Wishlist">
+          <DashboardPanel title={t("dashboard.wishlist")}>
             {wishlist.length ? (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {wishlist.map((item) => {
@@ -943,14 +963,14 @@ const CustomerDashboard = () => {
                         )}
                       </div>
                       <div className="p-4">
-                        <h3 className="line-clamp-2 font-bold text-gray-900">{tour.name || "Saved tour"}</h3>
+                        <h3 className="line-clamp-2 font-bold text-gray-900">{tour.name || t("dashboard.savedTour")}</h3>
                         <p className="mt-2 text-sm text-gray-600">{formatPrice(tour.price)}</p>
                         <div className="mt-4 flex flex-wrap gap-2">
                           <button onClick={() => id && navigate(`/switzerland/${id}/checkout-sw`, { state: { tour } })} className="rounded-lg bg-orange-600 px-3 py-2 text-sm font-bold text-white hover:bg-orange-700">
-                            View tour
+                            {t("dashboard.viewTour")}
                           </button>
                           <button onClick={() => removeWishlistItem(item)} disabled={actionLoading === `wishlist-${id}`} className="rounded-lg border border-red-200 px-3 py-2 text-sm font-bold text-red-700 hover:bg-red-50 disabled:opacity-60">
-                            Remove
+                            {t("dashboard.remove")}
                           </button>
                         </div>
                       </div>
@@ -961,9 +981,9 @@ const CustomerDashboard = () => {
             ) : (
               <EmptyState
                 icon={Heart}
-                title="No saved tours"
-                text="Tours saved from this dashboard or your existing favorites will appear here."
-                action={<Link to="/tours" className="mt-4 rounded-lg bg-orange-600 px-4 py-2 text-sm font-bold text-white hover:bg-orange-700">Explore tours</Link>}
+                title={t("dashboard.noSavedTours")}
+                text={t("dashboard.noSavedToursText")}
+                action={<Link to="/tours" className="mt-4 rounded-lg bg-orange-600 px-4 py-2 text-sm font-bold text-white hover:bg-orange-700">{t("dashboard.exploreTours")}</Link>}
               />
             )}
           </DashboardPanel>
@@ -971,10 +991,10 @@ const CustomerDashboard = () => {
 
         {activeTab === "security" && (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <DashboardPanel title="Change password">
+            <DashboardPanel title={t("dashboard.changePassword")}>
               <form onSubmit={handlePasswordSubmit} className="space-y-5">
                 <PasswordInput
-                  label="Current password"
+                  label={t("dashboard.currentPassword")}
                   value={passwordForm.currentPassword}
                   onChange={(value) => setPasswordForm((current) => ({ ...current, currentPassword: value }))}
                   visible={showPasswordFields.current}
@@ -983,7 +1003,7 @@ const CustomerDashboard = () => {
                 />
                 <div>
                   <PasswordInput
-                    label="New password"
+                    label={t("dashboard.newPassword")}
                     value={passwordForm.newPassword}
                     onChange={(value) => setPasswordForm((current) => ({ ...current, newPassword: value }))}
                     visible={showPasswordFields.next}
@@ -993,7 +1013,7 @@ const CustomerDashboard = () => {
                   <PasswordRequirementList requirements={passwordRequirements} />
                 </div>
                 <PasswordInput
-                  label="Confirm new password"
+                  label={t("dashboard.confirmNewPassword")}
                   value={passwordForm.confirmPassword}
                   onChange={(value) => setPasswordForm((current) => ({ ...current, confirmPassword: value }))}
                   visible={showPasswordFields.confirm}
@@ -1001,32 +1021,32 @@ const CustomerDashboard = () => {
                   autoComplete="new-password"
                 />
                 <button disabled={actionLoading === "password"} className="rounded-lg bg-orange-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-orange-700 disabled:opacity-60">
-                  {actionLoading === "password" ? "Changing..." : "Change password"}
+                  {actionLoading === "password" ? t("dashboard.changing") : t("dashboard.changePassword")}
                 </button>
               </form>
             </DashboardPanel>
-            <DashboardPanel title="Security activity">
+            <DashboardPanel title={t("dashboard.securityActivity")}>
               <div className="space-y-4">
-                <DetailRow label="Account status" value={security?.accountStatus || overview?.account?.status || "Active"} />
-                <DetailRow label="Password changed" value={formatDateTime(security?.passwordChangedAt)} />
-                <DetailRow label="Last login" value={formatDateTime(security?.lastLoginAt)} />
+                <DetailRow label={t("dashboard.accountStatus")} value={security?.accountStatus || overview?.account?.status || t("common.active")} />
+                <DetailRow label={t("dashboard.passwordChanged")} value={formatDateTime(security?.passwordChangedAt)} />
+                <DetailRow label={t("dashboard.lastLogin")} value={formatDateTime(security?.lastLoginAt)} />
                 <div className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
-                  <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Active session</p>
-                  <p className="mt-1 text-sm font-semibold text-gray-900">This browser</p>
+                  <p className="text-xs font-bold uppercase tracking-wide text-gray-500">{t("dashboard.activeSession")}</p>
+                  <p className="mt-1 text-sm font-semibold text-gray-900">{t("dashboard.thisBrowser")}</p>
                 </div>
                 <div>
-                  <p className="mb-2 text-sm font-bold text-gray-700">Login activity</p>
+                  <p className="mb-2 text-sm font-bold text-gray-700">{t("dashboard.loginActivity")}</p>
                   {security?.loginActivity?.length ? (
                     <div className="space-y-2">
                       {security.loginActivity.map((item, index) => (
                         <div key={`${item.occurredAt}-${index}`} className="rounded-lg border border-gray-200 bg-white p-3">
                           <p className="text-sm font-bold text-gray-900">{formatDateTime(item.occurredAt)}</p>
-                          <p className="mt-1 line-clamp-2 text-xs text-gray-500">{item.userAgent || "Browser details unavailable"}</p>
+                          <p className="mt-1 line-clamp-2 text-xs text-gray-500">{item.userAgent || t("dashboard.browserUnavailable")}</p>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="rounded-lg border border-gray-200 bg-white p-3 text-sm text-gray-600">Login history begins with your next successful login.</p>
+                    <p className="rounded-lg border border-gray-200 bg-white p-3 text-sm text-gray-600">{t("dashboard.loginHistoryBegins")}</p>
                   )}
                 </div>
               </div>
@@ -1089,6 +1109,7 @@ const BookingList = ({ bookings, onSelect }) => (
 const BookingCard = ({ booking, onDetails, onCancel, onRebook, canCancel, actionLoading }) => {
   const id = bookingId(booking);
   const { formatPrice } = useCurrency();
+  const { t } = useI18n();
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -1096,7 +1117,7 @@ const BookingCard = ({ booking, onDetails, onCancel, onRebook, canCancel, action
           <p className="text-lg font-bold text-gray-900">{booking.tourTitle || bookingTour(booking)?.name || "AJL Tour"}</p>
           <div className="mt-2 flex flex-wrap gap-2 text-sm text-gray-600">
             <span className="inline-flex items-center gap-1"><CalendarDays className="h-4 w-4" /> {formatDate(booking.tripDate)}</span>
-            <span className="inline-flex items-center gap-1"><MapPin className="h-4 w-4" /> {booking.address || "Pickup not set"}</span>
+            <span className="inline-flex items-center gap-1"><MapPin className="h-4 w-4" /> {booking.address || t("dashboard.pickupNotSet")}</span>
             <span>{formatPrice(booking.totalPrice)}</span>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -1106,13 +1127,13 @@ const BookingCard = ({ booking, onDetails, onCancel, onRebook, canCancel, action
         </div>
         <div className="flex flex-wrap gap-2">
           <button onClick={onDetails} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50">
-            <Eye className="h-4 w-4" /> Details
+            <Eye className="h-4 w-4" /> {t("dashboard.details")}
           </button>
           <DownloadPdfButton type="invoice" booking={booking} />
           <DownloadPdfButton type="ticket" booking={booking} />
           {String(booking.status).toLowerCase() === "completed" && (
             <button onClick={onRebook} className="rounded-lg border border-orange-200 px-3 py-2 text-sm font-bold text-orange-700 hover:bg-orange-50">
-              Rebook
+              {t("dashboard.rebook")}
             </button>
           )}
           {canCancel && (
@@ -1121,7 +1142,7 @@ const BookingCard = ({ booking, onDetails, onCancel, onRebook, canCancel, action
               disabled={actionLoading === `cancel-${id}`}
               className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-bold text-red-700 hover:bg-red-50 disabled:opacity-60"
             >
-              <XCircle className="h-4 w-4" /> {actionLoading === `cancel-${id}` ? "Cancelling" : "Cancel"}
+              <XCircle className="h-4 w-4" /> {actionLoading === `cancel-${id}` ? t("dashboard.cancelling") : t("dashboard.cancel")}
             </button>
           )}
         </div>
@@ -1132,21 +1153,22 @@ const BookingCard = ({ booking, onDetails, onCancel, onRebook, canCancel, action
 
 const BookingDetails = ({ booking, onRebook }) => {
   const { formatPrice } = useCurrency();
+  const { t } = useI18n();
 
   if (!booking) {
-    return <EmptyState icon={Ticket} title="No booking selected" text="Select a booking to view its details." />;
+    return <EmptyState icon={Ticket} title={t("dashboard.noBookingSelected")} text={t("dashboard.selectBookingDetails")} />;
   }
 
   const tour = bookingTour(booking);
   return (
     <DashboardPanel
-      title="Booking details"
+      title={t("dashboard.bookingDetails")}
       action={<div className="flex flex-wrap gap-2"><DownloadPdfButton type="invoice" booking={booking} /><DownloadPdfButton type="ticket" booking={booking} /></div>}
     >
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-2xl font-bold text-gray-900">{booking.tourTitle || tour?.name || "AJL Tour"}</p>
-          <p className="mt-1 text-sm text-gray-500">Booking ID: {bookingId(booking)}</p>
+          <p className="mt-1 text-sm text-gray-500">{t("success.bookingId")} {bookingId(booking)}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <StatusBadge value={booking.status} />
@@ -1154,52 +1176,55 @@ const BookingDetails = ({ booking, onRebook }) => {
         </div>
       </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <DetailRow label="Tour information" value={tour?.name || booking.tourTitle} />
-        <DetailRow label="Travel date" value={formatDate(booking.tripDate)} />
-        <DetailRow label="Participants" value={booking.travelers} />
-        <DetailRow label="Pickup information" value={booking.address} />
-        <DetailRow label="Booking status" value={booking.status} />
-        <DetailRow label="Payment status" value={booking.paymentStatus} />
-        <DetailRow label="Invoice number" value={`AJL-${String(bookingId(booking)).slice(-8).toUpperCase()}`} />
-        <DetailRow label="Payment reference" value={booking.stripePaymentId} />
-        <DetailRow label="Total" value={formatPrice(booking.totalPrice)} />
-        <DetailRow label="Start location" value={tour?.startLocation} />
-        <DetailRow label="End location" value={tour?.endLocation} />
-        <DetailRow label="Special requests" value={booking.specialRequests} />
+        <DetailRow label={t("dashboard.tourInformation")} value={tour?.name || booking.tourTitle} />
+        <DetailRow label={t("dashboard.travelDate")} value={formatDate(booking.tripDate)} />
+        <DetailRow label={t("dashboard.participants")} value={booking.travelers} />
+        <DetailRow label={t("dashboard.pickupInformation")} value={booking.address} />
+        <DetailRow label={t("dashboard.bookingStatus")} value={booking.status} />
+        <DetailRow label={t("dashboard.paymentStatus")} value={booking.paymentStatus} />
+        <DetailRow label={t("dashboard.invoiceNumber")} value={`AJL-${String(bookingId(booking)).slice(-8).toUpperCase()}`} />
+        <DetailRow label={t("dashboard.paymentReference")} value={booking.stripePaymentId} />
+        <DetailRow label={t("dashboard.total")} value={formatPrice(booking.totalPrice)} />
+        <DetailRow label={t("dashboard.startLocation")} value={tour?.startLocation} />
+        <DetailRow label={t("dashboard.endLocation")} value={tour?.endLocation} />
+        <DetailRow label={t("dashboard.specialRequests")} value={booking.specialRequests} />
       </div>
       {String(booking.status).toLowerCase() === "completed" && (
         <button onClick={onRebook} className="mt-5 rounded-lg bg-orange-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-orange-700">
-          Rebook this tour
+          {t("dashboard.rebookThisTour")}
         </button>
       )}
     </DashboardPanel>
   );
 };
 
-const NotificationList = ({ notifications, onRead, actionLoading }) => (
-  <div className="space-y-3">
-    {notifications.map((notification) => (
-      <div key={notification._id || notification.id} className={`rounded-lg border p-4 ${notification.isRead ? "border-gray-200 bg-white" : "border-orange-200 bg-orange-50"}`}>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="font-bold text-gray-900">{notification.title}</p>
-            <p className="mt-1 text-sm text-gray-600">{notification.message}</p>
-            <p className="mt-2 text-xs font-semibold text-gray-500">{formatDateTime(notification.createdAt)}</p>
+const NotificationList = ({ notifications, onRead, actionLoading }) => {
+  const { t } = useI18n();
+  return (
+    <div className="space-y-3">
+      {notifications.map((notification) => (
+        <div key={notification._id || notification.id} className={`rounded-lg border p-4 ${notification.isRead ? "border-gray-200 bg-white" : "border-orange-200 bg-orange-50"}`}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="font-bold text-gray-900">{notification.title}</p>
+              <p className="mt-1 text-sm text-gray-600">{notification.message}</p>
+              <p className="mt-2 text-xs font-semibold text-gray-500">{formatDateTime(notification.createdAt)}</p>
+            </div>
+            {!notification.isRead && (
+              <button
+                onClick={() => onRead(notification._id || notification.id)}
+                disabled={actionLoading === `notification-${notification._id || notification.id}`}
+                className="rounded-lg border border-orange-200 px-3 py-2 text-sm font-bold text-orange-700 hover:bg-white disabled:opacity-60"
+              >
+                {t("dashboard.markAllRead")}
+              </button>
+            )}
           </div>
-          {!notification.isRead && (
-            <button
-              onClick={() => onRead(notification._id || notification.id)}
-              disabled={actionLoading === `notification-${notification._id || notification.id}`}
-              className="rounded-lg border border-orange-200 px-3 py-2 text-sm font-bold text-orange-700 hover:bg-white disabled:opacity-60"
-            >
-              Mark read
-            </button>
-          )}
         </div>
-      </div>
-    ))}
-  </div>
-);
+      ))}
+    </div>
+  );
+};
 
 const Select = ({ label, value, onChange, children }) => (
   <label className="block">

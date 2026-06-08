@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useI18n } from "../i18n";
 
 const DEFAULT_TITLE = "AJL Tours | Private Switzerland Tours";
 const DEFAULT_DESCRIPTION =
@@ -26,6 +27,10 @@ const upsertCanonical = (href) => {
 };
 
 const SEO = ({ title = DEFAULT_TITLE, description = DEFAULT_DESCRIPTION, image = "/logoTravel.png" }) => {
+  const { language, t } = useI18n();
+  const resolvedTitle = title === DEFAULT_TITLE ? t("seo.defaultTitle") : title;
+  const resolvedDescription = description === DEFAULT_DESCRIPTION ? t("seo.defaultDescription") : description;
+
   useEffect(() => {
     const canonical =
       typeof window !== "undefined"
@@ -36,17 +41,19 @@ const SEO = ({ title = DEFAULT_TITLE, description = DEFAULT_DESCRIPTION, image =
         ? `${window.location.origin}${image.startsWith("/") ? image : `/${image}`}`
         : image;
 
-    document.title = title;
-    upsertMeta('meta[name="description"]', { name: "description", content: description });
-    upsertMeta('meta[property="og:title"]', { property: "og:title", content: title });
-    upsertMeta('meta[property="og:description"]', { property: "og:description", content: description });
+    document.documentElement.lang = language;
+    document.title = resolvedTitle;
+    upsertMeta('meta[name="description"]', { name: "description", content: resolvedDescription });
+    upsertMeta('meta[property="og:title"]', { property: "og:title", content: resolvedTitle });
+    upsertMeta('meta[property="og:description"]', { property: "og:description", content: resolvedDescription });
     upsertMeta('meta[property="og:type"]', { property: "og:type", content: "website" });
+    upsertMeta('meta[property="og:locale"]', { property: "og:locale", content: language });
     upsertMeta('meta[property="og:image"]', { property: "og:image", content: resolvedImage });
     upsertMeta('meta[name="twitter:card"]', { name: "twitter:card", content: "summary_large_image" });
-    upsertMeta('meta[name="twitter:title"]', { name: "twitter:title", content: title });
-    upsertMeta('meta[name="twitter:description"]', { name: "twitter:description", content: description });
+    upsertMeta('meta[name="twitter:title"]', { name: "twitter:title", content: resolvedTitle });
+    upsertMeta('meta[name="twitter:description"]', { name: "twitter:description", content: resolvedDescription });
     upsertCanonical(canonical);
-  }, [title, description, image]);
+  }, [resolvedTitle, resolvedDescription, image, language]);
 
   return null;
 };

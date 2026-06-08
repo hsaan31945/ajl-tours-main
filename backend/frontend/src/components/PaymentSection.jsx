@@ -8,6 +8,7 @@ import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Users } from "luc
 import EditableField from "./EditableField";
 import ParticipantStepper from "./ParticipantStepper";
 import { useCurrency } from "../context/CurrencyContext";
+import { useI18n } from "../i18n";
 
 const monthLabel = (date) => date.toLocaleString("default", { month: "long", year: "numeric" });
 
@@ -192,6 +193,7 @@ function PaymentSection({
   const { setBooking } = useBooking();
   const { isAdmin, passcodeHeader } = useAdmin();
   const { formatPrice } = useCurrency();
+  const { t } = useI18n();
   const [editingMinTickets, setEditingMinTickets] = useState(false);
   const [minTicketsInput, setMinTicketsInput] = useState(tour?.minTicketsPerBooking || 1);
   
@@ -240,7 +242,7 @@ function PaymentSection({
       )}
       <div className="flex flex-col gap-2 w-full mb-4">
         <div className="flex justify-between items-center">
-          <span className="font-semibold">Per Person:</span>
+          <span className="font-semibold">{t("booking.perPerson")}:</span>
           <div className="font-bold text-orange-600 text-right">
             {pricing.hasDiscount && (
               <div className="text-sm font-semibold text-gray-400 line-through">
@@ -319,7 +321,7 @@ function PaymentSection({
         <div className="flex items-center justify-between rounded-full bg-gray-100 px-4 py-3">
           <span className="flex items-center gap-3 font-semibold text-gray-800">
             <Users size={20} className="text-gray-600" />
-            Adult x
+            {t("common.adult")} x
           </span>
           <ParticipantStepper
             value={currentTickets}
@@ -335,11 +337,11 @@ function PaymentSection({
           />
         )}
         {minTickets > 1 && (
-          <p className="text-xs text-gray-500 text-right">Minimum {minTickets} adults required</p>
+          <p className="text-xs text-gray-500 text-right">{t("booking.minimumAdults", { count: minTickets })}</p>
         )}
         {!ticketsMeetMinimum && (
           <p className="text-xs text-red-600 text-right font-semibold">
-            Increase adults to continue.
+            {t("booking.increaseAdults")}
           </p>
         )}
       </div>
@@ -357,7 +359,7 @@ function PaymentSection({
           navigate("/flexibility");
         }}
       >
-        Pay
+        {t("common.pay")}
       </button>
     </div>
   );

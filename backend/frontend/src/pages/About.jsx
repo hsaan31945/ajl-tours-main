@@ -2,6 +2,7 @@ import React from "react";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
 import { useHeroBanner } from "../hooks/useHeroBanner";
+import { useI18n } from "../i18n";
 
 const fadeIn = {
   hidden: { opacity: 0 },
@@ -9,6 +10,7 @@ const fadeIn = {
 };
 
 const About = () => {
+  const { t } = useI18n();
   const fallbackHeroImage = "https://img.freepik.com/free-photo/travel-concept-with-landmarks_23-2149153256.jpg?t=st=1734459512~exp=1734463112~hmac=956199774261d513cea7b1861f7343dcc4bcdc9298fbcf1c82e3028ab2da7f18&w=1800";
   const heroBanner = useHeroBanner("about", fallbackHeroImage);
 
@@ -27,7 +29,7 @@ const About = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
-          Welcome to <span className="text-red-400">AJL Tours</span>
+          {t("about.heroTitle")}
         </motion.h1>
         <motion.p
           className="text-white mt-4 text-lg relative z-10"
@@ -35,7 +37,7 @@ const About = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
         >
-          More Than Tours — We Create Life's Favourite Moments
+          {t("about.heroSubtitle")}
         </motion.p>
       </section>
 
@@ -52,7 +54,7 @@ const About = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.6 }}
           >
-            About <span className="text-red-600">AJL Tours</span>
+            {t("about.title")}
           </motion.h2>
           <motion.p
             className="text-lg"
@@ -60,11 +62,7 @@ const About = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.8 }}
           >
-            AJL Tours specializes in creating unforgettable Swiss travel experiences. 
-            We transform destinations into lifelong memories through personalized private tours, 
-            featuring handpicked destinations, seamless planning, and 24/7 support. 
-            From Crash Landing on You locations to Alpine adventures, we craft 
-            bespoke itineraries that cater to your pace and interests.
+            {t("about.intro")}
           </motion.p>
         </motion.div>
       </section>
@@ -82,7 +80,7 @@ const About = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.6 }}
           >
-            Our <span className="text-red-600">Mission</span>
+            {t("about.missionTitle")}
           </motion.h2>
           <motion.p
             className="text-lg"
@@ -90,10 +88,7 @@ const About = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.8 }}
           >
-            Our mission is to provide exceptional Swiss travel experiences that go beyond 
-            ordinary tours. We create personalized journeys that transform destinations 
-            into lifelong memories, offering seamless planning, multilingual local guides, 
-            and 24/7 support to ensure every moment of your Swiss adventure is perfect.
+            {t("about.mission")}
           </motion.p>
         </motion.div>
       </section>
@@ -111,7 +106,7 @@ const About = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.6 }}
           >
-            Why Choose <span className="text-red-600">Us?</span>
+            {t("about.whyTitle")}
           </motion.h2>
           <div className="flex flex-wrap justify-center gap-6">
             {[
@@ -164,13 +159,10 @@ const About = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.6 }}
           >
-            Meet Our <span className="text-red-600">Team</span>
+            {t("about.teamTitle")}
           </motion.h2>
           <p className="text-lg mb-8">
-            Our team of Swiss travel experts is dedicated to creating 
-            unforgettable experiences. We are passionate about showcasing 
-            Switzerland's hidden gems and helping you discover authentic 
-            Swiss culture and breathtaking landscapes.
+            {t("about.teamText")}
           </p>
           <div className="flex flex-wrap justify-center gap-8">
             {[

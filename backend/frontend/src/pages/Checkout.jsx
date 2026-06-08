@@ -19,12 +19,14 @@ import { calculateBookingPricing } from "../utils/bookingPricing";
 import TourReviews, { getTourReviewSummary } from "../components/TourReviews";
 import { Star } from "lucide-react";
 import { useCurrency } from "../context/CurrencyContext";
+import { useI18n } from "../i18n";
 
 function ItineraryAccordion({ itinerary = [], adminOn = false, onSave, onAddDraft }) {
   const itineraryList = Array.isArray(itinerary) ? itinerary : [];
   const itineraryLength = itineraryList.length;
   const [open, setOpen] = useState(itineraryList.map(() => false));
   const { isAdmin } = useAdmin();
+  const { t } = useI18n();
   const effectiveEditMode = adminOn || isAdmin;
 
   useEffect(() => {
@@ -134,7 +136,7 @@ function ItineraryAccordion({ itinerary = [], adminOn = false, onSave, onAddDraf
                   )}
                   {(effectiveEditMode || item.location) && (
                     <div className="text-sm text-gray-500 mt-1">
-                      <span className="font-medium">Location: </span>
+                      <span className="font-medium">{t("booking.location")} </span>
                       <EditableField
                         value={item.location || ''}
                         placeholder="Add location"
@@ -147,7 +149,7 @@ function ItineraryAccordion({ itinerary = [], adminOn = false, onSave, onAddDraf
                   )}
                   {(effectiveEditMode || (item.activities && item.activities.length > 0)) && (
                     <div className="mt-2">
-                      <div className="font-semibold">Activities:</div>
+                      <div className="font-semibold">{t("booking.activities")}</div>
                       <ul className="list-disc pl-5">
                         {(Array.isArray(item.activities) ? item.activities : []).map((activity, activityIdx) => (
                           <li key={activityIdx} className="group/activity">
@@ -191,7 +193,7 @@ function ItineraryAccordion({ itinerary = [], adminOn = false, onSave, onAddDraf
                           }}
                           className="mt-2 text-sm text-blue-600 hover:text-blue-800"
                         >
-                          + Add Activity
+                        {t("booking.addActivity")}
                         </button>
                       )}
                     </div>
@@ -203,7 +205,7 @@ function ItineraryAccordion({ itinerary = [], adminOn = false, onSave, onAddDraf
         </div>
       ))}
       {itineraryLength === 0 && (
-        <div className="text-gray-500 italic py-4 text-center">No itinerary details available for this tour.</div>
+      <div className="text-gray-500 italic py-4 text-center">{t("booking.noItinerary")}</div>
       )}
       {adminOn && (
         <button
@@ -249,6 +251,7 @@ const Checkout = () => {
   const { user } = useContext(AppContext);
   const { isAdmin, passcodeHeader } = useAdmin();
   const { formatPrice } = useCurrency();
+  const { t } = useI18n();
   const legacyIsAdmin = user?.isAdmin || false;
   const adminOn = isAdmin || legacyIsAdmin;
   const [tour, setTour] = useState(null);
@@ -465,8 +468,8 @@ const Checkout = () => {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
-          <div className="text-xl font-semibold text-gray-700">Loading tour details...</div>
-          <div className="text-sm text-gray-500 mt-2">Please wait while we fetch the tour information</div>
+          <div className="text-xl font-semibold text-gray-700">{t("booking.loadingTourDetails")}</div>
+          <div className="text-sm text-gray-500 mt-2">{t("booking.loadingTourText")}</div>
         </div>
       </div>
     );
@@ -478,7 +481,7 @@ const Checkout = () => {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-md mx-auto px-4">
           <div className="text-red-600 text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Failed to Load Tour</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">{t("booking.failedLoadTour")}</h2>
           <p className="text-gray-600 mb-4">
             We couldn't load the tour details. This might be due to:
           </p>
@@ -497,13 +500,13 @@ const Checkout = () => {
               onClick={() => window.location.reload()}
               className="bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-orange-700 transition-colors block w-full"
             >
-              Retry Loading Tour
+              {t("booking.retryLoadingTour")}
             </button>
             <button
               onClick={() => window.history.back()}
               className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors block w-full"
             >
-              Go Back to Tours
+              {t("booking.goBackToTours")}
             </button>
           </div>
         </div>
@@ -516,8 +519,8 @@ const Checkout = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">No Tour Selected</h2>
-          <p className="text-gray-600 mb-4">Please select a tour to view details</p>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">{t("payment.noTourTitle")}</h2>
+          <p className="text-gray-600 mb-4">{t("booking.pleaseSelectTour")}</p>
           <button
             onClick={() => window.history.back()}
             className="bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-orange-700 transition-colors"
@@ -537,7 +540,7 @@ const Checkout = () => {
   const reviewSummary = getTourReviewSummary(tour);
   const reviewLabel = reviewSummary.reviewCount
     ? `${reviewSummary.reviewAverage.toFixed(1)}/5`
-    : "No ratings yet";
+    : t("common.noRatingsYet");
   // Only admins can edit - no toggle needed
   const effectiveEditMode = adminOn;
 
@@ -650,14 +653,14 @@ const Checkout = () => {
             }
           }}
         >
-          Explore {tourName}
+          {t("booking.exploreTour", { name: tourName })}
         </EditableText>
       </h1>
       {/* Image Carousel */}
       <div className="w-full max-w-6xl px-4 mb-8">
         {loading ? (
           <div className="h-48 md:h-64 bg-gray-200 rounded-lg flex items-center justify-center">
-            <span className="text-gray-400">Loading images...</span>
+            <span className="text-gray-400">{t("common.loadingImages")}</span>
           </div>
         ) : (
           <ImageCarousel 
@@ -680,7 +683,7 @@ const Checkout = () => {
       {/* Info Row - Responsive Grid */}
       <div className="w-full max-w-6xl grid grid-cols-2 md:grid-cols-4 gap-6 items-start bg-gray-50 rounded-xl shadow p-6 mb-10">
         <div className="flex flex-col items-start">
-          <span className="text-xs text-gray-500">Price</span>
+          <span className="text-xs text-gray-500">{t("common.price")}</span>
           {pricing.hasDiscount && (
             <span className="text-sm font-semibold text-gray-400 line-through">
               {formatPrice(pricing.originalBaseUnitPrice)}
@@ -688,7 +691,7 @@ const Checkout = () => {
           )}
           {effectiveEditMode ? (
             <EditableField
-              value={`From ${tour?.currency || "CHF"}${pricing.originalBaseUnitPrice.toFixed(2)}`}
+              value={`${t("common.from")} ${tour?.currency || "CHF"}${pricing.originalBaseUnitPrice.toFixed(2)}`}
               tag="span"
               className="text-lg font-bold text-red-600"
               forceEditMode={effectiveEditMode}
@@ -699,14 +702,14 @@ const Checkout = () => {
             />
           ) : (
             <span className="text-lg font-bold text-red-600">
-              From {formatPrice(pricePerTicket)}
+              {t("common.from")} {formatPrice(pricePerTicket)}
             </span>
           )}
         </div>
         <div className="flex flex-col items-start">
-          <span className="text-xs text-gray-500">Duration</span>
+          <span className="text-xs text-gray-500">{t("common.duration")}</span>
           <EditableField
-            value={tour?.duration || "Not specified"}
+            value={tour?.duration || t("common.notSpecified")}
             tag="span"
             className="text-lg font-bold"
             forceEditMode={effectiveEditMode}
@@ -714,9 +717,9 @@ const Checkout = () => {
           />
         </div>
         <div className="flex flex-col items-start">
-          <span className="text-xs text-gray-500">Tour Type</span>
+          <span className="text-xs text-gray-500">{t("common.tourType")}</span>
           <EditableField
-            value={tour?.type || "Not specified"}
+            value={tour?.type || t("common.notSpecified")}
             tag="span"
             className="text-lg font-bold"
             forceEditMode={effectiveEditMode}
@@ -724,7 +727,7 @@ const Checkout = () => {
           />
         </div>
         <div className="flex flex-col items-start">
-          <span className="text-xs text-gray-500">Reviews</span>
+          <span className="text-xs text-gray-500">{t("common.reviews")}</span>
           <span className="text-lg font-bold">{reviewLabel}</span>
           {reviewSummary.reviewCount > 0 && <RatingStars rating={reviewSummary.reviewAverage} />}
         </div>
@@ -736,7 +739,7 @@ const Checkout = () => {
         {/* Left: Overview/Details */}
         <div className="flex-1 bg-white rounded-xl p-8 shadow">
           <EditableField
-            value="Overview"
+            value={t("common.overview")}
             forceEditMode={effectiveEditMode}
             onSave={async () => true}
             className="text-2xl font-bold mb-4 block"
@@ -813,7 +816,7 @@ const Checkout = () => {
             </div>
           )}
           {/* Highlights Section - Rebuilt from Scratch */}
-          <h3 className="text-2xl font-bold mt-8 mb-4">Highlights</h3>
+          <h3 className="text-2xl font-bold mt-8 mb-4">{t("common.highlights")}</h3>
           <ul className="pl-6 space-y-3 text-gray-700 list-none">
             {highlights.map((highlight, index) => (
               <li key={`highlight-${index}`} className="flex items-start group">
@@ -882,7 +885,7 @@ const Checkout = () => {
               </li>
             ))}
             {highlights.length === 0 && (
-              <li className="text-gray-500 italic">No highlights available for this tour.</li>
+              <li className="text-gray-500 italic">{t("booking.noHighlights")}</li>
             )}
           </ul>
           {adminOn && (
@@ -900,11 +903,11 @@ const Checkout = () => {
           )}
           {/* Included/Excluded Section - Rebuilt from Scratch */}
           <hr className="my-8 border-gray-200" />
-          <h2 className="text-2xl font-bold mb-4">Included & Excluded</h2>
+          <h2 className="text-2xl font-bold mb-4">{t("common.includedExcluded")}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Included Section */}
             <div>
-              <h3 className="text-lg font-semibold mb-3 text-green-700">Included</h3>
+              <h3 className="text-lg font-semibold mb-3 text-green-700">{t("common.included")}</h3>
             <ul className="space-y-4">
                 {included.map((item, index) => (
                   <li key={`included-${index}`} className="flex items-center gap-3 group">
@@ -976,7 +979,7 @@ const Checkout = () => {
                 </li>
               ))}
                 {included.length === 0 && (
-                <li className="text-gray-500 italic">No included items specified for this tour.</li>
+                <li className="text-gray-500 italic">{t("booking.noIncluded")}</li>
               )}
             </ul>
               {adminOn && (
@@ -995,7 +998,7 @@ const Checkout = () => {
             </div>
             {/* Excluded Section - Using Atomic API */}
             <div>
-              <h3 className="text-lg font-semibold mb-3 text-red-700">Excluded</h3>
+              <h3 className="text-lg font-semibold mb-3 text-red-700">{t("common.excluded")}</h3>
             <ul className="space-y-4">
                 {excluded.map((item, index) => (
                   <li key={`excluded-${index}`} className="flex items-center gap-3 group">
@@ -1068,7 +1071,7 @@ const Checkout = () => {
                 </li>
               ))}
                 {excluded.length === 0 && (
-                <li className="text-gray-500 italic">No excluded items specified for this tour.</li>
+                <li className="text-gray-500 italic">{t("booking.noExcluded")}</li>
               )}
             </ul>
               {adminOn && (
@@ -1089,7 +1092,7 @@ const Checkout = () => {
 
           {/* Itinerary Section - Using Atomic API */}
           <hr className="my-8 border-gray-200" />
-          <h2 className="text-3xl font-bold mb-6 text-red-600">Itinerary</h2>
+          <h2 className="text-3xl font-bold mb-6 text-red-600">{t("common.itinerary")}</h2>
           <ItineraryAccordion 
             itinerary={itinerary} 
             adminOn={adminOn}
@@ -1101,7 +1104,7 @@ const Checkout = () => {
 
           {/* Calendar & Prices Section */}
           <hr className="my-8 border-gray-200" />
-          <h2 className="text-2xl font-bold mb-6">Calendar & Prices</h2>
+          <h2 className="text-2xl font-bold mb-6">{t("common.calendarPrices")}</h2>
           {/* Only admins see the full calendar, others get a simple date picker */}
           {adminOn ? (
           <CalendarPrices
@@ -1112,7 +1115,7 @@ const Checkout = () => {
           />
           ) : (
             <div className="flex items-center gap-4">
-              <label className="text-sm text-gray-600">Select date:</label>
+              <label className="text-sm text-gray-600">{t("common.selectDate")}</label>
               <input
                 type="date"
                 value={selectedDate}

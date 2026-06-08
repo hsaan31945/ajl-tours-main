@@ -5,10 +5,12 @@ import Button from "../components/Button";
 import { AppContext } from "../context/AppContext";
 import { useAdmin } from "../context/AdminContext";
 import { Eye, EyeOff } from "lucide-react";
+import { useI18n } from "../i18n";
 
 const LoginPage = () => {
   const { addUser, loginUser } = useContext(AppContext);
   const { enableWithPasscode } = useAdmin();
+  const { t } = useI18n();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,14 +23,14 @@ const LoginPage = () => {
     const handler = (e) => {
       // Ctrl+Shift+A
       if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
-        const code = window.prompt('Enter admin passcode');
+        const code = window.prompt(t("auth.adminPasscode"));
         if (!code) return;
         const ok = enableWithPasscode(code);
         if (ok) {
-          toast.success('Admin mode enabled');
+          toast.success(t("auth.adminEnabled"));
           navigate('/');
         } else {
-          toast.error('Invalid passcode');
+          toast.error(t("auth.invalidPasscode"));
         }
       }
     };
@@ -39,7 +41,7 @@ const LoginPage = () => {
   const onSubmitHandler = async (e) => {
     e.preventDefault();
     if (!email || !password || (!isLogin && (!name || !phone))) {
-      toast.error("All fields are required!");
+      toast.error(t("auth.allFieldsRequired"));
       return;
     }
 
@@ -47,22 +49,22 @@ const LoginPage = () => {
       try {
         const success = await loginUser(email, password);
         if (success) {
-          toast.success("Logged in successfully!");
+          toast.success(t("auth.loggedIn"));
           navigate("/");
         } else {
-          toast.error("Invalid email or password!");
+          toast.error(t("auth.invalidLogin"));
         }
       } catch (error) {
-        toast.error("Login failed. Please try again.");
+        toast.error(t("auth.loginFailed"));
         console.error('Login error:', error);
       }
     } else {
       try {
         await addUser({ name, email, password, phone });
-        toast.success("Registered successfully!");
+        toast.success(t("auth.registered"));
         navigate("/");
       } catch (error) {
-        toast.error("Registration failed. Please try again.");
+        toast.error(t("auth.registrationFailed"));
         console.error('Registration error:', error);
       }
     }
@@ -71,18 +73,18 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center">
       <h1 className="text-4xl max-w-[300px] sm:text-7xl sm:max-w-[590px] mx-auto mt-[-70px] text-center mb-10">
-        Welcome to <span className="text-red-600">AJL Tours</span>
+        {t("auth.welcome")}
       </h1>
       <div className="bg-white/20 p-8 rounded-lg shadow-lg max-w-md w-full">
         <h2 className="text-3xl font-semibold text-center text-black">
-          {isLogin ? "Login" : "Register"}
+          {isLogin ? t("auth.login") : t("auth.register")}
         </h2>
         <form onSubmit={onSubmitHandler} className="space-y-4 mt-6">
           {!isLogin && (
             <>
             <div>
               <label htmlFor="name" className="block text-md font-medium">
-                Full Name
+                {t("auth.fullName")}
               </label>
               <input
                 type="text"
@@ -91,12 +93,12 @@ const LoginPage = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-                placeholder="Enter your full name"
+                placeholder={t("auth.enterName")}
               />
             </div>
               <div>
                 <label htmlFor="phone" className="block text-md font-medium">
-                  Phone Number
+                  {t("auth.phoneNumber")}
                 </label>
                 <input
                   type="tel"
@@ -105,7 +107,7 @@ const LoginPage = () => {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-                  placeholder="Enter your phone number"
+                  placeholder={t("auth.enterPhone")}
                 />
               </div>
             </>
@@ -113,7 +115,7 @@ const LoginPage = () => {
 
           <div>
             <label htmlFor="email" className="block text-md font-medium">
-              Email
+              {t("auth.email")}
             </label>
             <input
               type="email"
@@ -122,12 +124,12 @@ const LoginPage = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-              placeholder="Enter your email"
+              placeholder={t("auth.enterEmail")}
             />
           </div>
           <div>
             <label htmlFor="password" className="block text-md font-medium">
-              Password
+              {t("auth.password")}
             </label>
             <div className="relative mt-2">
               <input
@@ -137,21 +139,21 @@ const LoginPage = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-2 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-                placeholder="Enter your password"
+                placeholder={t("auth.enterPassword")}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((current) => !current)}
                 className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-red-600"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                title={showPassword ? "Hide password" : "Show password"}
+                aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
+                title={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
           </div>
           <Button type="submit" className="button-31 w-full text-lg">
-            {isLogin ? "Login" : "Register"}
+            {isLogin ? t("auth.login") : t("auth.register")}
           </Button>
         </form>
         
@@ -162,7 +164,7 @@ const LoginPage = () => {
               to="/forgot-password" 
               className="text-red-600 hover:text-red-700 text-sm font-medium"
             >
-              Forgot your password?
+              {t("auth.forgotPassword")}
             </Link>
           </div>
         )}
@@ -171,22 +173,22 @@ const LoginPage = () => {
           <p>
             {isLogin ? (
               <>
-                Don't have an account?{" "}
+                {t("auth.noAccount")}{" "}
                 <span
                   className="text-red-600 cursor-pointer"
                   onClick={() => setIsLogin(false)}
                 >
-                  Register here
+                  {t("auth.registerHere")}
                 </span>
               </>
             ) : (
               <>
-                Already have an account?{" "}
+                {t("auth.hasAccount")}{" "}
                 <span
                   className="text-red-600 cursor-pointer"
                   onClick={() => setIsLogin(true)}
                 >
-                  Login here
+                  {t("auth.loginHere")}
                 </span>
               </>
             )}

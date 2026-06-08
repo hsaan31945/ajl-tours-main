@@ -6,6 +6,7 @@ import { BrowserRouter } from "react-router-dom";
 import AppContextProvider from "./context/AppContext.jsx";
 import { AdminProvider } from "./context/AdminContext";
 import { BookingProvider } from "./context/BookingContext";
+import { I18nProvider } from "./i18n";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -13,7 +14,9 @@ createRoot(document.getElementById("root")).render(
       <AppContextProvider>
         <AdminProvider>
           <BookingProvider>
-            <App />
+            <I18nProvider>
+              <App />
+            </I18nProvider>
           </BookingProvider>
         </AdminProvider>
       </AppContextProvider>

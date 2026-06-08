@@ -75,27 +75,27 @@ const UserDetails = () => {
     
     // Full name validation
     if (!fullName.trim()) {
-      newErrors.fullName = "Full name is required";
+      newErrors.fullName = t("auth.fullName") + " " + t("booking.isRequired");
     } else if (fullName.trim().length < 2) {
-      newErrors.fullName = "Full name must be at least 2 characters";
+      newErrors.fullName = t("booking.fullNameMin");
     }
     
     // Email validation
     if (!email.trim()) {
-      newErrors.email = "Email is required";
+      newErrors.email = t("auth.email") + " " + t("booking.isRequired");
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = "Please enter a valid email address";
+      newErrors.email = t("booking.emailAlert");
     }
     
     // Phone validation
     if (!phone.trim()) {
-      newErrors.phone = "Phone number is required";
+      newErrors.phone = t("auth.phoneNumber") + " " + t("booking.isRequired");
     } else if (!/^[+]?[0-9\s\-()]{8,}$/.test(phone)) {
       newErrors.phone = "Please enter a valid phone number";
     }
 
     if (!pickupAddress.trim()) {
-      newErrors.pickupAddress = "Pickup address is required";
+      newErrors.pickupAddress = t("booking.pickupAddressRequired");
     }
     
     console.log("Validation errors:", newErrors); // Debug log
@@ -119,7 +119,7 @@ const UserDetails = () => {
     console.log("Form validation result:", isValid); // Debug log
     
     if (!ticketsMeetMinimum) {
-      alert(`Minimum ${minTickets} tickets are required for this tour.`);
+      alert(t("booking.minimumTicketsAlert", { count: minTickets }));
       navigate("/flexibility");
       return false;
     }
@@ -167,7 +167,7 @@ const UserDetails = () => {
     } else {
       console.log("Form is invalid, not navigating"); // Debug log
       console.log("Current errors:", errors); // Debug log
-      alert("Please fill in all required fields correctly before proceeding.");
+      alert(t("booking.formInvalidAlert"));
       return false; // Explicitly return false
     }
     
@@ -214,11 +214,11 @@ const UserDetails = () => {
       <div className="flex flex-col md:flex-row gap-8 w-full max-w-5xl mx-auto">
         {/* Left: Personal Details Form */}
         <div className="flex-1 bg-white rounded-xl shadow p-6 mb-8 md:mb-0">
-          <div className="mb-4 text-lg font-bold">Enter your personal details</div>
-          <div className="mb-2 text-green-700 flex items-center gap-2"><Lock className="w-5 h-5" aria-hidden="true" /> Checkout is fast and secure</div>
+          <div className="mb-4 text-lg font-bold">{t("booking.personalDetails")}</div>
+          <div className="mb-2 text-green-700 flex items-center gap-2"><Lock className="w-5 h-5" aria-hidden="true" /> {t("booking.secureCheckout")}</div>
           <form className="flex flex-col gap-4 mt-4" onSubmit={handleSubmit}>
             <div>
-              <label className="block text-sm font-semibold mb-1">Full name*</label>
+              <label className="block text-sm font-semibold mb-1">{t("auth.fullName")}*</label>
               <input 
                 type="text" 
                 id="fullName"
@@ -227,12 +227,12 @@ const UserDetails = () => {
                 value={fullName} 
                 onChange={e => setFullName(e.target.value)} 
                 required
-                placeholder="Enter your full name"
+                placeholder={t("auth.enterName")}
               />
               {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
             </div>
             <div>
-              <label className="block text-sm font-semibold mb-1">Email*</label>
+              <label className="block text-sm font-semibold mb-1">{t("auth.email")}*</label>
               <input 
                 type="email" 
                 id="email"
@@ -241,12 +241,12 @@ const UserDetails = () => {
                 value={email} 
                 onChange={e => setEmail(e.target.value)} 
                 required
-                placeholder="Enter your email address"
+                placeholder={t("auth.enterEmail")}
               />
               {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
             </div>
             <div>
-              <label className="block text-sm font-semibold mb-1">Country*</label>
+              <label className="block text-sm font-semibold mb-1">{t("booking.country")}*</label>
               <select 
                 id="country"
                 name="country"
@@ -264,7 +264,7 @@ const UserDetails = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-semibold mb-1">Mobile phone number*</label>
+              <label className="block text-sm font-semibold mb-1">{t("auth.phoneNumber")}*</label>
               <input 
                 type="tel" 
                 id="phone"
@@ -273,12 +273,12 @@ const UserDetails = () => {
                 value={phone} 
                 onChange={e => setPhone(e.target.value)} 
                 required
-                placeholder="Enter your phone number"
+                placeholder={t("auth.enterPhone")}
               />
               {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
             </div>
             <div>
-              <label className="block text-sm font-semibold mb-1">Pickup address*</label>
+              <label className="block text-sm font-semibold mb-1">{t("booking.pickupAddress")}*</label>
               <input
                 type="text"
                 id="pickupAddress"
@@ -287,7 +287,7 @@ const UserDetails = () => {
                 value={pickupAddress}
                 onChange={e => setPickupAddress(e.target.value)}
                 required
-                placeholder="Enter your pickup address"
+                placeholder={t("booking.pickupPlaceholder")}
               />
               {errors.pickupAddress && <p className="text-red-500 text-sm mt-1">{errors.pickupAddress}</p>}
             </div>
@@ -301,10 +301,10 @@ const UserDetails = () => {
               }`}
               disabled={isSubmitting || !fullName.trim() || !email.trim() || !phone.trim() || !pickupAddress.trim()}
             >
-              {isSubmitting ? "Validating..." : "Go to payment"}
+              {isSubmitting ? t("booking.validating") : t("booking.goToPayment")}
             </button>
           </form>
-          <div className="mt-6 text-green-700 flex items-center gap-2"><CheckCircle className="w-5 h-5" aria-hidden="true" /> Free cancellation <span className="text-gray-700">Until 10:00 AM on August 11</span></div>
+          <div className="mt-6 text-green-700 flex items-center gap-2"><CheckCircle className="w-5 h-5" aria-hidden="true" /> {t("common.freeCancellation")} <span className="text-gray-700">{t("booking.freeCancellationUntil")}</span></div>
         </div>
 
         {/* Right: Order Summary */}
@@ -318,27 +318,27 @@ const UserDetails = () => {
             </div>
           </div>
           <div className="border-b pb-2 mb-2">
-            <div className="text-sm">Language: English</div>
-            <div className="text-sm">{date || "Date not selected"}</div>
-            <div className="text-sm">{currentTickets} adult{currentTickets > 1 ? "s" : ""}</div>
+            <div className="text-sm">{t("booking.languageEnglish")}</div>
+            <div className="text-sm">{date || t("common.dateNotSelected")}</div>
+            <div className="text-sm">{currentTickets} {currentTickets > 1 ? t("common.adults") : t("common.adult")}</div>
             {!ticketsMeetMinimum && (
-              <div className="text-sm text-red-600 font-semibold">Minimum {minTickets} adults required</div>
+              <div className="text-sm text-red-600 font-semibold">{t("booking.minimumAdults", { count: minTickets })}</div>
             )}
             {/* Removed Change date or participants button */}
           </div>
           <div className="flex flex-col gap-1 text-sm">
-            <span className="text-green-700">Free cancellation</span>
-            <span className="text-green-700">Great value</span>
+            <span className="text-green-700">{t("common.freeCancellation")}</span>
+            <span className="text-green-700">{t("common.greatValue")}</span>
           </div>
           <div className="flex flex-col gap-2 mt-2">
             <input type="text" placeholder="Enter promo, credit, or gift code" className="border rounded px-3 py-2 text-sm" />
           </div>
           <OrderSummaryBreakdown pricing={pricing} travelers={currentTickets} />
           <div className="flex justify-between items-center mt-4 font-bold text-lg">
-            <span>Total</span>
+            <span>{t("common.total")}</span>
             <span>{formatPrice(pricing.total)}</span>
           </div>
-          <div className="text-xs text-gray-500 text-right">All taxes and fees included</div>
+          <div className="text-xs text-gray-500 text-right">{t("common.allTaxesIncluded")}</div>
         </div>
       </div>
     </div>
