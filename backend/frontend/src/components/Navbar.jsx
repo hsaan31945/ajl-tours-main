@@ -1,6 +1,6 @@
 import React, { useState, useContext, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, Home, Heart, ShoppingCart, History as HistoryIcon, MapPin, Globe, BookOpen, Info, ChevronDown } from "lucide-react";
+import { Menu, X, Heart, ShoppingCart, History as HistoryIcon, MapPin, Globe, BookOpen, Info, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AppContext } from "../context/AppContext.jsx";
 import { assets } from "../assets/assets.js";
@@ -19,6 +19,7 @@ const Navbar = () => {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [destinationsOpen, setDestinationsOpen] = useState(false);
+  const [mobileDestinationsOpen, setMobileDestinationsOpen] = useState(true);
   const location = useLocation();
   const isDestinationsActive =
     destinationsOpen ||
@@ -505,28 +506,47 @@ const Navbar = () => {
               {/* Drawer Content */}
               <div className="flex-1 overflow-y-auto">
                 <div className="py-2">
-                  <DrawerLink
-                    to="/"
-                    icon={<Home className="w-5 h-5" />}
-                    label={t("nav.home")}
-                    onClick={() => setMenuOpen(false)}
+                  <DrawerDisclosure
+                    icon={<MapPin className="w-5 h-5" />}
+                    label={t("nav.destinations")}
+                    open={mobileDestinationsOpen}
+                    onClick={() => setMobileDestinationsOpen((current) => !current)}
                   />
+                  <AnimatePresence initial={false}>
+                    {mobileDestinationsOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.18 }}
+                        className="overflow-hidden bg-orange-50/40"
+                      >
+                        <DrawerLink
+                          to="/switzerland"
+                          icon={<MapPin className="w-4 h-4" />}
+                          label={t("nav.switzerland")}
+                          onClick={() => setMenuOpen(false)}
+                          nested
+                        />
+                        <DrawerLink
+                          to="/srilanka"
+                          icon={<MapPin className="w-4 h-4" />}
+                          label={t("nav.srilanka")}
+                          onClick={() => setMenuOpen(false)}
+                          nested
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
-                  <h3 className="px-6 pt-5 pb-2 text-xs font-bold uppercase tracking-wide text-gray-400">
-                    {t("nav.destinations")}
-                  </h3>
-                  <DrawerLink
-                    to="/switzerland"
-                    icon={<MapPin className="w-5 h-5" />}
-                    label={t("nav.switzerland")}
-                    onClick={() => setMenuOpen(false)}
-                  />
-                  <DrawerLink
-                    to="/srilanka"
-                    icon={<MapPin className="w-5 h-5" />}
-                    label={t("nav.srilanka")}
-                    onClick={() => setMenuOpen(false)}
-                  />
+                  <div className="border-b border-gray-100">
+                    <div className="px-6 py-4">
+                      <LanguageSelector className="w-full justify-between rounded-none border-0 bg-transparent px-0 py-0 text-gray-700 hover:border-transparent hover:text-gray-700" />
+                    </div>
+                    <div className="px-6 py-4">
+                      <CurrencySelector className="w-full justify-between rounded-none border-0 bg-transparent px-0 py-0 text-gray-700 hover:border-transparent hover:text-gray-700" />
+                    </div>
+                  </div>
 
                   <h3 className="px-6 pt-5 pb-2 text-xs font-bold uppercase tracking-wide text-gray-400">
                     {t("nav.menu")}
@@ -608,15 +628,6 @@ const Navbar = () => {
                 }
                 </div>
 
-                {/* Additional Sections matching reference */}
-                <div className="mt-4 border-t border-gray-100 pt-2">
-                   <div className="px-6 py-4 flex items-center justify-between text-gray-700 hover:bg-gray-50 transition-colors">
-                     <LanguageSelector className="w-full justify-between rounded-lg border-0 px-0 py-0 hover:text-gray-700" />
-                   </div>
-                   <div className="px-6 py-4 flex items-center justify-between text-gray-700 hover:bg-gray-50 transition-colors">
-                     <CurrencySelector className="w-full justify-between rounded-lg border-0 px-0 py-0 hover:text-gray-700" />
-                   </div>
-                </div>
               </div>
             </motion.div>
           </>
@@ -627,19 +638,38 @@ const Navbar = () => {
 };
 
 // Helper component for drawer links matching the reference style
-const DrawerLink = ({ to, icon, label, onClick }) => {
+const DrawerLink = ({ to, icon, label, onClick, nested = false }) => {
   return (
     <Link
       to={to}
       onClick={onClick}
-      className="flex items-center justify-between px-6 py-4 border-b border-gray-100 text-[#ff6b35] hover:bg-gray-50 transition-colors"
+      className={`flex items-center justify-between border-b border-gray-100 text-[#ff6b35] transition-colors hover:bg-gray-50 ${
+        nested ? "px-10 py-3.5" : "px-6 py-4"
+      }`}
     >
       <div className="flex items-center gap-3">
         {icon}
-        <span className="font-medium text-lg">{label}</span>
+        <span className={nested ? "text-base font-semibold" : "text-lg font-medium"}>{label}</span>
       </div>
       <ChevronRight className="w-5 h-5 text-gray-400" />
     </Link>
+  );
+};
+
+const DrawerDisclosure = ({ icon, label, open, onClick }) => {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-center justify-between border-b border-gray-100 px-6 py-4 text-[#ff6b35] transition-colors hover:bg-gray-50"
+      aria-expanded={open}
+    >
+      <div className="flex items-center gap-3">
+        {icon}
+        <span className="text-lg font-medium">{label}</span>
+      </div>
+      <ChevronDown className={`h-5 w-5 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
+    </button>
   );
 };
 
