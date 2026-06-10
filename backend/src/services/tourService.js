@@ -195,8 +195,15 @@ class TourService {
     return null;
   }
 
+  clearListCache() {
+    clearTourListCache();
+  }
+
   async getSwitzerlandDivision() {
-    let division = await Division.findOne({ name: 'Switzerland' });
+    let division = await Division.findOne({
+      name: { $regex: /^Switzerland$/i },
+      isActive: { $ne: false },
+    });
     if (!division) {
       division = await Division.create({
         name: 'Switzerland',
@@ -229,6 +236,27 @@ class TourService {
     if (!matched) return null;
 
     return Division.findById(matched._id);
+  }
+
+  async resolveDivisionIds(divisionInput) {
+    const value = getDivisionInputValue(divisionInput);
+    if (!value) return [];
+
+    if (mongoose.Types.ObjectId.isValid(String(value))) {
+      const division = await Division.findById(value).select('_id').lean();
+      return division ? [division._id] : [];
+    }
+
+    const requestedKey = normalizeDivisionKey(value);
+    if (!requestedKey) return [];
+
+    const divisions = await Division.find({})
+      .select('_id name')
+      .lean();
+
+    return divisions
+      .filter((division) => normalizeDivisionKey(division.name) === requestedKey)
+      .map((division) => division._id);
   }
 
   normalizeTourUpdatePayload(updateData = {}, fallbackId = null, withDefaults = false) {
@@ -419,10 +447,10 @@ class TourService {
     const match = { isActive: { $ne: false } };
 
     if (division) {
-      const divisionDoc = await this.resolveDivision(division);
+      const divisionIds = await this.resolveDivisionIds(division);
 
-      if (divisionDoc) {
-        match.division = divisionDoc._id;
+      if (divisionIds.length) {
+        match.division = { $in: divisionIds };
       } else {
         listCache.set(cacheKey, { data: [], expiresAt: Date.now() + LIST_CACHE_TTL_MS });
         return [];

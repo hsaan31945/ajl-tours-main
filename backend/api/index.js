@@ -4,13 +4,14 @@
  */
 
 // Wrap all imports in try-catch to identify which module is failing
-let connectDB, setCORSHeaders, errorHandler, tourController, bookingController, authController, emailController, customerController, Division, Tour, Booking, User, getPasswordPolicyMessage;
+let connectDB, setCORSHeaders, errorHandler, tourController, tourService, bookingController, authController, emailController, customerController, Division, Tour, Booking, User, getPasswordPolicyMessage;
 
 try {
   connectDB = require('../src/config/database').connectDB;
   setCORSHeaders = require('../src/middleware/cors').setCORSHeaders;
   errorHandler = require('../src/middleware/errorHandler').errorHandler;
   tourController = require('../src/controllers/tourController');
+  tourService = require('../src/services/tourService');
   bookingController = require('../src/controllers/bookingController');
   authController = require('../src/controllers/authController');
   emailController = require('../src/controllers/emailController');
@@ -238,6 +239,7 @@ module.exports = async (req, res) => {
             bannerImage: bannerImage || banner_image || '',
           });
           await division.save();
+          tourService.clearListCache();
           res.status(201).json({
             id: division._id.toString(),
             _id: division._id.toString(),
@@ -274,6 +276,7 @@ module.exports = async (req, res) => {
           if (!division) {
             return res.status(404).json({ message: 'Division not found' });
           }
+          tourService.clearListCache();
           res.json({
             id: division._id.toString(),
             _id: division._id.toString(),
@@ -289,6 +292,12 @@ module.exports = async (req, res) => {
           if (!expected || !header || header.trim() !== expected.trim()) {
             return res.status(401).json({ message: 'Invalid or missing admin passcode' });
           }
+          const linkedTours = await Tour.countDocuments({ division: divisionId });
+          if (linkedTours > 0) {
+            return res.status(409).json({
+              message: `This division is assigned to ${linkedTours} tour${linkedTours === 1 ? '' : 's'}. Move or delete those tours before removing the division.`
+            });
+          }
           const division = await Division.findByIdAndUpdate(
             divisionId,
             { isActive: false },
@@ -297,6 +306,7 @@ module.exports = async (req, res) => {
           if (!division) {
             return res.status(404).json({ message: 'Division not found' });
           }
+          tourService.clearListCache();
           res.json({
             id: division._id.toString(),
             _id: division._id.toString(),

@@ -274,6 +274,7 @@ module.exports = async (req, res) => {
           bannerImage: bannerImage || banner_image || '',
         });
         await division.save();
+        tourService.clearListCache();
         return res.status(201).json({
           id: division._id.toString(),
           _id: division._id.toString(),
@@ -305,6 +306,7 @@ module.exports = async (req, res) => {
         if (!division) {
           return res.status(404).json({ message: 'Division not found' });
         }
+        tourService.clearListCache();
         return res.json({
           id: division._id.toString(),
           _id: division._id.toString(),
@@ -320,6 +322,12 @@ module.exports = async (req, res) => {
         if (!isValidAdminPasscode(header)) {
           return res.status(401).json({ message: 'Invalid or missing admin passcode' });
         }
+        const linkedTours = await Tour.countDocuments({ division: divisionId });
+        if (linkedTours > 0) {
+          return res.status(409).json({
+            message: `This division is assigned to ${linkedTours} tour${linkedTours === 1 ? '' : 's'}. Move or delete those tours before removing the division.`
+          });
+        }
         const division = await Division.findByIdAndUpdate(
           divisionId,
           { isActive: false },
@@ -328,6 +336,7 @@ module.exports = async (req, res) => {
         if (!division) {
           return res.status(404).json({ message: 'Division not found' });
         }
+        tourService.clearListCache();
         return res.json({
           id: division._id.toString(),
           _id: division._id.toString(),
