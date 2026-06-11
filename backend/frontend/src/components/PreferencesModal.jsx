@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Check, CircleDollarSign, Globe, X } from "lucide-react";
 import { useCurrency } from "../context/CurrencyContext";
 import { useI18n } from "../i18n";
@@ -24,10 +24,12 @@ const CurrencyLabel = ({ item }) => (
   </>
 );
 
-const PreferencesModal = ({ initialTab = "currency", onClose }) => {
+const PreferencesModal = ({ mode = "currency", onClose }) => {
   const { currency, setCurrency, SUPPORTED_CURRENCIES } = useCurrency();
   const { language, setLanguage, supportedLanguages, t } = useI18n();
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const isCurrencyMode = mode === "currency";
+  const title = isCurrencyMode ? "Currency" : t("language.label");
+  const Icon = isCurrencyMode ? CircleDollarSign : Globe;
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -63,13 +65,13 @@ const PreferencesModal = ({ initialTab = "currency", onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 z-[120] flex items-start justify-center overflow-y-auto bg-black/55 px-4 py-16 sm:py-24"
+      className="fixed inset-0 z-[120] flex items-center justify-center overflow-hidden bg-black/55 px-4 py-8"
       role="dialog"
       aria-modal="true"
       onMouseDown={onClose}
     >
       <div
-        className="relative w-full max-w-3xl rounded-xl bg-white shadow-2xl"
+        className="relative flex max-h-[calc(100vh-4rem)] w-full max-w-3xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl"
         onMouseDown={(event) => event.stopPropagation()}
       >
         <button
@@ -81,37 +83,17 @@ const PreferencesModal = ({ initialTab = "currency", onClose }) => {
           <X className="h-6 w-6" aria-hidden="true" />
         </button>
 
-        <div className="px-6 pt-14 sm:px-7">
+        <div className="shrink-0 px-6 pt-14 sm:px-7">
           <div className="flex border-b border-slate-200">
-            <button
-              type="button"
-              onClick={() => setActiveTab("language")}
-              className={`flex min-w-[9rem] items-center justify-center gap-2 border-b-4 px-4 pb-4 text-sm font-bold transition-colors ${
-                activeTab === "language"
-                  ? "border-blue-600 text-slate-900"
-                  : "border-transparent text-slate-500 hover:text-slate-900"
-              }`}
-            >
-              <Globe className="h-5 w-5" aria-hidden="true" />
-              {t("language.label")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("currency")}
-              className={`flex min-w-[9rem] items-center justify-center gap-2 border-b-4 px-4 pb-4 text-sm font-bold transition-colors ${
-                activeTab === "currency"
-                  ? "border-blue-600 text-slate-900"
-                  : "border-transparent text-slate-500 hover:text-slate-900"
-              }`}
-            >
-              <CircleDollarSign className="h-5 w-5" aria-hidden="true" />
-              Currency
-            </button>
+            <div className="flex min-w-[9rem] items-center justify-center gap-2 border-b-4 border-blue-600 px-4 pb-4 text-sm font-bold text-slate-900">
+              <Icon className="h-5 w-5" aria-hidden="true" />
+              {title}
+            </div>
           </div>
         </div>
 
-        {activeTab === "currency" ? (
-          <div className="px-6 pb-8 pt-3 sm:px-7">
+        {isCurrencyMode ? (
+          <div className="min-h-0 overflow-y-auto px-6 pb-8 pt-3 sm:px-7">
             <div className="grid grid-cols-1 gap-x-12 sm:grid-cols-3">
               {featuredCurrencies.map((item) => (
                 <PreferenceItem
@@ -140,7 +122,7 @@ const PreferencesModal = ({ initialTab = "currency", onClose }) => {
             </div>
           </div>
         ) : (
-          <div className="px-6 pb-8 pt-3 sm:px-7">
+          <div className="min-h-0 overflow-y-auto px-6 pb-8 pt-3 sm:px-7">
             <h3 className="border-b border-slate-200 pb-4 text-sm font-bold text-slate-900">
               All languages
             </h3>

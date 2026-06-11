@@ -13,7 +13,7 @@ const LanguageSelector = ({ compact = false, className = "" }) => {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={`relative inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:border-orange-300 hover:text-orange-600 ${className}`}
+        className={`relative inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-full border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:border-orange-300 hover:text-orange-600 ${className}`}
         title={t("language.label")}
         aria-label={t("language.label")}
       >
@@ -25,7 +25,7 @@ const LanguageSelector = ({ compact = false, className = "" }) => {
         <ChevronDown className="pointer-events-none absolute right-2 h-4 w-4 text-gray-400" aria-hidden="true" />
       </button>
 
-      {open && <PreferencesModal initialTab="language" onClose={() => setOpen(false)} />}
+      {open && <PreferencesModal mode="language" onClose={() => setOpen(false)} />}
     </>
   );
 };
