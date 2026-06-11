@@ -99,6 +99,23 @@ const tourSchema = new mongoose.Schema({
     type: String,
     trim: true
   }],
+  thumbnail: {
+    type: String,
+    trim: true
+  },
+  cardImage: {
+    type: String,
+    trim: true
+  },
+  coverImage: {
+    type: mongoose.Schema.Types.Mixed
+  },
+  gallery: [{
+    type: mongoose.Schema.Types.Mixed
+  }],
+  media: [{
+    type: mongoose.Schema.Types.Mixed
+  }],
   isActive: {
     type: Boolean,
     default: true

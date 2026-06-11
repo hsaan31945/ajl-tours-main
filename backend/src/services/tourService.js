@@ -6,6 +6,7 @@ const Tour = require('../../models/Tour');
 const Division = require('../../models/Division');
 const User = require('../../models/User');
 const { getTourId, normalizeTourId, isValidObjectId } = require('../utils/tourId');
+const { getTourThumbnail, getTourImageDebugPayload, stripDataImages } = require('../utils/tourImages');
 const mongoose = require('mongoose');
 
 const LIST_CACHE_TTL_MS = 2 * 60 * 1000;
@@ -50,12 +51,17 @@ const normalizeImageValue = (image) => {
   if (!image || typeof image !== 'string') return null;
   const value = image.trim();
   if (!value) return null;
-  return /^(https?:\/\/|\/|\.\/|data:image\/(webp|avif);base64,)/i.test(value) ? value : null;
+  return /^(https?:\/\/|\/|\.\/)/i.test(value) ? value : null;
 };
 
 const normalizeImages = (images) => {
   const list = Array.isArray(images) ? images : images ? [images] : [];
   return list.map(normalizeImageValue).filter(Boolean);
+};
+
+const normalizeOptionalImageValue = (image) => {
+  if (image && typeof image === 'object') return image;
+  return normalizeImageValue(image);
 };
 
 const cleanTourName = (value) => (
@@ -335,6 +341,19 @@ class TourService {
     }
     if (payload.datePrices !== undefined) payload.datePrices = normalizeDatePrices(payload.datePrices);
     if (payload.images !== undefined) payload.images = normalizeImages(payload.images);
+    if (payload.thumbnail !== undefined) payload.thumbnail = normalizeImageValue(payload.thumbnail);
+    if (payload.cardImage !== undefined) payload.cardImage = normalizeImageValue(payload.cardImage);
+    if (payload.coverImage !== undefined) payload.coverImage = normalizeOptionalImageValue(payload.coverImage);
+    if (payload.gallery !== undefined) {
+      payload.gallery = Array.isArray(payload.gallery)
+        ? payload.gallery.map(normalizeOptionalImageValue).filter(Boolean)
+        : [];
+    }
+    if (payload.media !== undefined) {
+      payload.media = Array.isArray(payload.media)
+        ? payload.media.map(normalizeOptionalImageValue).filter(Boolean)
+        : [];
+    }
     if (payload.highlights !== undefined) payload.highlights = cleanTextArray(payload.highlights);
     if (payload.included !== undefined) payload.included = cleanTextArray(payload.included);
     if (payload.excluded !== undefined) payload.excluded = cleanTextArray(payload.excluded);
@@ -391,54 +410,25 @@ class TourService {
         ? tour.division.name
         : null);
 
-    const thumbnail = this.pickListImage([
-      tour.thumbnail,
-      tour.photo,
-      tour.metadata?.thumbnail,
-      tour.metadata?.cardImage,
-      ...(Array.isArray(tour.images) ? tour.images : []),
-    ]);
-    const imageUrl = thumbnail || (Number(tour.imageCount || 0) > 0 ? this.getImageEndpoint(id) : '');
-
-    const description =
-      typeof tour.description === 'string'
-        ? tour.description.slice(0, 280)
-        : '';
-
     const reviewSummary = getReviewSummary(tour);
     const legacyReviewCount = Number(tour.metadata?.reviews);
     const legacyRating = Number(tour.metadata?.rating);
-    const groupDiscountFields = getGroupDiscountFields(tour);
+    const thumbnail = getTourThumbnail(tour);
 
     return {
       id,
       _id: id,
-        name: tour.name,
-        description,
-        bookingSummary: tour.bookingSummary || '',
-        price: Number(tour.price) || 0,
-      discountEnabled: Boolean(tour.discountEnabled || getNormalizedDiscountPrice(tour) !== null),
-      discountPrice: getNormalizedDiscountPrice(tour),
-      ...groupDiscountFields,
+      slug: this.buildSlug(tour, id),
+      name: tour.name,
+      price: Number(tour.price) || 0,
       currency: tour.currency || 'CHF',
-      thumbnail: imageUrl,
-      images: imageUrl ? [imageUrl] : [],
+      duration: tour.duration || '',
       startLocation: tour.startLocation,
-      endLocation: tour.endLocation,
-      duration: tour.duration,
-      tourType: tour.tourType,
-      division: tour.division,
       divisionName,
       rating: reviewSummary.reviewAverage || (Number.isFinite(legacyRating) ? legacyRating : 0),
-      avgRating: reviewSummary.reviewAverage || (Number.isFinite(legacyRating) ? legacyRating : 0),
-      reviews: reviewSummary.reviewCount || (Number.isFinite(legacyReviewCount) ? legacyReviewCount : 0),
       reviewCount: reviewSummary.reviewCount || (Number.isFinite(legacyReviewCount) ? legacyReviewCount : 0),
-      reviewAverage: reviewSummary.reviewAverage || (Number.isFinite(legacyRating) ? legacyRating : 0),
-      maxTotalTickets: tour.maxTotalTickets,
+      thumbnail,
       isActive: tour.isActive !== false,
-      metadata: tour.metadata || {},
-      createdAt: tour.createdAt,
-      updatedAt: tour.updatedAt,
     };
   }
 
@@ -449,15 +439,8 @@ class TourService {
       (typeof tour.division === 'object' && tour.division?.name
         ? tour.division.name
         : null);
-    const thumbnail = this.pickListImage([
-      tour.thumbnail,
-      tour.photo,
-      tour.metadata?.thumbnail,
-      tour.metadata?.cardImage,
-      ...(Array.isArray(tour.images) ? tour.images : []),
-    ]);
-    const imageUrl = thumbnail || (Number(tour.imageCount || 0) > 0 ? this.getImageEndpoint(id) : '');
     const legacyRating = Number(tour.metadata?.rating);
+    const thumbnail = getTourThumbnail(tour);
 
     return {
       _id: id,
@@ -467,10 +450,12 @@ class TourService {
       name: tour.name || '',
       location: tour.startLocation || divisionName || '',
       price: Number(tour.price) || 0,
-      thumbnail: imageUrl,
-      images: imageUrl ? [imageUrl] : [],
+      currency: tour.currency || 'CHF',
+      duration: tour.duration || '',
+      startLocation: tour.startLocation || '',
+      thumbnail,
       rating: Number.isFinite(legacyRating) ? legacyRating : 0,
-      reviews: Number(tour.metadata?.reviews) || 0,
+      reviewCount: Number(tour.metadata?.reviews) || 0,
       divisionName,
       isActive: tour.isActive !== false,
     };
@@ -526,6 +511,7 @@ class TourService {
       slug: this.buildSlug(tour, id),
       name: tour.name,
       title: tour.name,
+      thumbnail: getTourThumbnail(tour),
       startLocation: tour.startLocation,
       location: tour.startLocation,
       divisionName: tour.divisionName,
@@ -595,6 +581,7 @@ class TourService {
           name: 1,
           description: 1,
           price: 1,
+          currency: 1,
           discountEnabled: 1,
           discountPrice: 1,
           groupDiscountEnabled: 1,
@@ -612,6 +599,11 @@ class TourService {
           maxTotalTickets: 1,
           isActive: 1,
           metadata: 1,
+          thumbnail: 1,
+          cardImage: 1,
+          coverImage: 1,
+          gallery: 1,
+          media: 1,
           imageCount: 1,
           createdAt: 1,
           updatedAt: 1,
@@ -684,6 +676,9 @@ class TourService {
         .lean();
       
       const normalizedTours = tours.map(tour => {
+        if (process.env.DEBUG_TOUR_IMAGES === 'true') {
+          console.log('Tour image debug', getTourImageDebugPayload(tour));
+        }
         if (!tour.id && tour._id) {
           tour.id = tour._id.toString();
         }
@@ -692,7 +687,8 @@ class TourService {
         tour.included = Array.isArray(tour.included) ? tour.included : [];
         tour.excluded = Array.isArray(tour.excluded) ? tour.excluded : [];
         tour.itinerary = Array.isArray(tour.itinerary) ? tour.itinerary : [];
-        tour.images = Array.isArray(tour.images) ? tour.images : [];
+        tour.thumbnail = getTourThumbnail(tour);
+        tour.images = stripDataImages(tour.images);
         tour.pickupLocations = Array.isArray(tour.pickupLocations) ? tour.pickupLocations : [];
         // Ensure divisionName is set correctly
         if (tour.division) {
@@ -742,7 +738,11 @@ class TourService {
       tour.included = Array.isArray(tour.included) ? tour.included : [];
       tour.excluded = Array.isArray(tour.excluded) ? tour.excluded : [];
       tour.itinerary = Array.isArray(tour.itinerary) ? tour.itinerary : [];
-      tour.images = Array.isArray(tour.images) ? tour.images : [];
+      if (process.env.DEBUG_TOUR_IMAGES === 'true') {
+        console.log('Tour image debug', getTourImageDebugPayload(tour));
+      }
+      tour.thumbnail = getTourThumbnail(tour);
+      tour.images = stripDataImages(tour.images);
       tour.pickupLocations = Array.isArray(tour.pickupLocations) ? tour.pickupLocations : [];
 
       return applyReviewSummary(tour);
@@ -766,7 +766,11 @@ class TourService {
     tour.included = Array.isArray(tour.included) ? tour.included : [];
     tour.excluded = Array.isArray(tour.excluded) ? tour.excluded : [];
     tour.itinerary = Array.isArray(tour.itinerary) ? tour.itinerary : [];
-    tour.images = Array.isArray(tour.images) ? tour.images : [];
+    if (process.env.DEBUG_TOUR_IMAGES === 'true') {
+      console.log('Tour image debug', getTourImageDebugPayload(tour));
+    }
+    tour.thumbnail = getTourThumbnail(tour);
+    tour.images = stripDataImages(tour.images);
     tour.pickupLocations = Array.isArray(tour.pickupLocations) ? tour.pickupLocations : [];
     
     return applyReviewSummary(tour);
@@ -888,6 +892,15 @@ class TourService {
         excluded: cleanTextArray(tourData.excluded),
         itinerary: normalizeItinerary(tourData.itinerary),
         images: normalizeImages(tourData.images),
+        thumbnail: normalizeImageValue(tourData.thumbnail),
+        cardImage: normalizeImageValue(tourData.cardImage),
+        coverImage: normalizeOptionalImageValue(tourData.coverImage),
+        gallery: Array.isArray(tourData.gallery)
+          ? tourData.gallery.map(normalizeOptionalImageValue).filter(Boolean)
+          : [],
+        media: Array.isArray(tourData.media)
+          ? tourData.media.map(normalizeOptionalImageValue).filter(Boolean)
+          : [],
         pickupLocations: Array.isArray(tourData.pickupLocations) ? tourData.pickupLocations : [],
         // Ensure dates are Date objects
         startDate: tourData.startDate ? new Date(tourData.startDate) : new Date(),

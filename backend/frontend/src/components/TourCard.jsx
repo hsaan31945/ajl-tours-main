@@ -10,6 +10,7 @@ import { apiUrl } from "../utils/api";
 import { clearToursCache } from "../services/toursApi";
 import { cleanDisplayName } from "../utils/textFormatting";
 import { getDiscountPrice } from "../utils/bookingPricing";
+import { getTourCardImage, getTourFallbackImage, getTourImageDebugPayload } from "../utils/tourImages";
 import { useI18n } from "../i18n";
 
 const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
@@ -19,6 +20,7 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
   const { isAdmin, passcodeHeader } = useAdmin();
   const navigate = useNavigate();
   const [imageFailed, setImageFailed] = useState(false);
+  const [fallbackFailed, setFallbackFailed] = useState(false);
   const [localFavorite, setLocalFavorite] = useState(false);
 
   const tourId = getTourId(tour);
@@ -44,7 +46,7 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
     _id: String(tourId),
     title: tour.name || tour.title,
     name: tour.name || tour.title,
-    photo: tour.images?.[0] || tour.photo,
+    photo: getTourCardImage(tour),
     price: tour.price,
     discountEnabled: Boolean(tour.discountEnabled),
     discountPrice: tour.discountPrice ?? null,
@@ -53,7 +55,7 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
     avgRating: tour.rating || tour.avgRating,
     rating: tour.rating || tour.avgRating,
     reviews: tour.reviews,
-    images: tour.images || [],
+    images: getTourCardImage(tour) ? [getTourCardImage(tour)] : [],
     address: tour.address || tour.startLocation,
     startLocation: tour.startLocation,
     endLocation: tour.endLocation,
@@ -149,11 +151,11 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
     }
   };
 
-  const displayImage =
-    tour.thumbnail ||
-    (Array.isArray(tour.images) && tour.images.find((img) => img && String(img).trim())) ||
-    tour.photo ||
-    null;
+  const primaryImage = getTourCardImage(tour);
+  const fallbackImage = getTourFallbackImage(tour);
+  const displayImage = imageFailed
+    ? (fallbackFailed ? null : fallbackImage)
+    : (primaryImage || fallbackImage);
   const ratingValue = Number(tour.rating || tour.avgRating || 0);
   const reviewsValue = Number(tour.reviews || 0);
   const originalPrice = Number(tour.price || 0);
@@ -184,7 +186,14 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
 
   useEffect(() => {
     setImageFailed(false);
-  }, [displayImage]);
+    setFallbackFailed(false);
+  }, [primaryImage, fallbackImage]);
+
+  useEffect(() => {
+    if (import.meta.env.VITE_DEBUG_TOUR_IMAGES === "true") {
+      console.log("Tour card image debug:", getTourImageDebugPayload(tour));
+    }
+  }, [tour]);
 
   useEffect(() => {
     if (!tourId) {
@@ -226,7 +235,13 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
           decoding="async"
           width="800"
           height="600"
-          onError={() => setImageFailed(true)}
+          onError={() => {
+            if (displayImage === fallbackImage) {
+              setFallbackFailed(true);
+            } else {
+              setImageFailed(true);
+            }
+          }}
         />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center bg-white text-gray-500 border-b border-gray-100">

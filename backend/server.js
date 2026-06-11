@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const config = require('./config');
 const { connectDB } = require('./config/database');
+const { perfLogger } = require('./src/middleware/perfLogger');
 const stripe = require('stripe')(config.stripe.secretKey);
 
 // Import Mongoose models
@@ -33,6 +34,7 @@ app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
   next();
 });
+app.use(perfLogger);
 
 // Make models available to routes
 app.locals.models = {

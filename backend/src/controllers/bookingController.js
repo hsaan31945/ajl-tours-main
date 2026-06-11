@@ -7,6 +7,7 @@ const { AppError } = require('../middleware/errorHandler');
 class BookingController {
   async getAllBookings(req, res, next) {
     try {
+      res.setHeader('Cache-Control', 'no-store');
       const filters = {
         email: req.query.email,
         tourId: req.query.tourId
@@ -24,6 +25,7 @@ class BookingController {
 
   async getBookingById(req, res, next) {
     try {
+      res.setHeader('Cache-Control', 'no-store');
       const { id } = req.params;
       const booking = await bookingService.getBookingById(id);
       res.json({
@@ -108,6 +110,5 @@ class BookingController {
 }
 
 module.exports = new BookingController();
-
 
 

@@ -4,7 +4,7 @@
  */
 
 // Wrap all imports in try-catch to identify which module is failing
-let connectDB, setCORSHeaders, errorHandler, tourController, tourService, bookingController, authController, emailController, customerController, Division, Tour, Booking, User, getPasswordPolicyMessage;
+let connectDB, setCORSHeaders, errorHandler, tourController, tourService, bookingController, authController, emailController, customerController, Division, Tour, Booking, User, getPasswordPolicyMessage, attachPerfLogger;
 
 try {
   connectDB = require('../src/config/database').connectDB;
@@ -17,6 +17,7 @@ try {
   emailController = require('../src/controllers/emailController');
   customerController = require('../src/controllers/customerController');
   getPasswordPolicyMessage = require('../src/utils/passwordPolicy').getPasswordPolicyMessage;
+  attachPerfLogger = require('../src/middleware/perfLogger').attachPerfLogger;
   Division = require('../models/Division');
   Tour = require('../models/Tour');
   Booking = require('../models/Booking');
@@ -37,6 +38,7 @@ module.exports = async (req, res) => {
   // Set CORS headers first
   try {
     setCORSHeaders(req, res);
+    attachPerfLogger(req, res);
   } catch (e) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
