@@ -188,11 +188,20 @@ class TourService {
       if (!image || typeof image !== 'string') continue;
       const value = image.trim();
       if (!value) continue;
-      if (/^(https?:\/\/|\/|\.\/|data:image\/(webp|avif);base64,)/i.test(value)) {
+      if (/^(https?:\/\/|\/|\.\/)/i.test(value)) {
         return value;
       }
     }
     return null;
+  }
+
+  buildSlug(tour = {}, id = '') {
+    const raw = tour.slug || tour.metadata?.slug || tour.metadata?.staticId || tour.name || id;
+    return String(raw || '')
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || String(id || '');
   }
 
   clearListCache() {
@@ -411,17 +420,51 @@ class TourService {
     };
   }
 
+  formatSummaryTour(tour) {
+    const id = tour.id || (tour._id ? tour._id.toString() : null);
+    const divisionName =
+      tour.divisionName ||
+      (typeof tour.division === 'object' && tour.division?.name
+        ? tour.division.name
+        : null);
+    const thumbnail = this.pickListImage([
+      tour.thumbnail,
+      tour.photo,
+      tour.metadata?.thumbnail,
+      tour.metadata?.cardImage,
+      ...(Array.isArray(tour.images) ? tour.images : []),
+    ]);
+    const legacyRating = Number(tour.metadata?.rating);
+
+    return {
+      _id: id,
+      id,
+      slug: this.buildSlug(tour, id),
+      title: tour.name || '',
+      name: tour.name || '',
+      location: tour.startLocation || divisionName || '',
+      price: Number(tour.price) || 0,
+      thumbnail: thumbnail || '',
+      images: thumbnail ? [thumbnail] : [],
+      rating: Number.isFinite(legacyRating) ? legacyRating : 0,
+      reviews: Number(tour.metadata?.reviews) || 0,
+      divisionName,
+      isActive: tour.isActive !== false,
+    };
+  }
+
   formatSearchTour(tour) {
     const id = tour.id || (tour._id ? tour._id.toString() : null);
     return {
       id,
       _id: id,
+      slug: this.buildSlug(tour, id),
       name: tour.name,
+      title: tour.name,
       startLocation: tour.startLocation,
+      location: tour.startLocation,
+      divisionName: tour.divisionName,
       price: Number(tour.price) || 0,
-      discountEnabled: Boolean(tour.discountEnabled || getNormalizedDiscountPrice(tour) !== null),
-      discountPrice: getNormalizedDiscountPrice(tour),
-      ...getGroupDiscountFields(tour),
       isActive: tour.isActive !== false,
     };
   }
@@ -459,11 +502,13 @@ class TourService {
 
     const sortStage =
       sort === 'popular'
-        ? { reviews: -1, rating: -1, createdAt: -1 }
+        ? { 'metadata.reviews': -1, 'metadata.rating': -1, createdAt: -1 }
         : { createdAt: -1 };
 
     const pipeline = [
       { $match: match },
+      { $sort: sortStage },
+      { $limit: safeLimit },
       {
         $lookup: {
           from: 'divisions',
@@ -509,8 +554,6 @@ class TourService {
           },
         },
       },
-      { $sort: sortStage },
-      { $limit: safeLimit },
     ];
 
     const tours = await Tour.aggregate(pipeline);
@@ -518,7 +561,9 @@ class TourService {
     const formatted =
       view === 'search'
         ? tours.map((t) => this.formatSearchTour(t))
-        : tours.map((t) => this.formatListTour(t));
+        : view === 'summary'
+          ? tours.map((t) => this.formatSummaryTour(t))
+          : tours.map((t) => this.formatListTour(t));
 
     const deduped = this.dedupeTours(formatted);
     listCache.set(cacheKey, { data: deduped, expiresAt: Date.now() + LIST_CACHE_TTL_MS });

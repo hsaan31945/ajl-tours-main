@@ -9,11 +9,13 @@ import { COUNTRY_CODES, DEFAULT_COUNTRY_CODE } from "../utils/countryCodes";
 import { cleanDisplayName } from "../utils/textFormatting";
 import OrderSummaryBreakdown from "../components/OrderSummaryBreakdown";
 import { useCurrency } from "../context/CurrencyContext";
+import { useI18n } from "../i18n";
 
 const UserDetails = () => {
   const navigate = useNavigate();
   const { booking, updateContact, updateTour } = useBooking();
   const { formatPrice } = useCurrency();
+  const { t } = useI18n();
   const { tour: bookingTour, tickets = 1, date, time, contact, flexibility } = booking || {};
   const [freshTour, setFreshTour] = useState(null);
   const tour = freshTour || bookingTour;

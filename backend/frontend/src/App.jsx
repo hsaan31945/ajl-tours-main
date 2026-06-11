@@ -67,7 +67,6 @@ const App = () => {
   const [showPasscodePrompt, setShowPasscodePrompt] = useState(false);
   const [passcode, setPasscode] = useState("");
   const [error, setError] = useState("");
-  const [routeLoading, setRouteLoading] = useState(true);
 
   // Global admin shortcut listener
   useEffect(() => {
@@ -83,15 +82,6 @@ const App = () => {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
-
-  useEffect(() => {
-    setRouteLoading(true);
-    const timer = window.setTimeout(() => {
-      setRouteLoading(false);
-    }, 420);
-
-    return () => window.clearTimeout(timer);
-  }, [location.pathname, location.search]);
 
   const ADMIN_PASSCODE = import.meta.env.VITE_ADMIN_PASSCODE || "";
 
@@ -126,7 +116,6 @@ const App = () => {
           {loading && <Preloader />}
           {!loading && (
           <div className="flex flex-col min-h-screen bg-neutral-100">
-          {routeLoading && <PlaneLoader label={t("common.loading")} />}
           <ToastContainer theme="dark" position="bottom-right" autoClose={1000} />
           {location.pathname.startsWith("/admin") && (isAdmin || isAuthenticatedAdmin)
             ? <AdminNavbar />

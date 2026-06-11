@@ -383,6 +383,17 @@ module.exports = async (req, res) => {
             setCacheHeaders(res);
             return res.json(normalizedTour);
           } else {
+            if (urlNormalized === '/api/tours' && queryParams.get('full') !== 'true') {
+              const tours = await tourService.getToursList({
+                division: queryParams.get('division') || undefined,
+                view: queryParams.get('view') || 'list',
+                sort: queryParams.get('sort') || 'newest',
+                limit: queryParams.get('limit') || 50,
+              });
+              setCacheHeaders(res);
+              return res.json(tours);
+            }
+
             // Check if this is a request for Switzerland tours only
             if (urlNormalized === '/api/tours/switzerland') {
               // GET Switzerland tours only - optimized query

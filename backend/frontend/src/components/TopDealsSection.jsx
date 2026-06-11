@@ -44,6 +44,7 @@ const TopDealsSection = () => {
         division: 'switzerland',
         limit: 12,
         sort: 'popular',
+        view: 'summary',
       });
 
       const toursWithSales = allTours
@@ -54,16 +55,19 @@ const TopDealsSection = () => {
           return {
             id: tourId || tour.id,
             staticId: tour.metadata?.staticId ? String(tour.metadata.staticId) : '',
-            name: tour.name,
-            desc: tour.description,
-            description: tour.description,
+            name: tour.name || tour.title,
+            title: tour.title || tour.name,
+            desc: tour.description || '',
+            description: tour.description || '',
             price: Number(tour.price) || 0,
             discountEnabled: Boolean(tour.discountEnabled),
             discountPrice: tour.discountPrice ?? null,
-            images: Array.isArray(tour.images) && tour.images.length > 0 ? tour.images : [],
+            thumbnail: tour.thumbnail || '',
+            images: tour.thumbnail ? [tour.thumbnail] : (Array.isArray(tour.images) && tour.images.length > 0 ? tour.images : []),
             rating: tour.rating,
             reviews: tour.reviews,
-            address: tour.startLocation || tour.address,
+            address: tour.location || tour.startLocation || tour.address,
+            startLocation: tour.location || tour.startLocation || tour.address,
             destination: tour.divisionName || tour.destination || 'switzerland',
             salesCount: 0 // Default to 0, use reviews/rating for sorting
           };

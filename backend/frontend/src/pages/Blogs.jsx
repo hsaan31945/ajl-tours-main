@@ -8,7 +8,7 @@ import { useHeroBanner } from "../hooks/useHeroBanner";
 
 const Blogs = () => {
   const navigate = useNavigate();
-  const heroBanner = useHeroBanner("blogs", "/assets/images/hero6.jpg");
+  const heroBanner = useHeroBanner("blogs", "/assets/images/optimized/hero6-1600.webp");
 
   const fadeIn = {
     hidden: { opacity: 0, y: 30 },

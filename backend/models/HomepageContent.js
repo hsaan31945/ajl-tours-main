@@ -19,6 +19,7 @@ const homepageContentSchema = new mongoose.Schema({
   timestamps: true
 });
 
-module.exports = mongoose.model('HomepageContent', homepageContentSchema);
+homepageContentSchema.index({ section: 1, isActive: 1 });
 
+module.exports = mongoose.model('HomepageContent', homepageContentSchema);
 

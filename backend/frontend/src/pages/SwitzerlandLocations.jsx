@@ -10,7 +10,7 @@ const SwitzerlandLocations = () => {
   const [dbTours, setDbTours] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const heroBanner = useHeroBanner("switzerland", "/assets/images/hero5.jpg");
+  const heroBanner = useHeroBanner("switzerland", "/assets/images/optimized/hero5-1600.webp");
 
   const fetchTours = async () => {
     setLoading(true);

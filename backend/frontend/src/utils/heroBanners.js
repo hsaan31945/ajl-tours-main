@@ -8,31 +8,31 @@ export const HERO_BANNER_PAGES = [
     key: "home",
     label: "Home",
     path: "/",
-    fallbackImage: "/assets/images/hero4.jpg",
+    fallbackImage: "/assets/images/optimized/hero4-1600.webp",
     fallbackImages: [
-      "/assets/images/hero4.jpg",
-      "/assets/images/hero5.jpg",
-      "/assets/images/hero6.jpg",
-      "/assets/images/hero7.jpg",
+      "/assets/images/optimized/hero4-1600.webp",
+      "/assets/images/optimized/hero5-1600.webp",
+      "/assets/images/optimized/hero6-1600.webp",
+      "/assets/images/optimized/hero7-1600.webp",
     ],
   },
   {
     key: "switzerland",
     label: "Switzerland",
     path: "/switzerland",
-    fallbackImage: "/assets/images/hero5.jpg",
+    fallbackImage: "/assets/images/optimized/hero5-1600.webp",
   },
   {
     key: "srilanka",
     label: "Srilanka",
     path: "/srilanka",
-    fallbackImage: "/assets/images/hero6.jpg",
+    fallbackImage: "/assets/images/optimized/hero6-1600.webp",
   },
   {
     key: "tours",
     label: "Tours",
     path: "/tours",
-    fallbackImage: "/assets/images/hero7.jpg",
+    fallbackImage: "/assets/images/optimized/hero7-1600.webp",
   },
   {
     key: "about",
@@ -44,7 +44,7 @@ export const HERO_BANNER_PAGES = [
     key: "blogs",
     label: "Blogs",
     path: "/blogs",
-    fallbackImage: "/assets/images/hero6.jpg",
+    fallbackImage: "/assets/images/optimized/hero6-1600.webp",
   },
 ];
 

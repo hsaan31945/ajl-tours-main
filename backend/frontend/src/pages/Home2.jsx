@@ -66,6 +66,7 @@ const Home2 = () => {
   const [searchLoading, setSearchLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [homepageContent, setHomepageContent] = useState({});
+  const searchToursLoadedRef = useRef(false);
   const homeHeroBanner = useHeroBanner("home", hero6Small, defaultHeroImages);
 
   // Load homepage content on mount
@@ -144,29 +145,20 @@ const Home2 = () => {
     { src: hero6Small, alt: "Switzerland Alps" },
   ];
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadSearchTours = async () => {
-      setSearchLoading(true);
-      try {
-        const tours = await fetchToursList({ limit: 200 });
-        if (!cancelled) {
-          setSearchTours(tours.filter((tour) => getTourId(tour) && tour?.isActive !== false));
-        }
-      } catch (error) {
-        if (!cancelled) setSearchTours([]);
-      } finally {
-        if (!cancelled) setSearchLoading(false);
-      }
-    };
-
-    loadSearchTours();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const loadSearchTours = async () => {
+    if (searchToursLoadedRef.current || searchLoading) return;
+    searchToursLoadedRef.current = true;
+    setSearchLoading(true);
+    try {
+      const tours = await fetchToursList({ limit: 100, view: "search" });
+      setSearchTours(tours.filter((tour) => getTourId(tour) && tour?.isActive !== false));
+    } catch (error) {
+      searchToursLoadedRef.current = false;
+      setSearchTours([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
 
   const normalizeSearchText = (value) =>
     String(value || "")
@@ -213,6 +205,9 @@ const Home2 = () => {
   // Search function
   const handleSearch = (query) => {
     setSearchQuery(query);
+    if (!searchToursLoadedRef.current) {
+      loadSearchTours();
+    }
     if (query.trim() === "") {
       setSearchResults([]);
       setShowDropdown(false);
@@ -301,7 +296,7 @@ const Home2 = () => {
               alt={homeHeroBanner.alt || ""}
               width="900"
               height="600"
-              fetchpriority="high"
+              fetchPriority="high"
               loading="eager"
               decoding="async"
               className="absolute inset-0 h-full w-full object-cover object-top"
@@ -333,7 +328,7 @@ const Home2 = () => {
                   alt={homeHeroBanner.isCustom ? homeHeroBanner.alt || "" : ""}
                   width="1600"
                   height="1067"
-                  fetchpriority={index === 0 ? "high" : "auto"}
+                  fetchPriority={index === 0 ? "high" : "auto"}
                   loading={index === 0 ? "eager" : "lazy"}
                   decoding="async"
                   className="h-full w-full object-cover"
@@ -363,7 +358,10 @@ const Home2 = () => {
                   placeholder={t("nav.searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
-                  onFocus={() => searchQuery.trim() !== "" && setShowDropdown(true)}
+                  onFocus={() => {
+                    loadSearchTours();
+                    if (searchQuery.trim() !== "") setShowDropdown(true);
+                  }}
                   autoComplete="off"
                 />
                 <button 

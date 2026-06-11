@@ -10,7 +10,7 @@ const Tour = () => {
   const [tours, setTours] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const heroBanner = useHeroBanner("tours", "/assets/images/hero7.jpg");
+  const heroBanner = useHeroBanner("tours", "/assets/images/optimized/hero7-1600.webp");
 
   const fetchTours = async () => {
     setLoading(true);

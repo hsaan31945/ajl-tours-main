@@ -5,8 +5,8 @@ import { adminImageFormatMessage, isAllowedAdminImageFile } from "../utils/image
 import axios from "axios";
 import { apiUrl } from "../utils/api";
 
-const MAX_IMAGE_BYTES = 900 * 1024;
-const MAX_TOTAL_IMAGE_BYTES = 3 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 300 * 1024;
+const MAX_TOTAL_IMAGE_BYTES = 1500 * 1024;
 const MAX_IMAGE_DIMENSION = 1600;
 
 const dataUrlBytes = (dataUrl) => {

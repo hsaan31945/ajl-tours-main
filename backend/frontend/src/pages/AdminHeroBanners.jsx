@@ -11,7 +11,7 @@ import {
   normalizeHeroBanners,
 } from "../utils/heroBanners";
 
-const MAX_IMAGE_BYTES = 900 * 1024;
+const MAX_IMAGE_BYTES = 300 * 1024;
 const MAX_IMAGE_DIMENSION = 1600;
 
 const dataUrlBytes = (dataUrl) => {

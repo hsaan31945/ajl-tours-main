@@ -364,7 +364,7 @@ const ImageCarousel = ({ images, alt, className = "", adminOn = false, onSaveIma
             draggable={false}
             loading="eager"
             decoding="sync"
-            fetchpriority="high"
+            fetchPriority="high"
             onError={onErr}
           />
         </div>

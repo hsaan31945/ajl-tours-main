@@ -150,6 +150,7 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
   };
 
   const displayImage =
+    tour.thumbnail ||
     (Array.isArray(tour.images) && tour.images.find((img) => img && String(img).trim())) ||
     tour.photo ||
     null;

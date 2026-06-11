@@ -225,6 +225,8 @@ tourSchema.set('toObject', { virtuals: true, flattenMaps: true });
 
 tourSchema.index({ division: 1, isActive: 1, createdAt: -1 });
 tourSchema.index({ isActive: 1, createdAt: -1 });
+tourSchema.index({ division: 1, isActive: 1, 'metadata.reviews': -1, 'metadata.rating': -1, createdAt: -1 });
+tourSchema.index({ isActive: 1, 'metadata.reviews': -1, 'metadata.rating': -1, createdAt: -1 });
 tourSchema.index({ 'metadata.staticId': 1 }, { sparse: true });
 
 module.exports = mongoose.model('Tour', tourSchema);

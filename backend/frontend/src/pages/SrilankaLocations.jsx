@@ -18,7 +18,7 @@ const SrilankaLocations = () => {
   const [dbTours, setDbTours] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const heroBanner = useHeroBanner("srilanka", "/assets/images/hero6.jpg");
+  const heroBanner = useHeroBanner("srilanka", "/assets/images/optimized/hero6-1600.webp");
 
   const fetchTours = async () => {
     setLoading(true);
