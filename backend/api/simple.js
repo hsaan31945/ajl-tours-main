@@ -147,10 +147,15 @@ const normalizeListTour = (tour) => {
   const firstImage = Array.isArray(normalized.images)
     ? normalized.images.find((image) => image && String(image).trim())
     : null;
+  const isUrlImage = /^(https?:\/\/|\/(?!api\/)|\.\/)/i.test(String(firstImage || ''));
+  const imageUrl = firstImage
+    ? (isUrlImage ? firstImage : `/api/tours/${encodeURIComponent(String(normalized.id))}/image`)
+    : '';
 
   return {
     ...normalized,
-    images: firstImage ? [firstImage] : [],
+    thumbnail: imageUrl,
+    images: imageUrl ? [imageUrl] : [],
   };
 };
 
@@ -354,6 +359,7 @@ module.exports = async (req, res) => {
       // Extract tour ID if present
       let tourId = null;
       const tourIdMatch = urlNormalized.match(/^\/api\/tours\/([^\/]+)$/);
+      const imageMatch = urlNormalized.match(/^\/api\/tours\/([^\/]+)\/image$/);
       const reviewMatch = urlNormalized.match(/^\/api\/tours\/([^\/]+)\/reviews$/);
       if (tourIdMatch) {
         tourId = tourIdMatch[1];
@@ -362,6 +368,24 @@ module.exports = async (req, res) => {
       // Handle different HTTP methods
       switch (req.method) {
         case 'GET':
+          if (imageMatch) {
+            const image = await tourService.getTourImage(imageMatch[1], queryParams.get('index') || 0);
+
+            if (image.redirectUrl) {
+              res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=604800');
+              res.writeHead(302, { Location: image.redirectUrl });
+              return res.end();
+            }
+
+            if (image.updatedAt) {
+              res.setHeader('Last-Modified', new Date(image.updatedAt).toUTCString());
+            }
+            res.setHeader('Content-Type', image.contentType);
+            res.setHeader('Content-Length', image.buffer.length);
+            res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=604800');
+            return res.end(image.buffer);
+          }
+
           if (tourId) {
             // GET single tour
             const cachedTour = tourByIdCache.get(tourId);

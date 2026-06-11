@@ -79,6 +79,16 @@ const getDivisionInputValue = (value) => {
   return value;
 };
 
+const parseImageDataUrl = (value = '') => {
+  const match = String(value || '').match(/^data:(image\/[a-z0-9.+-]+);base64,(.+)$/i);
+  if (!match) return null;
+
+  return {
+    contentType: match[1].toLowerCase(),
+    buffer: Buffer.from(match[2], 'base64'),
+  };
+};
+
 const normalizeItinerary = (items) => (
   Array.isArray(items)
     ? items
@@ -193,6 +203,10 @@ class TourService {
       }
     }
     return null;
+  }
+
+  getImageEndpoint(id) {
+    return id ? `/api/tours/${encodeURIComponent(String(id))}/image` : '';
   }
 
   buildSlug(tour = {}, id = '') {
@@ -377,7 +391,14 @@ class TourService {
         ? tour.division.name
         : null);
 
-    const thumbnail = this.pickListImage(tour.images);
+    const thumbnail = this.pickListImage([
+      tour.thumbnail,
+      tour.photo,
+      tour.metadata?.thumbnail,
+      tour.metadata?.cardImage,
+      ...(Array.isArray(tour.images) ? tour.images : []),
+    ]);
+    const imageUrl = thumbnail || (Number(tour.imageCount || 0) > 0 ? this.getImageEndpoint(id) : '');
 
     const description =
       typeof tour.description === 'string'
@@ -400,7 +421,8 @@ class TourService {
       discountPrice: getNormalizedDiscountPrice(tour),
       ...groupDiscountFields,
       currency: tour.currency || 'CHF',
-      images: thumbnail ? [thumbnail] : [],
+      thumbnail: imageUrl,
+      images: imageUrl ? [imageUrl] : [],
       startLocation: tour.startLocation,
       endLocation: tour.endLocation,
       duration: tour.duration,
@@ -434,6 +456,7 @@ class TourService {
       tour.metadata?.cardImage,
       ...(Array.isArray(tour.images) ? tour.images : []),
     ]);
+    const imageUrl = thumbnail || (Number(tour.imageCount || 0) > 0 ? this.getImageEndpoint(id) : '');
     const legacyRating = Number(tour.metadata?.rating);
 
     return {
@@ -444,12 +467,54 @@ class TourService {
       name: tour.name || '',
       location: tour.startLocation || divisionName || '',
       price: Number(tour.price) || 0,
-      thumbnail: thumbnail || '',
-      images: thumbnail ? [thumbnail] : [],
+      thumbnail: imageUrl,
+      images: imageUrl ? [imageUrl] : [],
       rating: Number.isFinite(legacyRating) ? legacyRating : 0,
       reviews: Number(tour.metadata?.reviews) || 0,
       divisionName,
       isActive: tour.isActive !== false,
+    };
+  }
+
+  async getTourImage(id, imageIndex = 0) {
+    const tourId = normalizeTourId(id);
+
+    if (!tourId) {
+      throw new Error('Tour ID is required');
+    }
+
+    const query = isValidObjectId(tourId)
+      ? { _id: tourId }
+      : { 'metadata.staticId': tourId };
+
+    const tour = await Tour.findOne(query)
+      .select('images updatedAt')
+      .lean();
+
+    if (!tour) {
+      throw new Error('Tour not found');
+    }
+
+    const images = Array.isArray(tour.images) ? tour.images : [];
+    const index = Math.max(0, Number(imageIndex) || 0);
+    const image = String(images[index] || images.find(Boolean) || '').trim();
+
+    if (!image) {
+      throw new Error('Tour image not found');
+    }
+
+    if (/^https?:\/\//i.test(image)) {
+      return { redirectUrl: image };
+    }
+
+    const parsed = parseImageDataUrl(image);
+    if (!parsed) {
+      throw new Error('Unsupported tour image format');
+    }
+
+    return {
+      ...parsed,
+      updatedAt: tour.updatedAt,
     };
   }
 
@@ -520,7 +585,7 @@ class TourService {
       {
         $addFields: {
           divisionName: { $ifNull: [{ $arrayElemAt: ['$divisionDoc.name', 0] }, ''] },
-          firstImage: { $arrayElemAt: ['$images', 0] },
+          imageCount: { $size: { $ifNull: ['$images', []] } },
           rating: { $ifNull: ['$metadata.rating', 0] },
           reviews: { $ifNull: ['$metadata.reviews', 0] },
         },
@@ -547,11 +612,9 @@ class TourService {
           maxTotalTickets: 1,
           isActive: 1,
           metadata: 1,
+          imageCount: 1,
           createdAt: 1,
           updatedAt: 1,
-          images: {
-            $cond: [{ $ne: ['$firstImage', null] }, ['$firstImage'], []],
-          },
         },
       },
     ];

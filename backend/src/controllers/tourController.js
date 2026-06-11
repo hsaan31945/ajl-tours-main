@@ -58,6 +58,35 @@ class TourController {
   }
 
   /**
+   * GET /api/tours/:id/image - Serve first tour image without embedding it in list JSON
+   */
+  async getTourImage(req, res, next) {
+    try {
+      const { id } = req.params;
+      const imageIndex = req.query?.index || 0;
+      const image = await tourService.getTourImage(id, imageIndex);
+
+      if (image.redirectUrl) {
+        res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=604800');
+        return res.redirect(302, image.redirectUrl);
+      }
+
+      if (image.updatedAt) {
+        res.setHeader('Last-Modified', new Date(image.updatedAt).toUTCString());
+      }
+      res.setHeader('Content-Type', image.contentType);
+      res.setHeader('Content-Length', image.buffer.length);
+      res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=604800');
+      return res.end(image.buffer);
+    } catch (error) {
+      if (error.message === 'Tour not found' || error.message === 'Tour image not found') {
+        return next(new AppError(error.message, 404));
+      }
+      next(error);
+    }
+  }
+
+  /**
    * POST /api/tours - Create tour
    */
   async createTour(req, res, next) {
