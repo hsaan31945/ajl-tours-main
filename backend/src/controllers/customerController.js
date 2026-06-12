@@ -7,6 +7,7 @@ const User = require('../../models/User');
 const WishlistItem = require('../../models/WishlistItem');
 const { AppError } = require('../middleware/errorHandler');
 const { getPasswordPolicyMessage } = require('../utils/passwordPolicy');
+const { sendSupportTicketNotification } = require('../services/emailService');
 
 const CUSTOMER_TOUR_SELECT = [
   'name',
@@ -562,6 +563,12 @@ class CustomerController {
         sourceKey: `support:${ticket._id}:created`,
         metadata: { ticketNumber: ticket.ticketNumber }
       });
+
+      try {
+        await sendSupportTicketNotification({ ticket, booking });
+      } catch (emailError) {
+        console.error('Support ticket notification email failed:', emailError.response?.data || emailError.message);
+      }
 
       res.status(201).json({ success: true, message: 'Support ticket created', data: ticket });
     } catch (error) {
