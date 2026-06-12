@@ -1,6 +1,5 @@
 import React, { Suspense, lazy, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import AdminControlPanel from "../components/AdminControlPanel";
 import { useAdmin } from "../context/AdminContext";
 import SEO from "../components/SEO";
 import { useHeroBanner } from "../hooks/useHeroBanner";
@@ -9,19 +8,26 @@ import { getTourId } from "../utils/tourId";
 import { cleanDisplayName } from "../utils/textFormatting";
 import { Search, MapPin, Compass, Users, ChevronDown, CheckCircle, Star, Quote, Car, Map, Clock, ShieldCheck, HeartPulse } from "lucide-react";
 import { useI18n } from "../i18n";
-import hero4 from "../assets/images/optimized/hero4-1600.webp";
-import hero5 from "../assets/images/optimized/hero5-1600.webp";
-import hero6 from "../assets/images/optimized/hero6-1600.webp";
-import hero7 from "../assets/images/optimized/hero7-1600.webp";
-import hero4Small from "../assets/images/optimized/hero4-900.webp";
-import hero5Small from "../assets/images/optimized/hero5-900.webp";
-import hero6Small from "../assets/images/optimized/hero6-900.webp";
-import hero7Small from "../assets/images/optimized/hero7-900.webp";
 
 const ExploreTours = lazy(() => import("../components/ExploreTours"));
 const TopDealsSection = lazy(() => import("../components/TopDealsSection"));
 const HERO_AUTOPLAY_MS = 5000;
 const HERO_TRANSITION_MS = 1000;
+const hero4 = "/assets/images/optimized/hero4-1600.webp";
+const hero5 = "/assets/images/optimized/hero5-1600.webp";
+const hero6 = "/assets/images/optimized/hero6-1600.webp";
+const hero7 = "/assets/images/optimized/hero7-1600.webp";
+const hero4Small = "/assets/images/optimized/hero4-900.webp";
+const hero5Small = "/assets/images/optimized/hero5-900.webp";
+const hero6Small = "/assets/images/optimized/hero6-900.webp";
+const hero7Small = "/assets/images/optimized/hero7-900.webp";
+const defaultHeroImages = [hero4, hero5, hero6, hero7];
+const heroGridImages = [
+  { src: hero4Small, alt: "Swiss mountain village" },
+  { src: hero7Small, alt: "Swiss alpine landscape" },
+  { src: hero5Small, alt: "Swiss scenic valley" },
+  { src: hero6Small, alt: "Switzerland Alps" },
+];
 
 const DeferredSection = ({ children, rootMargin = "700px" }) => {
   const ref = useRef(null);
@@ -57,11 +63,13 @@ const DeferredSection = ({ children, rootMargin = "700px" }) => {
 
 const Home2 = () => {
   const navigate = useNavigate();
-  const { passcodeHeader, isAdmin } = useAdmin();
+  const { passcodeHeader } = useAdmin();
   const { t } = useI18n();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isHeroTransitioning, setIsHeroTransitioning] = useState(true);
-  const defaultHeroImages = [hero4, hero5, hero6, hero7];
+  const [isDesktopHero, setIsDesktopHero] = useState(() => (
+    typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches
+  ));
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -74,11 +82,12 @@ const Home2 = () => {
 
   // Load homepage content on mount
   useEffect(() => {
-    (async () => {
+    let cancelled = false;
+    const loadContent = async () => {
       try {
         const res = await fetch('/api/content/homepage');
         const data = await res.json();
-        if (res.ok) {
+        if (res.ok && !cancelled) {
           const contentMap = {};
           data.forEach(item => {
             contentMap[item.section] = item.content;
@@ -86,7 +95,16 @@ const Home2 = () => {
           setHomepageContent(contentMap);
         }
       } catch (e) {}
-    })();
+    };
+
+    const schedule = window.requestIdleCallback || ((callback) => window.setTimeout(callback, 1500));
+    const cancel = window.cancelIdleCallback || window.clearTimeout;
+    const id = schedule(loadContent, { timeout: 2500 });
+
+    return () => {
+      cancelled = true;
+      cancel(id);
+    };
   }, []);
 
   const updateSection = async (section, content) => {
@@ -134,20 +152,12 @@ const Home2 = () => {
     return await updateSection('tour_descriptions', updated);
   };
 
-  // Hero carousel images
-  const shouldShowFallbackHero = !homeHeroBanner.isLoading;
+  // Hero carousel images. Always paint the fallback immediately; API content can replace it later.
   const heroImages = homeHeroBanner.isCustom && homeHeroBanner.images?.length
     ? homeHeroBanner.images
-    : (shouldShowFallbackHero ? defaultHeroImages : []);
+    : defaultHeroImages;
   const desktopHeroImages = heroImages.length > 1 ? [...heroImages, heroImages[0]] : heroImages;
   const mobileHeroImage = homeHeroBanner.isCustom ? heroImages[0] : hero6Small;
-
-  const heroGridImages = [
-    { src: hero4Small, alt: "Swiss mountain village" },
-    { src: hero7Small, alt: "Swiss alpine landscape" },
-    { src: hero5Small, alt: "Swiss scenic valley" },
-    { src: hero6Small, alt: "Switzerland Alps" },
-  ];
 
   const loadSearchTours = async () => {
     if (searchToursLoadedRef.current || searchLoading) return;
@@ -293,6 +303,15 @@ const Home2 = () => {
     });
   }, [heroImages.join("|")]);
 
+  React.useEffect(() => {
+    const media = window.matchMedia("(min-width: 768px)");
+    const updateHeroMode = () => setIsDesktopHero(media.matches);
+
+    updateHeroMode();
+    media.addEventListener?.("change", updateHeroMode);
+    return () => media.removeEventListener?.("change", updateHeroMode);
+  }, []);
+
   const [openFaq, setOpenFaq] = useState(null);
 
   return (
@@ -301,20 +320,18 @@ const Home2 = () => {
         title={t("seo.homeTitle")}
         description={t("seo.homeDescription")}
       />
-      {/* Admin Control Panel */}
-      <AdminControlPanel />
-
 
       {/* Hero Section - Full Width Background */}
       <section className="relative h-[70vh] sm:h-[60vh] md:h-screen w-full overflow-hidden bg-gray-900">
         {/* Mobile Background */}
-        <div className="md:hidden absolute inset-0 z-0">
+        {!isDesktopHero && (
+        <div className="absolute inset-0 z-0">
           {heroImages.length > 0 && (
             <img
               src={mobileHeroImage || hero6Small}
               srcSet={homeHeroBanner.isCustom ? undefined : `${hero6Small} 900w, ${hero6} 1600w`}
               sizes="100vw"
-              alt={homeHeroBanner.alt || ""}
+              alt={homeHeroBanner.alt || "Private Switzerland tour landscape"}
               width="900"
               height="600"
               fetchPriority="high"
@@ -324,9 +341,11 @@ const Home2 = () => {
             />
           )}
         </div>
+        )}
 
         {/* Desktop Background: Carousel */}
-        <div className="hidden md:block absolute inset-0 z-0">
+        {isDesktopHero && (
+        <div className="absolute inset-0 z-0">
           <div 
             className={`flex h-full ease-in-out ${isHeroTransitioning ? "transition-transform duration-1000" : ""}`}
             style={{ 
@@ -358,6 +377,7 @@ const Home2 = () => {
             ))}
           </div>
         </div>
+        )}
         {/* Hero Content */}
         <div className="absolute inset-0 z-20 flex items-center h-full">
           <div className="text-white ml-4 sm:ml-8 md:ml-16 lg:ml-24 px-4 sm:px-0 w-full max-w-4xl">
@@ -499,7 +519,7 @@ const Home2 = () => {
       <section className="py-24 px-6 sm:px-12 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
-            <h4 className="text-orange-600 font-bold uppercase tracking-[0.3em] mb-4">{t("home.exclusiveExperience")}</h4>
+            <p className="text-orange-600 font-bold uppercase tracking-[0.3em] mb-4">{t("home.exclusiveExperience")}</p>
             <h2 className="text-4xl sm:text-5xl font-extrabold text-[#1A2B47]">{t("home.servicesTitle")}</h2>
           </div>
           
@@ -621,7 +641,7 @@ const Home2 = () => {
         <div className="absolute top-0 right-0 w-96 h-96 bg-orange-100 rounded-full blur-[100px] -mr-48 -mt-48 opacity-50" />
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center mb-20">
-            <h4 className="text-orange-600 font-bold uppercase tracking-[0.3em] mb-4">{t("home.guestExperiences")}</h4>
+            <p className="text-orange-600 font-bold uppercase tracking-[0.3em] mb-4">{t("home.guestExperiences")}</p>
             <h2 className="text-4xl sm:text-5xl font-extrabold text-[#1A2B47]">{t("home.testimonials")}</h2>
           </div>
           
@@ -786,7 +806,7 @@ const BookingStep = ({ number, title, text }) => (
       <div className="w-16 h-16 bg-white text-orange-600 rounded-2xl flex items-center justify-center text-3xl font-black mb-6 shadow-lg shadow-black/10">
         {number}
       </div>
-      <h4 className="text-xl font-bold mb-3">{title}</h4>
+      <h3 className="text-xl font-bold mb-3">{title}</h3>
       <p className="text-sm text-white/80 leading-relaxed font-medium">{text}</p>
     </div>
     {number !== "5" && (
@@ -805,7 +825,7 @@ const FeatureItem = ({ title, text }) => (
       </div>
     </div>
     <div>
-      <h4 className="text-xl font-bold text-[#1A2B47] mb-1">{title}</h4>
+      <h3 className="text-xl font-bold text-[#1A2B47] mb-1">{title}</h3>
       <p className="text-gray-600 font-medium">{text}</p>
     </div>
   </div>
@@ -827,7 +847,7 @@ const TestimonialCard = ({ name, location, text }) => (
         {name[0]}
       </div>
       <div>
-        <h5 className="font-bold text-[#1A2B47] text-lg">{name}</h5>
+        <p className="font-bold text-[#1A2B47] text-lg">{name}</p>
         <p className="text-orange-600 font-bold text-sm uppercase tracking-widest">{location}</p>
       </div>
     </div>

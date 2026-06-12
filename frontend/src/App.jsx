@@ -2,20 +2,15 @@ import React, { Suspense, lazy, useState, useEffect } from "react";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import { Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import Preloader from "./components/Preloader";
 import PlaneLoader from "./components/PlaneLoader";
-import AdminNavbar from "./components/AdminNavbar";
-import FloatingWhatsApp from "./components/FloatingWhatsApp";
 import { useContext } from "react";
 import { AppContext } from "./context/AppContext";
 import { CurrencyProvider } from "./context/CurrencyContext";
 import { EditModeProvider } from "./context/EditModeContext";
-import Home2 from "./pages/Home2";
 import { useAdmin } from "./context/AdminContext";
 import { useI18n } from "./i18n";
 
+const Home2 = lazy(() => import("./pages/Home2"));
 const Tour = lazy(() => import("./pages/Tour"));
 const TourDetails = lazy(() => import("./pages/TourDetails"));
 const Login = lazy(() => import("./pages/Login"));
@@ -50,6 +45,14 @@ const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const VerifyOTP = lazy(() => import("./pages/VerifyOTP"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const TourWizard = lazy(() => import("./pages/TourWizard"));
+const AdminNavbar = lazy(() => import("./components/AdminNavbar"));
+const FloatingWhatsApp = lazy(() => import("./components/FloatingWhatsApp"));
+const ToastContainer = lazy(() =>
+  Promise.all([
+    import("react-toastify"),
+    import("react-toastify/dist/ReactToastify.css"),
+  ]).then(([module]) => ({ default: module.ToastContainer }))
+);
 
 
 // Wrapper component to force remount when id changes
@@ -58,12 +61,25 @@ const CheckoutWrapper = () => {
   return <Checkout key={id} />;
 };
 
+const useAfterFirstPaint = (delay = 1200) => {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const schedule = window.requestIdleCallback || ((callback) => window.setTimeout(callback, delay));
+    const cancel = window.cancelIdleCallback || window.clearTimeout;
+    const id = schedule(() => setReady(true), { timeout: delay });
+    return () => cancel(id);
+  }, [delay]);
+
+  return ready;
+};
+
 const App = () => {
-  const [loading] = useState(false);
   const location = useLocation();
   const { isAdmin } = useContext(AppContext);
   const { isAdmin: isAuthenticatedAdmin } = useAdmin();
   const { t } = useI18n();
+  const canLoadNonCriticalUi = useAfterFirstPaint();
   const [showPasscodePrompt, setShowPasscodePrompt] = useState(false);
   const [passcode, setPasscode] = useState("");
   const [error, setError] = useState("");
@@ -113,12 +129,18 @@ const App = () => {
   return (
     <CurrencyProvider>
         <EditModeProvider>
-          {loading && <Preloader />}
-          {!loading && (
           <div className="flex flex-col min-h-screen bg-neutral-100">
-          <ToastContainer theme="dark" position="bottom-right" autoClose={1000} />
+          {canLoadNonCriticalUi && (
+            <Suspense fallback={null}>
+              <ToastContainer theme="dark" position="bottom-right" autoClose={1000} />
+            </Suspense>
+          )}
           {location.pathname.startsWith("/admin") && (isAdmin || isAuthenticatedAdmin)
-            ? <AdminNavbar />
+            ? (
+              <Suspense fallback={null}>
+                <AdminNavbar />
+              </Suspense>
+            )
             : <Navbar />}
           <main className="flex-1">
             <Suspense fallback={<PlaneLoader label={t("common.loading")} />}>
@@ -177,7 +199,11 @@ const App = () => {
             </Suspense>
           </main>
           <Footer />
-          <FloatingWhatsApp />
+          {canLoadNonCriticalUi && (
+            <Suspense fallback={null}>
+              <FloatingWhatsApp />
+            </Suspense>
+          )}
           
           {/* Global Admin Passcode Prompt */}
           {showPasscodePrompt && (
@@ -217,7 +243,6 @@ const App = () => {
             </div>
           )}
         </div>
-      )}
         </EditModeProvider>
     </CurrencyProvider>
   );

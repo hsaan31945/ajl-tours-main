@@ -1,4 +1,4 @@
-import { StrictMode } from "react";
+import { StrictMode, Suspense, lazy, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.jsx";
@@ -7,7 +7,26 @@ import AppContextProvider from "./context/AppContext.jsx";
 import { AdminProvider } from "./context/AdminContext";
 import { BookingProvider } from "./context/BookingContext";
 import { I18nProvider } from "./i18n";
-import { SpeedInsights } from "@vercel/speed-insights/react";
+
+const SpeedInsights = lazy(() =>
+  import("@vercel/speed-insights/react").then((module) => ({ default: module.SpeedInsights }))
+);
+
+const DeferredSpeedInsights = () => {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const id = window.setTimeout(() => setReady(true), 2000);
+    return () => window.clearTimeout(id);
+  }, []);
+
+  if (!ready) return null;
+  return (
+    <Suspense fallback={null}>
+      <SpeedInsights />
+    </Suspense>
+  );
+};
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -17,7 +36,7 @@ createRoot(document.getElementById("root")).render(
           <BookingProvider>
             <I18nProvider>
               <App />
-              <SpeedInsights />
+              <DeferredSpeedInsights />
             </I18nProvider>
           </BookingProvider>
         </AdminProvider>

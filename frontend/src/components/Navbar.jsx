@@ -1,7 +1,6 @@
 import React, { useState, useContext, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X, Heart, ShoppingCart, History as HistoryIcon, MapPin, Globe, BookOpen, Info, ChevronDown } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { AppContext } from "../context/AppContext.jsx";
 import { assets } from "../assets/assets.js";
 import { useAdmin } from "../context/AdminContext";
@@ -265,10 +264,10 @@ const Navbar = () => {
 
       {/* Flex container for small screens */}
       <div className="flex items-center gap-3 sm:hidden">
-        <Link to="/favorites" className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+        <Link to="/favorites" className="p-2 hover:bg-gray-100 rounded-full transition-colors" aria-label={t("nav.favorites")}>
           <Heart className="w-6 h-6 text-gray-700" />
         </Link>
-        <Link to="/checkout" className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+        <Link to="/checkout" className="p-2 hover:bg-gray-100 rounded-full transition-colors" aria-label={t("nav.checkout")}>
           <ShoppingCart className="w-6 h-6 text-gray-700" />
         </Link>
         <button 
@@ -473,24 +472,16 @@ const Navbar = () => {
       </div>
 
       {/* Mobile Menu Side Drawer */}
-      <AnimatePresence>
-        {menuOpen && (
-          <>
+      {menuOpen && (
+        <>
             {/* Overlay */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+            <div
               onClick={() => setMenuOpen(false)}
               className="sm:hidden fixed inset-0 bg-black/50 z-[60]"
             />
 
             {/* Side Drawer */}
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            <div
               className="sm:hidden fixed top-0 right-0 h-screen w-[85%] max-w-[320px] bg-white z-[70] shadow-2xl flex flex-col"
             >
               {/* Drawer Header */}
@@ -498,6 +489,7 @@ const Navbar = () => {
                 <button 
                   onClick={() => setMenuOpen(false)}
                   className="p-1 hover:bg-white/10 rounded-full transition-colors"
+                  aria-label="Close menu"
                 >
                   <X className="w-6 h-6 text-white" />
                 </button>
@@ -512,15 +504,8 @@ const Navbar = () => {
                     open={mobileDestinationsOpen}
                     onClick={() => setMobileDestinationsOpen((current) => !current)}
                   />
-                  <AnimatePresence initial={false}>
-                    {mobileDestinationsOpen && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.18 }}
-                        className="overflow-hidden bg-orange-50/40"
-                      >
+                  {mobileDestinationsOpen && (
+                      <div className="overflow-hidden bg-orange-50/40">
                         <DrawerLink
                           to="/switzerland"
                           icon={<MapPin className="w-4 h-4" />}
@@ -535,9 +520,8 @@ const Navbar = () => {
                           onClick={() => setMenuOpen(false)}
                           nested
                         />
-                      </motion.div>
+                      </div>
                     )}
-                  </AnimatePresence>
 
                   <div className="border-b border-gray-100">
                     <div className="px-6 py-4">
@@ -629,10 +613,9 @@ const Navbar = () => {
                 </div>
 
               </div>
-            </motion.div>
+            </div>
           </>
         )}
-      </AnimatePresence>
     </div>
   );
 };

@@ -1,8 +1,7 @@
 import React, { useCallback, useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { AppContext } from "../context/AppContext";
-import { useAdmin } from "../context/AdminContext";
 import TourCard from "./TourCard";
 import { getTourId } from "../utils/tourId";
 import { fetchToursList } from "../services/toursApi";
@@ -15,7 +14,6 @@ const CARD_GAP_REM = 1.5;
 const ExploreTours = () => {
   const navigate = useNavigate();
   const { user } = useContext(AppContext);
-  const { isAdmin } = useAdmin();
   const [randomTours, setRandomTours] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [favorites, setFavorites] = useState({});
