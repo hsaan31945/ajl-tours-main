@@ -20,6 +20,7 @@ import TourReviews, { getTourReviewSummary } from "../components/TourReviews";
 import { Star } from "lucide-react";
 import { useCurrency } from "../context/CurrencyContext";
 import { useI18n } from "../i18n";
+import { getTourGalleryImages } from "../utils/tourImages";
 
 function ItineraryAccordion({ itinerary = [], adminOn = false, onSave, onAddDraft }) {
   const itineraryList = Array.isArray(itinerary) ? itinerary : [];
@@ -533,6 +534,7 @@ const Checkout = () => {
   }
 
   const tourName = cleanDisplayName(tour?.title || tour?.name || "Tour");
+  const checkoutImages = getTourGalleryImages(tour);
   const pricing = calculateBookingPricing({ tour, tickets, selectedDate });
   const pricePerTicket = pricing.baseUnitPrice;
   const totalPrice = pricing.total;
@@ -664,7 +666,7 @@ const Checkout = () => {
           </div>
         ) : (
           <ImageCarousel 
-            images={Array.isArray(tour?.images) ? tour.images : []} 
+            images={checkoutImages} 
             alt={tourName} 
             className="h-64 sm:h-80 md:h-[400px] lg:h-[500px] object-cover rounded-lg" 
             adminOn={effectiveEditMode}

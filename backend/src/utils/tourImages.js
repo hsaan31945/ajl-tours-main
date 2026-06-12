@@ -72,6 +72,25 @@ const firstImageValue = (value) => {
   return readImageValue(value);
 };
 
+const hasDataImageValue = (value) => {
+  if (!value) return false;
+  if (Array.isArray(value)) return value.some(hasDataImageValue);
+  if (typeof value === 'string') return isDataImage(value);
+  if (typeof value === 'object') {
+    return hasDataImageValue(value.url || value.secure_url || value.src || value.path || value.imageUrl);
+  }
+  return false;
+};
+
+const getTourId = (tour = {}) => tour._id?.toString?.() || tour.id || '';
+
+const getTourImageEndpoint = (tour = {}, index = 0) => {
+  const id = getTourId(tour);
+  if (!id) return '';
+  const suffix = Number(index) > 0 ? `?index=${encodeURIComponent(String(index))}` : '';
+  return `/api/tours/${encodeURIComponent(String(id))}/image${suffix}`;
+};
+
 const getStaticTourThumbnail = (tour = {}) => {
   const haystack = normalizeText([
     tour.name,
@@ -104,7 +123,22 @@ const getTourThumbnail = (tour = {}) => {
     firstImageValue(tour.metadata?.coverImage)
   );
 
-  return direct || getStaticTourThumbnail(tour);
+  if (direct) return direct;
+
+  if (
+    Number(tour.imageCount || 0) > 0 ||
+    hasDataImageValue(tour.thumbnail) ||
+    hasDataImageValue(tour.cardImage) ||
+    hasDataImageValue(tour.coverImage) ||
+    hasDataImageValue(tour.images) ||
+    hasDataImageValue(tour.gallery) ||
+    hasDataImageValue(tour.media)
+  ) {
+    const endpoint = getTourImageEndpoint(tour);
+    if (endpoint) return endpoint;
+  }
+
+  return getStaticTourThumbnail(tour);
 };
 
 const summarizeImageField = (value) => {
@@ -130,9 +164,21 @@ const getTourImageDebugPayload = (tour = {}) => ({
   media: summarizeImageField(tour.media),
 });
 
-const stripDataImages = (images) => {
+const stripDataImages = (images, tourId = '') => {
   if (!Array.isArray(images)) return [];
-  return images.map(readImageValue).filter(Boolean);
+  return images
+    .map((image, index) => {
+      const direct = readImageValue(image);
+      if (direct) return direct;
+
+      if (hasDataImageValue(image) && tourId) {
+        const suffix = index > 0 ? `?index=${encodeURIComponent(String(index))}` : '';
+        return `/api/tours/${encodeURIComponent(String(tourId))}/image${suffix}`;
+      }
+
+      return '';
+    })
+    .filter(Boolean);
 };
 
 module.exports = {
@@ -140,5 +186,6 @@ module.exports = {
   getTourThumbnail,
   getStaticTourThumbnail,
   getTourImageDebugPayload,
+  getTourImageEndpoint,
   stripDataImages,
 };

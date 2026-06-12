@@ -28,7 +28,7 @@ const TOUR_IMAGE_RULES = [
     image: '/assets/images/Lucerne/Lucerne1.avif',
   },
   {
-    keys: ['liechtenstein', 'vaduz', 'heidiland', 'landquart', 'lindt', 'walensee', 'austria', 'germany'],
+    keys: ['liechtenstein', 'vaduz', 'heidiland', 'landquart', 'lindt', 'walensee', 'austria', 'germany', '4 countries', '4-country'],
     image: '/assets/images/Switzerland/Zurich1.avif',
   },
   {
@@ -48,7 +48,7 @@ const normalize = (value = '') =>
 
 const readImageValue = (value) => {
   if (!value) return '';
-  if (typeof value === 'string') return isDataImage(value) ? '' : value.trim();
+  if (typeof value === 'string') return value.trim();
   if (typeof value === 'object') {
     return readImageValue(value.url || value.secure_url || value.src || value.path || value.imageUrl);
   }
@@ -88,6 +88,7 @@ export const getTourFallbackImage = (tour = {}) => {
 export const resolveTourImageUrl = (image = '') => {
   const value = readImageValue(image);
   if (!value) return '';
+  if (isDataImage(value)) return value;
   if (isHttpUrl(value)) return value;
   if (value.startsWith('/assets/') || value.startsWith('/src/assets/') || value.startsWith('./')) return value;
   if (value.startsWith('/')) {
@@ -109,6 +110,27 @@ export function getTourCardImage(tour = {}) {
   );
 
   return resolveTourImageUrl(image || getTourFallbackImage(tour));
+}
+
+export function getTourGalleryImages(tour = {}) {
+  if (!tour) return [];
+
+  const images = [
+    ...readImageList(tour.images),
+    ...readImageList(tour.thumbnail),
+    ...readImageList(tour.cardImage),
+    ...readImageList(tour.coverImage),
+    ...readImageList(tour.gallery),
+    ...readImageList(tour.media),
+    getTourCardImage(tour),
+  ];
+
+  return [...new Set(images.filter(Boolean))];
+}
+
+function readImageList(value) {
+  const list = Array.isArray(value) ? value : value ? [value] : [];
+  return list.map(resolveTourImageUrl).filter(Boolean);
 }
 
 export const getTourImageDebugPayload = (tour = {}) => ({

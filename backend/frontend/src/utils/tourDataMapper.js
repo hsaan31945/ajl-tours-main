@@ -54,6 +54,11 @@ export const mapTourResponse = (tour) => {
     
     // Images & Media
     images: Array.isArray(tour.images) ? tour.images : [],
+    thumbnail: tour.thumbnail || '',
+    cardImage: tour.cardImage || '',
+    coverImage: tour.coverImage || '',
+    gallery: Array.isArray(tour.gallery) ? tour.gallery : [],
+    media: Array.isArray(tour.media) ? tour.media : [],
     
     // Location & Logistics
     startLocation: tour.startLocation || '',
@@ -210,6 +215,11 @@ export const normalizeTourData = (tour) => {
     excluded: Array.isArray(mappedTour.excluded) ? mappedTour.excluded : [],
     itinerary: Array.isArray(mappedTour.itinerary) ? mappedTour.itinerary : [],
     images: Array.isArray(mappedTour.images) ? mappedTour.images : [],
+    thumbnail: mappedTour.thumbnail || '',
+    cardImage: mappedTour.cardImage || '',
+    coverImage: mappedTour.coverImage || '',
+    gallery: Array.isArray(mappedTour.gallery) ? mappedTour.gallery : [],
+    media: Array.isArray(mappedTour.media) ? mappedTour.media : [],
     pickupLocations: Array.isArray(mappedTour.pickupLocations) ? mappedTour.pickupLocations : [],
   };
 };

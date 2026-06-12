@@ -51,7 +51,7 @@ const normalizeImageValue = (image) => {
   if (!image || typeof image !== 'string') return null;
   const value = image.trim();
   if (!value) return null;
-  return /^(https?:\/\/|\/|\.\/)/i.test(value) ? value : null;
+  return /^(https?:\/\/|\/|\.\/|data:image\/(webp|avif);base64,)/i.test(value) ? value : null;
 };
 
 const normalizeImages = (images) => {
@@ -93,6 +93,37 @@ const parseImageDataUrl = (value = '') => {
     contentType: match[1].toLowerCase(),
     buffer: Buffer.from(match[2], 'base64'),
   };
+};
+
+const readStoredImageValue = (value) => {
+  if (!value) return '';
+  if (typeof value === 'string') return value.trim();
+  if (typeof value === 'object') {
+    return readStoredImageValue(value.url || value.secure_url || value.src || value.path || value.imageUrl);
+  }
+  return '';
+};
+
+const collectStoredImages = (tour = {}) => {
+  const fields = [
+    tour.images,
+    tour.thumbnail,
+    tour.cardImage,
+    tour.coverImage,
+    tour.gallery,
+    tour.media,
+  ];
+
+  return fields
+    .flatMap((field) => (Array.isArray(field) ? field : field ? [field] : []))
+    .map(readStoredImageValue)
+    .filter(Boolean);
+};
+
+const pickStoredImage = (tour = {}, imageIndex = 0) => {
+  const images = collectStoredImages(tour);
+  const index = Math.max(0, Number(imageIndex) || 0);
+  return images[index] || images.find(Boolean) || '';
 };
 
 const normalizeItinerary = (items) => (
@@ -204,7 +235,7 @@ class TourService {
       if (!image || typeof image !== 'string') continue;
       const value = image.trim();
       if (!value) continue;
-      if (/^(https?:\/\/|\/|\.\/)/i.test(value)) {
+      if (/^(https?:\/\/|\/|\.\/|data:image\/(webp|avif);base64,)/i.test(value)) {
         return value;
       }
     }
@@ -473,16 +504,14 @@ class TourService {
       : { 'metadata.staticId': tourId };
 
     const tour = await Tour.findOne(query)
-      .select('images updatedAt')
+      .select('images thumbnail cardImage coverImage gallery media updatedAt')
       .lean();
 
     if (!tour) {
       throw new Error('Tour not found');
     }
 
-    const images = Array.isArray(tour.images) ? tour.images : [];
-    const index = Math.max(0, Number(imageIndex) || 0);
-    const image = String(images[index] || images.find(Boolean) || '').trim();
+    const image = pickStoredImage(tour, imageIndex);
 
     if (!image) {
       throw new Error('Tour image not found');
@@ -688,7 +717,7 @@ class TourService {
         tour.excluded = Array.isArray(tour.excluded) ? tour.excluded : [];
         tour.itinerary = Array.isArray(tour.itinerary) ? tour.itinerary : [];
         tour.thumbnail = getTourThumbnail(tour);
-        tour.images = stripDataImages(tour.images);
+        tour.images = stripDataImages(tour.images, tour.id || tour._id);
         tour.pickupLocations = Array.isArray(tour.pickupLocations) ? tour.pickupLocations : [];
         // Ensure divisionName is set correctly
         if (tour.division) {
@@ -742,7 +771,7 @@ class TourService {
         console.log('Tour image debug', getTourImageDebugPayload(tour));
       }
       tour.thumbnail = getTourThumbnail(tour);
-      tour.images = stripDataImages(tour.images);
+      tour.images = stripDataImages(tour.images, tour.id || tour._id);
       tour.pickupLocations = Array.isArray(tour.pickupLocations) ? tour.pickupLocations : [];
 
       return applyReviewSummary(tour);
@@ -770,7 +799,7 @@ class TourService {
       console.log('Tour image debug', getTourImageDebugPayload(tour));
     }
     tour.thumbnail = getTourThumbnail(tour);
-    tour.images = stripDataImages(tour.images);
+    tour.images = stripDataImages(tour.images, tour.id || tour._id);
     tour.pickupLocations = Array.isArray(tour.pickupLocations) ? tour.pickupLocations : [];
     
     return applyReviewSummary(tour);

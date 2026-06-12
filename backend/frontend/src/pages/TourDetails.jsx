@@ -7,6 +7,7 @@ import { apiUrl } from '../utils/api';
 import TourReviews, { getTourReviewSummary } from '../components/TourReviews';
 import { getDiscountPrice } from '../utils/bookingPricing';
 import { useCurrency } from '../context/CurrencyContext';
+import { getTourGalleryImages } from '../utils/tourImages';
 
 const TourDetails = () => {
   const { id } = useParams();
@@ -104,6 +105,7 @@ const TourDetails = () => {
     ? `${reviewSummary.reviewAverage.toFixed(1)} / 5`
     : 'No ratings yet';
   const discountPrice = getDiscountPrice(tour, tour?.price);
+  const tourImages = getTourGalleryImages(tour);
 
   if (loading) {
     return (
@@ -138,9 +140,9 @@ const TourDetails = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Tour Images */}
           <div className="space-y-4">
-            {tour.images && tour.images.length > 0 ? (
+            {tourImages.length > 0 ? (
               <div className="grid grid-cols-1 gap-4">
-                {tour.images.map((image, index) => (
+                {tourImages.map((image, index) => (
                   <img
                     key={index}
                     src={image}
