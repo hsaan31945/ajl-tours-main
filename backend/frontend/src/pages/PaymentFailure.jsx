@@ -77,7 +77,7 @@ const PaymentFailure = () => {
 
         {/* Support Info */}
         <div className="mt-8 text-sm text-gray-500">
-          <p>Still having trouble? Contact our support team at support@tripgo.com</p>
+          <p>Still having trouble? Contact our support team at hey@ajltour.com</p>
           <p className="mt-2">We're here to help you complete your booking!</p>
         </div>
       </div>
@@ -86,7 +86,6 @@ const PaymentFailure = () => {
 };
 
 export default PaymentFailure;
-
 
 
 

@@ -302,7 +302,7 @@ const PaymentSuccess = () => {
 
         {/* Support Info */}
         <div className="mt-8 text-sm text-gray-500">
-          <p>Need help? Contact our support team at support@tripgo.com</p>
+          <p>Need help? Contact our support team at hey@ajltour.com</p>
         </div>
       </div>
     </div>

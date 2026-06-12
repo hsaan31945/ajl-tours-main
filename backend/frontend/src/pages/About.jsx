@@ -221,7 +221,7 @@ const About = () => {
               {
                 icon: <Mail className="w-8 h-8 mb-4" />,
                 title: "Email",
-                content: "contact@ajltransfer.com",
+                content: "hey@ajltour.com",
               },
               {
                 icon: <Phone className="w-8 h-8 mb-4" />,
@@ -250,7 +250,7 @@ const About = () => {
           </div>
           <div className="mt-12 text-center">
             <a
-              href="mailto:contact@ajltransfer.com"
+              href="mailto:hey@ajltour.com"
               className="inline-block px-8 py-3 bg-white text-red-600 rounded-full font-semibold hover:bg-red-100 transition duration-300"
             >
               Contact Us

@@ -28,7 +28,7 @@ const Footer = () => {
         <div>
           <h3 className="text-lg font-semibold mb-2 text-black">{t("footer.contactInfo")}</h3>
           <ul className="text-gray-600 text-sm space-y-1">
-            <li>{t("footer.email")}: contact@ajltransfer.com</li>
+            <li>{t("footer.email")}: hey@ajltour.com</li>
             <li>{t("footer.phone")}: +41 78 207 89 02</li>
             <li>{t("footer.address")}: Plattenstrasse 7, 8152 Opfikon, Switzerland</li>
           </ul>
