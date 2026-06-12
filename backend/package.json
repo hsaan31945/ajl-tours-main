@@ -16,6 +16,11 @@
     "uuid": "^11.1.0"
   },
   "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "setup:admin": "node scripts/setup-admin.js",
+    "test:connection": "node scripts/test-connection.js",
+    "test:admin": "node scripts/test-admin.js",
     "migrate:customer-dashboard": "node scripts/create-customer-dashboard-indexes.js"
   },
   "devDependencies": {
@@ -26,7 +31,6 @@
     "npm": ">=8.0.0"
   }
 }
-
 
 
 

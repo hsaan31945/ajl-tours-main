@@ -3,7 +3,7 @@
  * Imports JSON data exported by export_db.ps1 into any new MongoDB database.
  * 
  * Usage:
- *   node import_db.js --uri "your_mongodb_connection_uri" --folder "../db_export_20260518_235523"
+ *   node scripts/import_db.js --uri "your_mongodb_connection_uri" --folder "../database-backups/db_export_20260518_235523"
  */
 
 const fs = require('fs');
@@ -90,7 +90,7 @@ const exportFolder = args.folder;
 if (!mongoURI || !exportFolder) {
   console.error('\n❌ Missing arguments!');
   console.log('\nUsage:');
-  console.log('  node import_db.js --uri="<connection_uri>" --folder="<export_folder_path>"\n');
+  console.log('  node scripts/import_db.js --uri="<connection_uri>" --folder="<export_folder_path>"\n');
   process.exit(1);
 }
 
