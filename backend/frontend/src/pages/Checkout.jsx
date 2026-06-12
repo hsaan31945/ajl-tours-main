@@ -21,6 +21,7 @@ import { Star } from "lucide-react";
 import { useCurrency } from "../context/CurrencyContext";
 import { useI18n } from "../i18n";
 import { getTourGalleryImages } from "../utils/tourImages";
+import { getMinimumBookingDateString } from "../components/PaymentSection";
 
 function ItineraryAccordion({ itinerary = [], adminOn = false, onSave, onAddDraft }) {
   const itineraryList = Array.isArray(itinerary) ? itinerary : [];
@@ -270,13 +271,13 @@ const Checkout = () => {
   // State for booking form and calendar
   const now = new Date();
   const pad = (n) => String(n).padStart(2, '0');
-  const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  const minBookingDateStr = getMinimumBookingDateString();
   // Choose next available time slot (9:00 or 10:00)
   let defaultTime = '09:00';
   if (now.getHours() >= 10) defaultTime = '10:00';
   if (now.getHours() >= 11) defaultTime = '09:00'; // fallback to 9:00 if past 10am
 
-  const [selectedDate, setSelectedDate] = useState(todayStr);
+  const [selectedDate, setSelectedDate] = useState(minBookingDateStr);
   const [selectedTime, setSelectedTime] = useState(defaultTime);
   const [tickets, setTickets] = useState(1);
   
@@ -1118,7 +1119,7 @@ const Checkout = () => {
             currency={pricing.currency}
             date={selectedDate}
             setDate={setSelectedDate}
-            minDate={todayStr}
+            minDate={minBookingDateStr}
             time={selectedTime}
             onPriceUpdated={(newPrice) => {
               setTour((currentTour) => ({

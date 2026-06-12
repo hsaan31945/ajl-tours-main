@@ -19,6 +19,15 @@ const toLocalDateString = (date) => {
   return `${year}-${month}-${day}`;
 };
 
+const getMinimumBookingDate = () => {
+  const date = new Date();
+  date.setDate(date.getDate() + 2);
+  date.setHours(0, 0, 0, 0);
+  return date;
+};
+
+export const getMinimumBookingDateString = () => toLocalDateString(getMinimumBookingDate());
+
 const parseLocalDate = (value) => {
   if (!value) return new Date();
   const [year, month, day] = value.split("-").map(Number);
@@ -88,12 +97,25 @@ function MonthGrid({ monthDate, selectedDate, minDate, onSelect }) {
 }
 
 function DateDropdown({ date, setDate, minDate }) {
+  const effectiveMinDate = minDate || getMinimumBookingDateString();
   const [open, setOpen] = useState(false);
   const [visibleMonth, setVisibleMonth] = useState(() => {
-    const base = parseLocalDate(date || minDate);
+    const base = parseLocalDate(date || effectiveMinDate);
     return new Date(base.getFullYear(), base.getMonth(), 1);
   });
   const wrapperRef = useRef(null);
+
+  useEffect(() => {
+    const min = parseLocalDate(effectiveMinDate);
+    min.setHours(0, 0, 0, 0);
+    const selected = parseLocalDate(date);
+    selected.setHours(0, 0, 0, 0);
+
+    if (!date || selected < min) {
+      setDate(effectiveMinDate);
+      setVisibleMonth(new Date(min.getFullYear(), min.getMonth(), 1));
+    }
+  }, [date, effectiveMinDate, setDate]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -155,13 +177,13 @@ function DateDropdown({ date, setDate, minDate }) {
             <MonthGrid
               monthDate={visibleMonth}
               selectedDate={date}
-              minDate={minDate}
+              minDate={effectiveMinDate}
               onSelect={handleSelect}
             />
             <MonthGrid
               monthDate={nextMonth}
               selectedDate={date}
-              minDate={minDate}
+              minDate={effectiveMinDate}
               onSelect={handleSelect}
             />
           </div>
@@ -333,7 +355,7 @@ function PaymentSection({
           <DateDropdown
             date={date}
             setDate={setDate}
-            minDate={minDate || toLocalDateString(new Date())}
+            minDate={minDate || getMinimumBookingDateString()}
           />
         )}
         {minTickets > 1 && (
