@@ -4,7 +4,7 @@ import { Menu, X, Heart, ShoppingCart, History as HistoryIcon, MapPin, Globe, Bo
 import { AppContext } from "../context/AppContext.jsx";
 import { assets } from "../assets/assets.js";
 import { useAdmin } from "../context/AdminContext";
-import { getTourId } from "../utils/tourId";
+import { getTourId, getTourSeoPath } from "../utils/tourId";
 import { fetchToursList } from "../services/toursApi";
 import CurrencySelector from "./CurrencySelector";
 import LanguageSelector from "./LanguageSelector";
@@ -22,6 +22,7 @@ const Navbar = () => {
   const location = useLocation();
   const isDestinationsActive =
     destinationsOpen ||
+    location.pathname.startsWith("/destinations") ||
     location.pathname.startsWith("/switzerland") ||
     location.pathname.startsWith("/srilanka");
   const destinationsRef = useRef(null);
@@ -132,7 +133,7 @@ const Navbar = () => {
       setNavQuery(tour.name);
       setShowSearchDropdown(false);
       // Use replace: false and state to ensure route change is detected
-      navigate(`/switzerland/${tourId}/checkout-sw`, { 
+      navigate(getTourSeoPath(tour), { 
         replace: false,
         state: { tour: tour, fromSearch: true }
       });
@@ -318,11 +319,10 @@ const Navbar = () => {
             onMouseEnter={() => setDestinationsOpen(true)}
             onMouseLeave={() => setDestinationsOpen(false)}
           >
-            <button
-              type="button"
+            <Link
+              to="/destinations"
               title="Destinations"
               onFocus={() => setDestinationsOpen(true)}
-              onClick={() => setDestinationsOpen((current) => !current)}
               className={`inline-flex items-center gap-2 rounded-full px-4 py-2 transition-colors ${
                 isDestinationsActive
                   ? "bg-orange-50 text-orange-700"
@@ -331,7 +331,7 @@ const Navbar = () => {
             >
               {t("nav.destinations")}
               <ChevronDown className={`h-4 w-4 transition-transform ${destinationsOpen ? "rotate-180" : ""}`} />
-            </button>
+            </Link>
 
               <div
                 className={`absolute left-0 top-full z-40 w-64 pt-3 text-left transition duration-150 group-hover:visible group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 ${
@@ -468,16 +468,16 @@ const Navbar = () => {
             {isAdmin ? (
               <button
                 onClick={disableAdmin}
-                className="inline-flex h-11 items-center justify-center rounded-lg border-2 border-orange-600 px-6 text-base font-bold text-orange-600 transition-colors hover:bg-orange-600 hover:text-white"
+                className="inline-flex h-11 items-center justify-center rounded-lg border-2 border-orange-700 px-6 text-base font-bold text-orange-700 transition-colors hover:bg-orange-700 hover:text-white"
               >
                 {t("nav.logout")}
               </button>
             ) : (
-              <button onClick={logout} className="inline-flex h-11 items-center justify-center rounded-lg border-2 border-orange-600 px-6 text-base font-bold text-orange-600 transition-colors hover:bg-orange-600 hover:text-white">{t("nav.logout")}</button>
+              <button onClick={logout} className="inline-flex h-11 items-center justify-center rounded-lg border-2 border-orange-700 px-6 text-base font-bold text-orange-700 transition-colors hover:bg-orange-700 hover:text-white">{t("nav.logout")}</button>
             )}
           </div>
         ) : (
-          <Link to="/login" className="inline-flex h-11 items-center justify-center rounded-lg border-2 border-orange-600 px-6 text-base font-bold text-orange-600 transition-colors hover:bg-orange-600 hover:text-white">
+          <Link to="/login" className="inline-flex h-11 items-center justify-center rounded-lg border-2 border-orange-700 px-6 text-base font-bold text-orange-700 transition-colors hover:bg-orange-700 hover:text-white">
             {t("nav.login")}
           </Link>
         )}
@@ -547,6 +547,12 @@ const Navbar = () => {
                   <h3 className="px-6 pt-5 pb-2 text-xs font-bold uppercase tracking-wide text-gray-400">
                     {t("nav.menu")}
                   </h3>
+                  <DrawerLink
+                    to="/destinations"
+                    icon={<MapPin className="w-5 h-5" />}
+                    label={t("nav.destinations")}
+                    onClick={() => setMenuOpen(false)}
+                  />
                   <DrawerLink
                     to="/tours"
                     icon={<ShoppingCart className="w-5 h-5" />}

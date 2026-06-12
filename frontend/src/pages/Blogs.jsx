@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { blogs } from "../data/blogs";
 import SEO from "../components/SEO";
 import { useHeroBanner } from "../hooks/useHeroBanner";
+import { createBreadcrumbJsonLd } from "../utils/seo";
 
 const Blogs = () => {
   const navigate = useNavigate();
@@ -30,6 +31,10 @@ const Blogs = () => {
       <SEO
         title="Switzerland Travel Blog | AJL Tours"
         description="Read AJL Tours travel guides, Swiss destination inspiration, and private tour tips for premium Switzerland trips."
+        structuredData={createBreadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Blogs", path: "/blogs" },
+        ])}
       />
       {/* Hero Section */}
       <motion.div
@@ -40,7 +45,7 @@ const Blogs = () => {
       >
         <img
           src={heroBanner.imageUrl}
-          alt={heroBanner.alt || "Blogs hero banner"}
+          alt={heroBanner.alt || "Switzerland travel blog hero image"}
           className="absolute inset-0 h-full w-full object-cover opacity-55"
         />
         <div className="absolute inset-0 bg-black/45" />

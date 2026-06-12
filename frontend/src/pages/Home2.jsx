@@ -2,13 +2,15 @@ import React, { Suspense, lazy, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import SEO from "../components/SEO";
 import { fetchToursList } from "../services/toursApi";
-import { getTourId } from "../utils/tourId";
+import { getTourId, getTourSeoPath } from "../utils/tourId";
 import { cleanDisplayName } from "../utils/textFormatting";
-import { Search, MapPin, Compass, Users, ChevronDown, CheckCircle, Star, Quote, Car, Map, Clock, ShieldCheck, HeartPulse } from "lucide-react";
+import { organizationJsonLd } from "../utils/seo";
+import { Search, MapPin, ChevronDown, Star, Quote } from "lucide-react";
 import { useI18n } from "../i18n";
 
 const ExploreTours = lazy(() => import("../components/ExploreTours"));
 const TopDealsSection = lazy(() => import("../components/TopDealsSection"));
+const HomeDeferredContent = lazy(() => import("./HomeDeferredContent"));
 const HERO_AUTOPLAY_MS = 5000;
 const HERO_TRANSITION_MS = 1000;
 const hero4 = "/assets/images/optimized/hero4-1600.webp";
@@ -20,10 +22,8 @@ const hero5Small = "/assets/images/optimized/hero5-900.webp";
 const hero6Small = "/assets/images/optimized/hero6-900.webp";
 const hero6Mobile480 = "/assets/images/optimized/hero6-480.webp";
 const hero6Mobile640 = "/assets/images/optimized/hero6-640.webp";
-const hero6Mobile768 = "/assets/images/optimized/hero6-768.webp";
 const hero6Mobile480Avif = "/assets/images/optimized/hero6-480.avif";
 const hero6Mobile640Avif = "/assets/images/optimized/hero6-640.avif";
-const hero6Mobile768Avif = "/assets/images/optimized/hero6-768.avif";
 const hero7Small = "/assets/images/optimized/hero7-900.webp";
 const defaultHeroImages = [hero4, hero5, hero6, hero7];
 const mobileHeroAvifSrcSet = `${hero6Mobile480Avif} 480w, ${hero6Mobile640Avif} 640w`;
@@ -35,14 +35,7 @@ const heroImageSrcSets = {
   [hero7]: `${hero7Small} 900w, ${hero7} 1600w`,
 };
 
-const heroGridImages = [
-  { src: hero4Small, alt: "Swiss mountain village" },
-  { src: hero7Small, alt: "Swiss alpine landscape" },
-  { src: hero5Small, alt: "Swiss scenic valley" },
-  { src: hero6Mobile768, alt: "Switzerland Alps" },
-];
-
-const DeferredSection = ({ children, rootMargin = "700px", minHeight = 0 }) => {
+const DeferredSection = ({ children, rootMargin = "700px", minHeight = 0, className = "" }) => {
   const ref = useRef(null);
   const [shouldRender, setShouldRender] = useState(false);
 
@@ -72,7 +65,7 @@ const DeferredSection = ({ children, rootMargin = "700px", minHeight = 0 }) => {
   }, [rootMargin, shouldRender]);
 
   return (
-    <div ref={ref} style={shouldRender ? undefined : { minHeight }}>
+    <div ref={ref} className={className} style={shouldRender ? undefined : { minHeight }}>
       {shouldRender ? children : null}
     </div>
   );
@@ -83,6 +76,7 @@ const Home2 = () => {
   const { t } = useI18n();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isHeroTransitioning, setIsHeroTransitioning] = useState(true);
+  const [canAnimateHero, setCanAnimateHero] = useState(false);
   const [isDesktopHero, setIsDesktopHero] = useState(() => (
     typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches
   ));
@@ -96,7 +90,9 @@ const Home2 = () => {
 
   // Keep homepage LCP independent from CMS/API hero banners.
   const heroImages = defaultHeroImages;
-  const desktopHeroImages = heroImages.length > 1 ? [...heroImages, heroImages[0]] : heroImages;
+  const desktopHeroImages = canAnimateHero && heroImages.length > 1
+    ? [...heroImages, heroImages[0]]
+    : [heroImages[0]];
 
   const loadSearchTours = async () => {
     if (searchToursLoadedRef.current || searchLoading) return;
@@ -122,9 +118,7 @@ const Home2 = () => {
   const getTourRoute = (tour) => {
     const tourId = getTourId(tour);
     if (!tourId) return null;
-    const destinationName = String(tour.divisionName || tour.destination || "").toLowerCase();
-    const basePath = destinationName.includes("sri") ? "/srilanka" : "/switzerland";
-    return `${basePath}/${tourId}/checkout-sw`;
+    return getTourSeoPath(tour);
   };
 
   const buildTourSearchResults = (query) => {
@@ -210,7 +204,7 @@ const Home2 = () => {
 
   // Auto-advance slowly and loop visually from last slide to first slide.
   React.useEffect(() => {
-    if (heroImages.length <= 1) return undefined;
+    if (!isDesktopHero || !canAnimateHero || heroImages.length <= 1) return undefined;
 
     const interval = setInterval(() => {
       setIsHeroTransitioning(true);
@@ -218,10 +212,10 @@ const Home2 = () => {
     }, HERO_AUTOPLAY_MS);
 
     return () => clearInterval(interval);
-  }, [heroImages.length]);
+  }, [canAnimateHero, heroImages.length, isDesktopHero]);
 
   React.useEffect(() => {
-    if (heroImages.length <= 1 || currentImageIndex !== heroImages.length) return undefined;
+    if (!canAnimateHero || heroImages.length <= 1 || currentImageIndex !== heroImages.length) return undefined;
 
     const timeout = window.setTimeout(() => {
       setIsHeroTransitioning(false);
@@ -232,7 +226,7 @@ const Home2 = () => {
     }, HERO_TRANSITION_MS);
 
     return () => window.clearTimeout(timeout);
-  }, [currentImageIndex, heroImages.length]);
+  }, [canAnimateHero, currentImageIndex, heroImages.length]);
 
   React.useEffect(() => {
     setIsHeroTransitioning(false);
@@ -251,13 +245,41 @@ const Home2 = () => {
     return () => media.removeEventListener?.("change", updateHeroMode);
   }, []);
 
-  const [openFaq, setOpenFaq] = useState(null);
+  React.useEffect(() => {
+    if (!isDesktopHero || canAnimateHero) return undefined;
+
+    let timeoutId;
+    const enableAfterLoad = () => {
+      timeoutId = window.setTimeout(() => setCanAnimateHero(true), 6000);
+    };
+
+    if (document.readyState === "complete") {
+      enableAfterLoad();
+    } else {
+      window.addEventListener("load", enableAfterLoad, { once: true });
+    }
+
+    const enableOnInteraction = () => {
+      window.clearTimeout(timeoutId);
+      setCanAnimateHero(true);
+    };
+    window.addEventListener("pointerdown", enableOnInteraction, { once: true, passive: true });
+    window.addEventListener("keydown", enableOnInteraction, { once: true });
+
+    return () => {
+      window.removeEventListener("load", enableAfterLoad);
+      window.removeEventListener("pointerdown", enableOnInteraction);
+      window.removeEventListener("keydown", enableOnInteraction);
+      window.clearTimeout(timeoutId);
+    };
+  }, [canAnimateHero, isDesktopHero]);
 
   return (
     <div className="min-h-screen">
       <SEO
         title={t("seo.homeTitle")}
         description={t("seo.homeDescription")}
+        structuredData={organizationJsonLd}
       />
 
       {/* Hero Section - Full Width Background */}
@@ -270,10 +292,10 @@ const Home2 = () => {
               <source type="image/avif" srcSet={mobileHeroAvifSrcSet} sizes="100vw" />
               <source type="image/webp" srcSet={mobileHeroWebpSrcSet} sizes="100vw" />
               <img
-                src={hero6Mobile640}
-                srcSet={mobileHeroWebpSrcSet}
+                src={hero6Mobile640Avif}
+                srcSet={mobileHeroAvifSrcSet}
                 sizes="100vw"
-                alt="Private Switzerland tour landscape"
+                alt="Private Switzerland tour through an alpine mountain landscape"
                 width="900"
                 height="600"
                 fetchPriority="high"
@@ -337,7 +359,7 @@ const Home2 = () => {
             {/* Search Destination Bar */}
             <div className="home-hero-search w-full md:max-w-[700px] relative search-container">
               <div className="home-hero-search-box flex items-center backdrop-blur-md rounded-full shadow-2xl px-3 sm:px-4 py-2 sm:py-4 transition-all duration-300 focus-within:ring-4 focus-within:ring-orange-500/30" style={{ backgroundColor: 'rgb(255 255 255 / 0.98)' }}>
-                <Search className="home-hero-search-icon w-5 h-5 sm:w-6 sm:h-6 text-orange-500 mr-2 sm:mr-3 shrink-0" />
+                <Search className="home-hero-search-icon w-5 h-5 sm:w-6 sm:h-6 text-orange-700 mr-2 sm:mr-3 shrink-0" />
                 <input
                   type="text"
                   className="home-hero-search-input flex-1 bg-transparent outline-none text-sm sm:text-lg text-black placeholder-gray-500 min-w-0"
@@ -351,7 +373,7 @@ const Home2 = () => {
                   autoComplete="off"
                 />
                 <button 
-                  className="home-hero-search-button bg-orange-600 hover:bg-black text-white font-bold px-4 sm:px-10 py-2 sm:py-4 rounded-full transition-all duration-300 text-sm sm:text-lg whitespace-nowrap flex-shrink-0 shadow-lg ml-1"
+                  className="home-hero-search-button bg-orange-700 hover:bg-black text-white font-bold px-4 sm:px-10 py-2 sm:py-4 rounded-full transition-all duration-300 text-sm sm:text-lg whitespace-nowrap flex-shrink-0 shadow-lg ml-1"
                   onClick={handleSearchButtonClick}
                 >
                   {t("nav.search")}
@@ -412,25 +434,27 @@ const Home2 = () => {
                   <p className="text-2xl font-bold text-[#1A2B47] italic mb-4 relative z-10 font-serif">
                     “{t("home.quote")}”
                   </p>
-                  <p className="text-orange-600 font-bold uppercase tracking-widest text-sm">— {t("home.quoteAuthor")}</p>
+                  <p className="text-orange-800 font-bold uppercase tracking-widest text-sm">— {t("home.quoteAuthor")}</p>
                 </div>
               </div>
             </div>
             <div className="relative">
               <div className="aspect-[4/5] rounded-[2.5rem] overflow-hidden shadow-2xl">
-                <picture>
-                  <source type="image/avif" srcSet={mobileHeroAvifSrcSet} sizes="(max-width: 1024px) 100vw, 50vw" />
-                  <source type="image/webp" srcSet={mobileHeroWebpSrcSet} sizes="(max-width: 1024px) 100vw, 50vw" />
-                  <img
-                    src={hero6Mobile640}
-                    alt="Switzerland Alps"
-                    width="900"
-                    height="600"
-                    loading="lazy"
-                    decoding="async"
-                    className="w-full h-full object-cover transform hover:scale-110 transition-transform duration-1000"
-                  />
-                </picture>
+                <DeferredSection rootMargin="0px" className="h-full">
+                  <picture className="block h-full">
+                    <source type="image/avif" srcSet={mobileHeroAvifSrcSet} sizes="(max-width: 1024px) 100vw, 50vw" />
+                    <source type="image/webp" srcSet={mobileHeroWebpSrcSet} sizes="(max-width: 1024px) 100vw, 50vw" />
+                    <img
+                      src={hero6Mobile640Avif}
+                      alt="Swiss Alps scenery for a private Switzerland tour"
+                      width="900"
+                      height="600"
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-cover transform hover:scale-110 transition-transform duration-1000"
+                    />
+                  </picture>
+                </DeferredSection>
               </div>
               <div className="absolute -bottom-8 -left-8 bg-white p-6 rounded-3xl shadow-xl border border-gray-100 hidden sm:block">
                 <div className="flex items-center gap-4">
@@ -451,358 +475,26 @@ const Home2 = () => {
 
 
       {/* Explore Tours Section */}
-      <DeferredSection minHeight={720}>
+      <DeferredSection rootMargin="0px" minHeight={720}>
         <Suspense fallback={null}>
           <ExploreTours />
         </Suspense>
       </DeferredSection>
 
       {/* Top Deals Section */}
-      <DeferredSection minHeight={640}>
+      <DeferredSection rootMargin="0px" minHeight={640}>
         <Suspense fallback={null}>
           <TopDealsSection />
         </Suspense>
       </DeferredSection>
 
-      <DeferredSection rootMargin="300px" minHeight={4200}>
-      {/* Services Section */}
-      <section className="py-24 px-6 sm:px-12 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-20">
-            <p className="text-orange-600 font-bold uppercase tracking-[0.3em] mb-4">{t("home.exclusiveExperience")}</p>
-            <h2 className="text-4xl sm:text-5xl font-extrabold text-[#1A2B47]">{t("home.servicesTitle")}</h2>
-          </div>
-          
-          <div className="flex md:grid md:grid-cols-2 lg:grid-cols-3 gap-8 overflow-x-auto pb-8 snap-x snap-mandatory scrollbar-hide -mx-6 px-6 sm:mx-0 sm:px-0">
-            <div className="min-w-[85%] md:min-w-0 snap-center">
-              <ServiceCard 
-                icon={<Compass />}
-                title={t("home.services.customItineraryTitle")}
-                description={t("home.services.customItineraryText")}
-              />
-            </div>
-            <div className="min-w-[85%] md:min-w-0 snap-center">
-              <ServiceCard 
-                icon={<Users />}
-                title={t("home.services.privateToursTitle")}
-                description={t("home.services.privateToursText")}
-              />
-            </div>
-            <div className="min-w-[85%] md:min-w-0 snap-center">
-              <ServiceCard 
-                icon={<Car />}
-                title={t("home.services.vehiclesTitle")}
-                description={t("home.services.vehiclesText")}
-              />
-            </div>
-            <div className="min-w-[85%] md:min-w-0 snap-center">
-              <ServiceCard 
-                icon={<ShieldCheck />}
-                title={t("home.services.chauffeursTitle")}
-                description={t("home.services.chauffeursText")}
-              />
-            </div>
-            <div className="min-w-[85%] md:min-w-0 snap-center">
-              <ServiceCard 
-                icon={<Map />}
-                title={t("home.services.guidesTitle")}
-                description={t("home.services.guidesText")}
-              />
-            </div>
-            <div className="min-w-[85%] md:min-w-0 snap-center">
-              <ServiceCard 
-                icon={<Clock />}
-                title={t("home.services.pickupTitle")}
-                description={t("home.services.pickupText")}
-              />
-            </div>
-            <div className="min-w-[85%] md:min-w-0 snap-center">
-              <ServiceCard 
-                icon={<HeartPulse />}
-                title={t("home.services.seasonalTitle")}
-                description={t("home.services.seasonalText")}
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Brand Story Section */}
-      <section className="py-24 px-6 sm:px-12 bg-[#1A2B47] text-white">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-20">
-            <div>
-              <h2 className="text-4xl font-extrabold mb-8 text-orange-500 whitespace-nowrap">{t("home.whoWeAre")}</h2>
-              <p className="text-lg text-gray-300 leading-relaxed font-medium">
-                {t("home.whoWeAreText")}
-              </p>
-            </div>
-            <div>
-              <h2 className="text-4xl font-extrabold mb-8 text-orange-500 whitespace-nowrap">{t("home.ourMission")}</h2>
-              <p className="text-lg text-gray-300 leading-relaxed font-medium">
-                {t("home.missionText")}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-
-
-
-
-      
-
-      {/* Why Choose Us Section */}
-      <section className="py-24 px-6 sm:px-12 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col lg:flex-row gap-20 items-center">
-            <div className="lg:w-1/2 order-2 lg:order-1">
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-6">
-                  <div className="aspect-square rounded-3xl overflow-hidden shadow-lg"><img src={heroGridImages[0].src} alt={heroGridImages[0].alt} width="900" height="600" loading="lazy" className="w-full h-full object-cover" /></div>
-                  <div className="aspect-square rounded-3xl overflow-hidden shadow-lg"><img src={heroGridImages[1].src} alt={heroGridImages[1].alt} width="900" height="600" loading="lazy" className="w-full h-full object-cover" /></div>
-                </div>
-                <div className="space-y-6 pt-12">
-                  <div className="aspect-square rounded-3xl overflow-hidden shadow-lg"><img src={heroGridImages[2].src} alt={heroGridImages[2].alt} width="900" height="600" loading="lazy" className="w-full h-full object-cover" /></div>
-                  <div className="aspect-square rounded-3xl overflow-hidden shadow-lg transform scale-110"><img src={heroGridImages[3].src} alt={heroGridImages[3].alt} width="900" height="600" loading="lazy" className="w-full h-full object-cover" /></div>
-                </div>
-              </div>
-            </div>
-            <div className="lg:w-1/2 order-1 lg:order-2">
-              <h2 className="text-4xl sm:text-5xl font-extrabold text-[#1A2B47] mb-8 leading-tight">
-                {t("home.whyChooseUs")}
-              </h2>
-              <div className="space-y-8">
-                <FeatureItem title={t("home.features.authenticityTitle")} text={t("home.features.authenticityText")} />
-                <FeatureItem title={t("home.features.excellenceTitle")} text={t("home.features.excellenceText")} />
-                <FeatureItem title={t("home.features.personalisationTitle")} text={t("home.features.personalisationText")} />
-                <FeatureItem title={t("home.features.guidesTitle")} text={t("home.features.guidesText")} />
-                <FeatureItem title={t("home.features.travelTitle")} text={t("home.features.travelText")} />
-                <FeatureItem title={t("home.features.memoriesTitle")} text={t("home.features.memoriesText")} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section className="py-24 px-6 sm:px-12 bg-gray-50 overflow-hidden relative">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-orange-100 rounded-full blur-[100px] -mr-48 -mt-48 opacity-50" />
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-center mb-20">
-            <p className="text-orange-600 font-bold uppercase tracking-[0.3em] mb-4">{t("home.guestExperiences")}</p>
-            <h2 className="text-4xl sm:text-5xl font-extrabold text-[#1A2B47]">{t("home.testimonials")}</h2>
-          </div>
-          
-          <div className="flex md:grid md:grid-cols-2 gap-8 overflow-x-auto pb-8 snap-x snap-mandatory scrollbar-hide -mx-6 px-6 sm:mx-0 sm:px-0">
-            <div className="min-w-[90%] md:min-w-0 snap-center">
-              <TestimonialCard 
-                name="Michael C."
-                location="United Kingdom"
-                text="Our private Lucerne and mount titles tour booked with AJL Tours surpassed all expectations. The planning was superb and our guide was highly knowledgeable, sharing incredible local insights that one could never know about, on their own. It was truly a premium and first class experience provided by AJL Tours."
-              />
-            </div>
-            <div className="min-w-[90%] md:min-w-0 snap-center">
-              <TestimonialCard 
-                name="Lara J."
-                location="United States"
-                text="We went for a tour of Grindelwald and Interlaken using AJL Tours and it was one of our most memorable experiences so far. From a luxurious vehicle to a very passionate guide, every moment was perfectly handled by the AJL Team. This was our first time experiencing Switzerland and its beauty at our own pace."
-              />
-            </div>
-            <div className="min-w-[90%] md:min-w-0 snap-center">
-              <TestimonialCard 
-                name="Hala F."
-                location="UAE"
-                text="Our main highlight of our European trip was our visit to Zermatt and Matterhorn, which we booked using AJL Tours. The scenic views were awesome inspiring and breathtaking and it was made even more special due to the personalised service provided by AJL Tours. They combined warmth with professionalism."
-              />
-            </div>
-            <div className="min-w-[90%] md:min-w-0 snap-center">
-              <TestimonialCard 
-                name="Ming Yen S."
-                location="Taiwan"
-                text="As a frequent traveller using guide services, I have to say that my Switzerland trip was made hassle free with an amazing chauffeur who saved up so much time while also showing me around the beautiful views of Switzerland. The private service with a vast range of options and flexibility was superb and outstanding."
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ Section */}
-      <section className="py-24 px-6 sm:px-12 bg-gray-50">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-extrabold text-[#1A2B47] mb-4">{t("home.faqTitle")}</h2>
-            <p className="text-lg text-gray-600">{t("home.faqSubtitle")}</p>
-          </div>
-          
-          <div className="space-y-4">
-            <FaqItem 
-              question={t("home.faq.q1")}
-              answer={t("home.faq.a1")}
-              isOpen={openFaq === 0}
-              toggle={() => setOpenFaq(openFaq === 0 ? null : 0)}
-            />
-            <FaqItem 
-              question={t("home.faq.q2")}
-              answer={t("home.faq.a2")}
-              isOpen={openFaq === 1}
-              toggle={() => setOpenFaq(openFaq === 1 ? null : 1)}
-            />
-            <FaqItem 
-              question={t("home.faq.q3")}
-              answer={t("home.faq.a3")}
-              isOpen={openFaq === 2}
-              toggle={() => setOpenFaq(openFaq === 2 ? null : 2)}
-            />
-             <FaqItem 
-              question={t("home.faq.q4")}
-              answer={t("home.faq.a4")}
-              isOpen={openFaq === 3}
-              toggle={() => setOpenFaq(openFaq === 3 ? null : 3)}
-            />
-             <FaqItem 
-              question={t("home.faq.q5")}
-              answer={t("home.faq.a5")}
-              isOpen={openFaq === 4}
-              toggle={() => setOpenFaq(openFaq === 4 ? null : 4)}
-            />
-             <FaqItem 
-              question={t("home.faq.q6")}
-              answer={t("home.faq.a6")}
-              isOpen={openFaq === 5}
-              toggle={() => setOpenFaq(openFaq === 5 ? null : 5)}
-            />
-             <FaqItem 
-              question={t("home.faq.q7")}
-              answer={t("home.faq.a7")}
-              isOpen={openFaq === 6}
-              toggle={() => setOpenFaq(openFaq === 6 ? null : 6)}
-            />
-             <FaqItem 
-              question={t("home.faq.q8")}
-              answer={t("home.faq.a8")}
-              isOpen={openFaq === 7}
-              toggle={() => setOpenFaq(openFaq === 7 ? null : 7)}
-            />
-             <FaqItem 
-              question={t("home.faq.q9")}
-              answer={t("home.faq.a9")}
-              isOpen={openFaq === 8}
-              toggle={() => setOpenFaq(openFaq === 8 ? null : 8)}
-            />
-             <FaqItem 
-              question={t("home.faq.q10")}
-              answer={t("home.faq.a10")}
-              isOpen={openFaq === 9}
-              toggle={() => setOpenFaq(openFaq === 9 ? null : 9)}
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* How to Book Section */}
-      <section className="py-24 px-6 sm:px-12 bg-[#ff6b35] text-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-extrabold mb-4">{t("home.howToBook")}</h2>
-            <p className="text-xl text-white/90">{t("home.howToBookText")}</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <BookingStep number="1" title={t("home.bookingSteps.passengersTitle")} text={t("home.bookingSteps.passengersText")} />
-            <BookingStep number="2" title={t("home.bookingSteps.destinationTitle")} text={t("home.bookingSteps.destinationText")} />
-            <BookingStep number="3" title={t("home.bookingSteps.requestsTitle")} text={t("home.bookingSteps.requestsText")} />
-            <BookingStep number="4" title={t("home.bookingSteps.hotelsTitle")} text={t("home.bookingSteps.hotelsText")} />
-          </div>
-        </div>
-      </section>
+      <DeferredSection rootMargin="0px" minHeight={4200}>
+        <Suspense fallback={null}>
+          <HomeDeferredContent />
+        </Suspense>
       </DeferredSection>
     </div>
   );
 };
-
-const ServiceCard = ({ icon, title, description }) => (
-  <div className="bg-white p-10 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 group">
-    <div className="bg-orange-50 w-20 h-20 rounded-2xl flex items-center justify-center text-orange-600 mb-8 group-hover:bg-orange-600 group-hover:text-white transition-colors duration-300">
-      {React.cloneElement(icon, { size: 40 })}
-    </div>
-    <h3 className="text-2xl font-bold text-[#1A2B47] mb-4">{title}</h3>
-    <p className="text-gray-600 leading-relaxed font-medium">{description}</p>
-  </div>
-);
-
-const FaqItem = ({ question, answer, isOpen, toggle }) => (
-  <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm transition-all duration-300">
-    <button 
-      onClick={toggle}
-      className="w-full px-8 py-6 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
-    >
-      <span className="text-xl font-bold text-[#1A2B47]">{question}</span>
-      <div className={`p-2 rounded-xl transition-all duration-300 ${isOpen ? 'bg-orange-600 text-white rotate-180' : 'bg-gray-100 text-gray-500'}`}>
-        <ChevronDown size={20} />
-      </div>
-    </button>
-    <div className={`transition-all duration-500 overflow-hidden ${isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-      <div className="px-8 pb-8 pt-2 text-lg text-gray-600 font-medium leading-relaxed">
-        {answer}
-      </div>
-    </div>
-  </div>
-);
-
-const BookingStep = ({ number, title, text }) => (
-  <div className="relative group">
-    <div className="bg-white/10 backdrop-blur-sm p-8 rounded-3xl border border-white/20 h-full flex flex-col items-center text-center hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-2">
-      <div className="w-16 h-16 bg-white text-orange-600 rounded-2xl flex items-center justify-center text-3xl font-black mb-6 shadow-lg shadow-black/10">
-        {number}
-      </div>
-      <h3 className="text-xl font-bold mb-3">{title}</h3>
-      <p className="text-sm text-white/80 leading-relaxed font-medium">{text}</p>
-    </div>
-    {number !== "5" && (
-      <div className="hidden lg:block absolute top-1/2 -right-3 -translate-y-1/2 z-10">
-        <div className="w-6 h-6 border-t-4 border-r-4 border-white/30 rotate-45" />
-      </div>
-    )}
-  </div>
-);
-
-const FeatureItem = ({ title, text }) => (
-  <div className="flex gap-4">
-    <div className="flex-shrink-0">
-      <div className="bg-orange-100 p-2 rounded-lg">
-        <CheckCircle className="w-6 h-6 text-orange-600" />
-      </div>
-    </div>
-    <div>
-      <h3 className="text-xl font-bold text-[#1A2B47] mb-1">{title}</h3>
-      <p className="text-gray-600 font-medium">{text}</p>
-    </div>
-  </div>
-);
-
-const TestimonialCard = ({ name, location, text }) => (
-  <div className="bg-white p-10 rounded-[2.5rem] shadow-sm border border-gray-100 flex flex-col h-full relative group hover:shadow-xl transition-all duration-300">
-    <Quote className="absolute top-10 right-10 w-12 h-12 text-gray-100 group-hover:text-orange-100 transition-colors" />
-    <div className="flex gap-1 mb-6">
-      {[...Array(5)].map((_, i) => (
-        <Star key={i} className="w-5 h-5 fill-orange-500 text-orange-500" />
-      ))}
-    </div>
-    <p className="text-xl text-[#1A2B47] font-medium leading-relaxed mb-8 flex-1 italic">
-      “{text}”
-    </p>
-    <div className="flex items-center gap-4 border-t border-gray-50 pt-8">
-      <div className="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-orange-200">
-        {name[0]}
-      </div>
-      <div>
-        <p className="font-bold text-[#1A2B47] text-lg">{name}</p>
-        <p className="text-orange-600 font-bold text-sm uppercase tracking-widest">{location}</p>
-      </div>
-    </div>
-  </div>
-);
 
 export default Home2;

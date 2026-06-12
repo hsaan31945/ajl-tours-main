@@ -50,6 +50,39 @@ export const isValidObjectId = (id) => {
   return /^[0-9a-fA-F]{24}$/.test(idString);
 };
 
+export const slugifyTourName = (value) => {
+  return String(value || "")
+    .toLowerCase()
+    .trim()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+};
+
+const getPreferredTourSlug = (tour) => {
+  const name = String(tour?.name || tour?.title || "").toLowerCase();
+  if (name.includes("lucerne") || name.includes("luzern")) return "lucerne-private-tour";
+  if (name.includes("interlaken")) return "interlaken-private-tour";
+  if (name.includes("zermatt")) return "zermatt-private-tour";
+  return "";
+};
+
+export const getTourSlug = (tour) => {
+  if (!tour) return "";
+  const explicitSlug = tour.slug || tour.metadata?.slug;
+  if (explicitSlug) return slugifyTourName(explicitSlug);
+
+  const preferredSlug = getPreferredTourSlug(tour);
+  if (preferredSlug) return preferredSlug;
+
+  const generatedSlug = slugifyTourName(tour.name || tour.title);
+  return generatedSlug || slugifyTourName(getTourId(tour));
+};
+
+export const getTourSeoPath = (tour) => {
+  const slug = getTourSlug(tour);
+  return slug ? `/tours/${slug}` : "/tours";
+};
 
 
 

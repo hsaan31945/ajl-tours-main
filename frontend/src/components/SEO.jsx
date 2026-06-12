@@ -26,7 +26,27 @@ const upsertCanonical = (href) => {
   tag.setAttribute("href", href);
 };
 
-const SEO = ({ title = DEFAULT_TITLE, description = DEFAULT_DESCRIPTION, image = "/logoTravel.png" }) => {
+const upsertJsonLd = (id, data) => {
+  let tag = document.head.querySelector(`script[data-seo-jsonld="${id}"]`);
+  if (!data) {
+    tag?.remove();
+    return;
+  }
+  if (!tag) {
+    tag = document.createElement("script");
+    tag.type = "application/ld+json";
+    tag.setAttribute("data-seo-jsonld", id);
+    document.head.appendChild(tag);
+  }
+  tag.textContent = JSON.stringify(data);
+};
+
+const SEO = ({
+  title = DEFAULT_TITLE,
+  description = DEFAULT_DESCRIPTION,
+  image = "/logoTravel.png",
+  structuredData,
+}) => {
   const { language, t } = useI18n();
   const resolvedTitle = title === DEFAULT_TITLE ? t("seo.defaultTitle") : title;
   const resolvedDescription = description === DEFAULT_DESCRIPTION ? t("seo.defaultDescription") : description;
@@ -54,6 +74,19 @@ const SEO = ({ title = DEFAULT_TITLE, description = DEFAULT_DESCRIPTION, image =
     upsertMeta('meta[name="twitter:description"]', { name: "twitter:description", content: resolvedDescription });
     upsertCanonical(canonical);
   }, [resolvedTitle, resolvedDescription, image, language]);
+
+  useEffect(() => {
+    const items = Array.isArray(structuredData)
+      ? structuredData.filter(Boolean)
+      : structuredData
+        ? [structuredData]
+        : [];
+
+    items.forEach((item, index) => upsertJsonLd(index, item));
+    for (let index = items.length; index < 8; index += 1) {
+      upsertJsonLd(index, null);
+    }
+  }, [structuredData]);
 
   return null;
 };

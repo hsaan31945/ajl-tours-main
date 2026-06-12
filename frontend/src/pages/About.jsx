@@ -3,6 +3,8 @@ import { Mail, Phone, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
 import { useHeroBanner } from "../hooks/useHeroBanner";
 import { useI18n } from "../i18n";
+import SEO from "../components/SEO";
+import { createBreadcrumbJsonLd } from "../utils/seo";
 
 const fadeIn = {
   hidden: { opacity: 0 },
@@ -16,6 +18,14 @@ const About = () => {
 
   return (
     <div className="about-page">
+      <SEO
+        title="About AJL Tours | Private Switzerland Travel Agency"
+        description="Learn about AJL Tours, a Switzerland-focused travel agency offering private tours, expert local guides, luxury vehicles, and tailored itineraries."
+        structuredData={createBreadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "About", path: "/about" },
+        ])}
+      />
       <section
         className="about-header text-center py-16 bg-cover bg-center relative"
         style={{

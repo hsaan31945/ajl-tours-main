@@ -16,6 +16,9 @@ const DeferredSpeedInsights = () => {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    const isProductionHost = window.location.hostname === "ajltour.com" || window.location.hostname === "www.ajltour.com";
+    if (!isProductionHost) return undefined;
+
     const id = window.setTimeout(() => setReady(true), 2000);
     return () => window.clearTimeout(id);
   }, []);

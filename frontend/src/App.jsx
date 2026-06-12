@@ -34,6 +34,7 @@ const Payment = lazy(() => import("./pages/Payment"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const PaymentFailure = lazy(() => import("./pages/PaymentFailure"));
 const Contact = lazy(() => import("./pages/Contact"));
+const UserDetails = lazy(() => import("./pages/UserDetails"));
 const Flexibility = lazy(() => import("./pages/Flexibility"));
 const TestVisitCheckout = lazy(() => import("./pages/TestVisitCheckout"));
 const Favorites = lazy(() => import("./pages/Favorites"));
@@ -156,6 +157,7 @@ const App = () => {
               <Route path="/booking" element={<Booking />} />
               <Route path="/invoice" element={<Invoice />} />
               <Route path="/locations" element={<Navigate to="/switzerland" replace />} />
+              <Route path="/destinations" element={<SwitzerlandLocations isDestinationsPage />} />
               <Route path="/switzerland" element={<SwitzerlandLocations />} />
               <Route path="/srilanka" element={<SrilankaLocations />} />
               
@@ -171,7 +173,7 @@ const App = () => {
           <Route path="/history" element={<BookingHistory />} />
               <Route path="/home1" element={<Navigate to="/" replace />} />
               <Route path="/flexibility" element={<Flexibility />} />
-              <Route path="/userDetails" element={<Contact />} />
+              <Route path="/userDetails" element={<UserDetails />} />
               <Route path="/payment" element={<Payment />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/payment-failure" element={<PaymentFailure />} />

@@ -5,6 +5,7 @@ import { getTourId } from "../utils/tourId";
 import { fetchToursList } from "../services/toursApi";
 import TourCardSkeleton from "../components/TourCardSkeleton";
 import { useHeroBanner } from "../hooks/useHeroBanner";
+import { createBreadcrumbJsonLd } from "../utils/seo";
 
 const Tour = () => {
   const [tours, setTours] = useState([]);
@@ -34,13 +35,17 @@ const Tour = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <SEO
-        title="Switzerland Tours | AJL Tours"
-        description="Explore AJL Tours' full collection of private Switzerland day tours, luxury transfers, and premium guided experiences."
+        title="Private Switzerland Tours | Luxury Day Tours | AJL Tours"
+        description="Browse private Switzerland tours with AJL Tours, including Lucerne, Interlaken, Zermatt, Rhine Falls, Titlis, and custom luxury day trips."
+        structuredData={createBreadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Tours", path: "/tours" },
+        ])}
       />
       <section className="relative overflow-hidden bg-gray-900 text-white">
         <img
           src={heroBanner.imageUrl}
-          alt={heroBanner.alt || "Tours hero banner"}
+          alt={heroBanner.alt || "Private Switzerland tours hero image"}
           className="absolute inset-0 h-full w-full object-cover opacity-60"
         />
         <div className="absolute inset-0 bg-black/45" />

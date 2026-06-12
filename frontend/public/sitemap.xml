@@ -2,140 +2,128 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://ajltour.com/</loc>
-    <lastmod>2026-06-05</lastmod>
+    <lastmod>2026-06-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://ajltour.com/switzerland</loc>
-    <lastmod>2026-06-05</lastmod>
+    <loc>https://ajltour.com/tours</loc>
+    <lastmod>2026-06-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://ajltour.com/srilanka</loc>
-    <lastmod>2026-06-05</lastmod>
-    <changefreq>monthly</changefreq>
+    <loc>https://ajltour.com/destinations</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://ajltour.com/switzerland</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://ajltour.com/tours</loc>
-    <lastmod>2026-06-05</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
+    <loc>https://ajltour.com/srilanka</loc>
+    <lastmod>2026-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://ajltour.com/about</loc>
-    <lastmod>2026-06-05</lastmod>
+    <lastmod>2026-06-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://ajltour.com/contact</loc>
-    <lastmod>2026-06-05</lastmod>
+    <lastmod>2026-06-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://ajltour.com/flexibility</loc>
-    <lastmod>2026-06-05</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
     <loc>https://ajltour.com/blogs</loc>
-    <lastmod>2026-06-05</lastmod>
+    <lastmod>2026-06-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://ajltour.com/blogs/1</loc>
-    <lastmod>2026-06-05</lastmod>
+    <lastmod>2026-06-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://ajltour.com/blogs/2</loc>
-    <lastmod>2026-06-05</lastmod>
+    <lastmod>2026-06-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://ajltour.com/blogs/3</loc>
-    <lastmod>2026-06-05</lastmod>
+    <lastmod>2026-06-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://ajltour.com/blogs/4</loc>
-    <lastmod>2026-06-05</lastmod>
+    <lastmod>2026-06-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://ajltour.com/switzerland/69d16eb1795734a9e494c4f1/checkout-sw</loc>
-    <lastmod>2026-06-05</lastmod>
+    <loc>https://ajltour.com/tours/lucerne-private-tour</loc>
+    <lastmod>2026-06-13</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://ajltour.com/switzerland/69d1725e320177b35825f5f0/checkout-sw</loc>
-    <lastmod>2026-06-05</lastmod>
+    <loc>https://ajltour.com/tours/interlaken-private-tour</loc>
+    <lastmod>2026-06-13</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://ajltour.com/switzerland/69d25bd63b3ca7cb3332dea7/checkout-sw</loc>
-    <lastmod>2026-06-05</lastmod>
+    <loc>https://ajltour.com/tours/zermatt-private-tour</loc>
+    <lastmod>2026-06-13</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://ajltour.com/switzerland/69d25ecd568e3f013c1e8c51/checkout-sw</loc>
-    <lastmod>2026-06-05</lastmod>
+    <loc>https://ajltour.com/tours/4-country-tours</loc>
+    <lastmod>2026-06-13</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://ajltour.com/switzerland/69d26ed49db7a9d8ef921bac/checkout-sw</loc>
-    <lastmod>2026-06-05</lastmod>
+    <loc>https://ajltour.com/tours/grindelwald-tours</loc>
+    <lastmod>2026-06-13</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://ajltour.com/switzerland/69d270769db7a9d8ef921bc2/checkout-sw</loc>
-    <lastmod>2026-06-05</lastmod>
+    <loc>https://ajltour.com/tours/crashlanding-tours</loc>
+    <lastmod>2026-06-13</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://ajltour.com/switzerland/69d273adc15333a20d7303a3/checkout-sw</loc>
-    <lastmod>2026-06-05</lastmod>
+    <loc>https://ajltour.com/tours/from-zurich-private-st-gallen-and-appenzell-day-tour</loc>
+    <lastmod>2026-06-13</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://ajltour.com/switzerland/69d7d0fed953f334d95e40ed/checkout-sw</loc>
-    <lastmod>2026-06-05</lastmod>
+    <loc>https://ajltour.com/tours/zurich-to-rhine-falls-unforgettable-private-day-trip</loc>
+    <lastmod>2026-06-13</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://ajltour.com/switzerland/69d7d370cdc6019326efe404/checkout-sw</loc>
-    <lastmod>2026-06-05</lastmod>
+    <loc>https://ajltour.com/tours/from-zurich-full-day-private-tour-basel-and-colmar</loc>
+    <lastmod>2026-06-13</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://ajltour.com/switzerland/69d7d542dbbaeb4e8909c9b5/checkout-sw</loc>
-    <lastmod>2026-06-05</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://ajltour.com/switzerland/6a033a0457c6eecd24a8de3b/checkout-sw</loc>
-    <lastmod>2026-06-05</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.75</priority>
   </url>
 </urlset>

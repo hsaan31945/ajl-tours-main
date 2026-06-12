@@ -29,6 +29,8 @@ const Footer = () => {
           <ul className="text-gray-600 text-sm space-y-1">
             <li><Link to="/" className="hover:text-red-600">{t("nav.home")}</Link></li>
             <li><Link to="/about" className="hover:text-red-600">{t("nav.about")}</Link></li>
+            <li><Link to="/tours" className="hover:text-red-600">{t("nav.tours")}</Link></li>
+            <li><Link to="/destinations" className="hover:text-red-600">{t("nav.destinations")}</Link></li>
             <li><Link to="/blogs" className="hover:text-red-600">{t("nav.blogs")}</Link></li>
             <li><Link to="/switzerland" className="hover:text-red-600">{t("footer.switzerlandTours")}</Link></li>
             <li><Link to="/srilanka" className="hover:text-red-600">{t("footer.srilankaTours")}</Link></li>

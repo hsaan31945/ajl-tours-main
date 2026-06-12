@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Calendar, Clock, MapPin, ArrowLeft, Share2, BookOpen } from "lucide-react";
 import { blogs } from "../data/blogs";
 import SEO from "../components/SEO";
+import { createBreadcrumbJsonLd } from "../utils/seo";
 
 const BlogPost = () => {
   const { id } = useParams();
@@ -34,6 +35,11 @@ const BlogPost = () => {
         title={`${blog.title} | AJL Tours`}
         description={blog.subtitle}
         image={blog.image}
+        structuredData={createBreadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Blogs", path: "/blogs" },
+          { name: blog.title, path: `/blogs/${blog.id}` },
+        ])}
       />
       <div className="max-w-4xl mx-auto px-6 pt-8">
         <button
@@ -89,7 +95,7 @@ const BlogPost = () => {
           </div>
 
           <div className="bg-gradient-to-r from-orange-50 to-red-50 p-6 rounded-xl border border-orange-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Featured Tour</h3>
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">Featured Tour</h2>
             <p className="text-gray-700 font-medium">{blog.tourName}</p>
             <button
               onClick={() => navigate('/tours')}
@@ -109,7 +115,7 @@ const BlogPost = () => {
         </div>
 
         <div className="mt-12 bg-gradient-to-r from-orange-500 to-red-600 text-white p-8 rounded-2xl text-center">
-          <h3 className="text-2xl font-bold mb-4">Ready to Experience This Adventure?</h3>
+          <h2 className="text-2xl font-bold mb-4">Ready to Experience This Adventure?</h2>
           <p className="text-orange-100 mb-6 max-w-2xl mx-auto">
             Book your Switzerland tour today and create memories that will last a lifetime.
           </p>

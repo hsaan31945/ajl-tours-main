@@ -5,7 +5,7 @@ import { useCurrency } from "../context/CurrencyContext";
 import { useAdmin } from "../context/AdminContext";
 import { AppContext } from "../context/AppContext";
 import EditableField from "./EditableField";
-import { getTourId } from "../utils/tourId";
+import { getTourId, getTourSeoPath } from "../utils/tourId";
 import { apiUrl } from "../utils/api";
 import { clearToursCache } from "../services/toursApi";
 import { cleanDisplayName } from "../utils/textFormatting";
@@ -161,14 +161,11 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
   const originalPrice = Number(tour.price || 0);
   const discountPrice = getDiscountPrice(tour, originalPrice);
   const hasDiscount = discountPrice !== null;
-  const destinationName = String(tour.divisionName || tour.destination || "").toLowerCase();
-  const detailBasePath = destinationName.includes("sri")
-    ? "/srilanka"
-    : "/switzerland";
+  const detailPath = getTourSeoPath(tour);
 
   const handleCardClick = () => {
     if (!tourId) return;
-    navigate(`${detailBasePath}/${tourId}/checkout-sw`, { state: { tour } });
+    navigate(detailPath, { state: { tour } });
   };
 
   const handleCardKeyDown = (event) => {
@@ -216,20 +213,16 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
   }, [tourId, user?.email]);
 
   return (
-    <div 
-      className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full cursor-pointer group"
-      onClick={handleCardClick}
-      onKeyDown={handleCardKeyDown}
-      role="button"
-      tabIndex={0}
-      aria-label={`${t("common.viewDetails")} ${tourName}`}
+    <article
+      className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full group"
     >
       {/* Image Section */}
       <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
+        <Link to={detailPath} state={{ tour }} aria-label={`${t("common.viewDetails")} ${tourName}`}>
         {displayImage && !imageFailed ? (
         <img 
           src={displayImage} 
-          alt={tourName} 
+          alt={`${tourName} private tour`}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           loading="lazy"
           decoding="async"
@@ -252,6 +245,7 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
             <span className="text-xs text-gray-500 mt-1">{t("common.imageComingSoon")}</span>
           </div>
         )}
+        </Link>
         
         {/* Favorite Button */}
         <button 
@@ -279,13 +273,20 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
       <div className="p-6 flex-1 flex flex-col">
         {/* Title */}
         <div onClick={stopAdminFieldClick}>
-              <EditableField
-                tag="h3"
-                value={tourName}
+          <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2 min-h-[3.5rem] leading-tight">
+            <Link to={detailPath} state={{ tour }} className="hover:text-orange-700">
+              {tourName}
+            </Link>
+          </h3>
+          {isAdmin && (
+            <EditableField
+              tag="div"
+              value={tourName}
             className="text-xl font-bold text-gray-900 mb-2 line-clamp-2 min-h-[3.5rem] leading-tight"
             onSave={(val) => handleSaveField("name", val)}
             showEditIcon={isAdmin}
           />
+          )}
         </div>
 
         {/* Location/Address */}
@@ -339,19 +340,16 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
             </div>
           </div>
           
-          <button 
-            type="button"
+          <Link
+            to={detailPath}
+            state={{ tour }}
             className="bg-orange-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-orange-700 transition-all shadow-md hover:shadow-lg active:scale-95"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleCardClick();
-            }}
           >
             {t("common.viewDetails")}
-          </button>
+          </Link>
         </div>
       </div>
-    </div>
+    </article>
   );
 };
 

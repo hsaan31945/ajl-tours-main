@@ -25,28 +25,21 @@ const AppContextProvider = (props) => {
   const [adminPassword, setAdminPassword] = useState("admin@@1212");
   const [loading, setLoading] = useState(true);
 
-  // Fetch users and bookings from backend
+  const loadAdminBookings = async () => {
+    try {
+      const bookingsRes = await axios.get(apiUrl('/api/bookings'));
+      setBookings(getCollection(bookingsRes.data));
+    } catch (e) {
+      console.error('Failed to load bookings:', e?.response?.data || e.message);
+      setBookings([]);
+    }
+  };
+
+  // Fetch admin-only booking data without touching public page startup.
   useEffect(() => {
-    const fetchData = async () => {
-      // Skip users endpoint for now since it's not implemented
-      // try {
-      //   const usersRes = await axios.get(`${API_URL}/users`);
-      //   setUsers(usersRes.data);
-      // } catch (e) {
-      //   console.error('Failed to load users:', e?.response?.data || e.message);
-      // }
-      
-      try {
-        const bookingsRes = await axios.get(apiUrl('/api/bookings'));
-        setBookings(getCollection(bookingsRes.data));
-      } catch (e) {
-        console.error('Failed to load bookings:', e?.response?.data || e.message);
-        setBookings([]);
-      }
-    };
-    fetchData();
-    // Real-time updates disabled
-    return () => {};
+    if (localStorage.getItem("isAdmin") === "true") {
+      loadAdminBookings();
+    }
   }, []);
 
   // Register a new user
@@ -119,6 +112,7 @@ const AppContextProvider = (props) => {
     if (username === adminUsername && password === adminPassword) {
       setIsAdmin(true);
       localStorage.setItem("isAdmin", "true");
+      loadAdminBookings();
       return true;
     }
     return false;

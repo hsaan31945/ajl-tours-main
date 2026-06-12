@@ -9,6 +9,7 @@ const CurrencySelector = ({ compact = false, className = "" }) => {
   const compactLabel = selectedCurrency?.symbol && selectedCurrency.symbol !== currency
     ? `${currency} ${selectedCurrency.symbol}`
     : currency;
+  const visibleLabel = compact ? compactLabel : selectedCurrency?.name || currency;
 
   return (
     <>
@@ -17,12 +18,12 @@ const CurrencySelector = ({ compact = false, className = "" }) => {
         onClick={() => setOpen(true)}
         className={`relative inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-full border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:border-orange-300 hover:text-orange-600 ${className}`}
         title="Select currency"
-        aria-label="Select currency"
+        aria-label={`Select currency: ${visibleLabel}`}
       >
         <CircleDollarSign className="h-4 w-4" aria-hidden="true" />
         {!compact && <span className="text-xs text-gray-500">Currency</span>}
         <span className="pr-5 font-bold text-gray-800">
-          {compact ? compactLabel : selectedCurrency?.name || currency}
+          {visibleLabel}
         </span>
         <ChevronDown className="pointer-events-none absolute right-2 h-4 w-4 text-gray-400" aria-hidden="true" />
       </button>

@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Heart, MapPin, Clock, Users, Star } from 'lucide-react';
 import { normalizeTourData } from '../utils/tourDataMapper';
-import { getTourId } from '../utils/tourId';
+import { getTourId, getTourSeoPath, getTourSlug } from '../utils/tourId';
 import { apiUrl } from '../utils/api';
 import TourReviews, { getTourReviewSummary } from '../components/TourReviews';
 import { getDiscountPrice } from '../utils/bookingPricing';
 import { useCurrency } from '../context/CurrencyContext';
 import { getTourGalleryImages } from '../utils/tourImages';
+import SEO from '../components/SEO';
+import { fetchToursList } from '../services/toursApi';
+import { absoluteUrl, createBreadcrumbJsonLd } from '../utils/seo';
 
 const TourDetails = () => {
   const { id } = useParams();
@@ -21,7 +24,21 @@ const TourDetails = () => {
   useEffect(() => {
     const fetchTour = async () => {
       try {
-        const response = await fetch(apiUrl(`/api/tours/${id}`));
+        let response = await fetch(apiUrl(`/api/tours/${id}`));
+        if (!response.ok) {
+          const tours = await fetchToursList({ limit: 100, full: true }, { skipCache: true });
+          const matchedTour = tours.find((item) => getTourSlug(item) === id || getTourId(item) === id);
+          if (!matchedTour) {
+            throw new Error('Tour not found');
+          }
+          const matchedTourId = getTourId(matchedTour);
+          response = await fetch(apiUrl(`/api/tours/${matchedTourId}`));
+          if (!response.ok) {
+            const normalizedMatchedTour = normalizeTourData(matchedTour);
+            setTour(normalizedMatchedTour);
+            return;
+          }
+        }
         if (!response.ok) {
           throw new Error('Tour not found');
         }
@@ -106,6 +123,39 @@ const TourDetails = () => {
     : 'No ratings yet';
   const discountPrice = getDiscountPrice(tour, tour?.price);
   const tourImages = getTourGalleryImages(tour);
+  const tourName = tour ? (tour.name || tour.title || 'Private Switzerland Tour') : 'Private Switzerland Tour';
+  const tourDescription = tour?.description || tour?.overview || `Book ${tourName} with AJL Tours for a private Switzerland travel experience.`;
+  const tourPath = tour ? getTourSeoPath(tour) : `/tours/${id}`;
+  const tourStructuredData = tour
+    ? [
+        createBreadcrumbJsonLd([
+          { name: 'Home', path: '/' },
+          { name: 'Tours', path: '/tours' },
+          { name: tourName, path: tourPath },
+        ]),
+        {
+          '@context': 'https://schema.org',
+          '@type': 'TouristTrip',
+          name: tourName,
+          description: tourDescription,
+          url: absoluteUrl(tourPath),
+          image: tourImages.map((image) => absoluteUrl(image)),
+          provider: {
+            '@type': 'TravelAgency',
+            name: 'AJL Tours',
+            url: 'https://ajltour.com',
+          },
+          touristType: 'Private tour travelers',
+          offers: {
+            '@type': 'Offer',
+            price: String(discountPrice ?? tour.price ?? ''),
+            priceCurrency: tour.currency || 'CHF',
+            availability: 'https://schema.org/InStock',
+            url: absoluteUrl(tourPath),
+          },
+        },
+      ]
+    : null;
 
   if (loading) {
     return (
@@ -125,6 +175,12 @@ const TourDetails = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
+      <SEO
+        title={`${tourName} | Private Switzerland Tour | AJL Tours`}
+        description={tourDescription.slice(0, 155)}
+        image={tourImages[0] || '/logoTravel.png'}
+        structuredData={tourStructuredData}
+      />
       <div className="max-w-6xl mx-auto px-4">
         {/* Back Button */}
         <button
@@ -146,7 +202,7 @@ const TourDetails = () => {
                   <img
                     key={index}
                     src={image}
-                    alt={`${tour.name} - Image ${index + 1}`}
+                    alt={`${tourName} private Switzerland tour image ${index + 1}`}
                     className="w-full h-80 object-cover rounded-lg"
                   />
                 ))}
@@ -162,7 +218,7 @@ const TourDetails = () => {
           <div className="space-y-6">
             <div className="flex justify-between items-start">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{tour.name}</h1>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">{tourName}</h1>
                 <div className="flex items-center mb-4">
                   <div className="flex items-center">
                     <Star className="w-4 h-4 text-yellow-400 fill-current" />
@@ -214,7 +270,7 @@ const TourDetails = () => {
             {/* Overview */}
             {tour.overview && (
               <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">Overview</h3>
+                <h2 className="text-xl font-semibold text-gray-900 mb-3">Overview</h2>
                 <p className="text-gray-700 leading-relaxed">{tour.overview}</p>
               </div>
             )}
@@ -222,7 +278,7 @@ const TourDetails = () => {
             {/* Description */}
             {tour.description && (
               <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">Description</h3>
+                <h2 className="text-xl font-semibold text-gray-900 mb-3">Description</h2>
                 <p className="text-gray-700 leading-relaxed">{tour.description}</p>
               </div>
             )}
@@ -230,7 +286,7 @@ const TourDetails = () => {
             {/* Highlights */}
             {tour.highlights && tour.highlights.length > 0 && (
               <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">Highlights</h3>
+                <h2 className="text-xl font-semibold text-gray-900 mb-3">Highlights</h2>
                 <ul className="space-y-2">
                   {tour.highlights.map((highlight, index) => (
                     <li key={index} className="flex items-start">
@@ -279,7 +335,7 @@ const TourDetails = () => {
         <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
           {tour.included && tour.included.length > 0 && (
             <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">What's Included</h3>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">What's Included</h2>
               <ul className="space-y-2">
                 {tour.included.map((item, index) => (
                   <li key={index} className="flex items-start">
@@ -293,7 +349,7 @@ const TourDetails = () => {
 
           {tour.excluded && tour.excluded.length > 0 && (
             <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">What's Not Included</h3>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">What's Not Included</h2>
               <ul className="space-y-2">
                 {tour.excluded.map((item, index) => (
                   <li key={index} className="flex items-start">

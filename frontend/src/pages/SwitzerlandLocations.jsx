@@ -5,8 +5,9 @@ import { fetchToursList } from "../services/toursApi";
 import SEO from "../components/SEO";
 import TourCardSkeleton from "../components/TourCardSkeleton";
 import { useHeroBanner } from "../hooks/useHeroBanner";
+import { createBreadcrumbJsonLd } from "../utils/seo";
 
-const SwitzerlandLocations = () => {
+const SwitzerlandLocations = ({ isDestinationsPage = false }) => {
   const [dbTours, setDbTours] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -34,24 +35,36 @@ const SwitzerlandLocations = () => {
     fetchTours();
   }, []);
 
+  const pagePath = isDestinationsPage ? "/destinations" : "/switzerland";
+  const pageTitle = isDestinationsPage ? "Destinations" : "Switzerland Tours";
+  const pageDescription = isDestinationsPage
+    ? "Explore AJL Tours destinations, including private Switzerland tours to Lucerne, Interlaken, Zermatt, Rhine Falls, Titlis, and Alpine villages."
+    : "Discover private Switzerland tours with AJL Tours, from scenic day trips to custom premium travel experiences.";
+
   return (
     <div className="min-h-screen bg-gray-50">
       <SEO
-        title="Private Switzerland Tours | AJL Tours"
-        description="Discover private Switzerland tours with AJL Tours, from scenic day trips to custom premium travel experiences."
+        title={isDestinationsPage ? "Destinations | Private Switzerland Tours | AJL Tours" : "Private Switzerland Tours | AJL Tours"}
+        description={pageDescription}
+        structuredData={createBreadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: pageTitle, path: pagePath },
+        ])}
       />
       <section className="relative overflow-hidden bg-gray-900 text-white">
         <img
           src={heroBanner.imageUrl}
-          alt={heroBanner.alt || "Switzerland hero banner"}
+          alt={heroBanner.alt || "Swiss Alps destination hero image"}
           className="absolute inset-0 h-full w-full object-cover opacity-60"
         />
         <div className="absolute inset-0 bg-black/45" />
         <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
-            <h1 className="text-4xl font-extrabold leading-tight sm:text-5xl">Switzerland Tours</h1>
+            <h1 className="text-4xl font-extrabold leading-tight sm:text-5xl">{pageTitle}</h1>
             <p className="mt-5 max-w-2xl text-lg text-white/90">
-              Discover the beauty of Switzerland with our curated private tour experiences.
+              {isDestinationsPage
+                ? "Explore our curated destinations and private Switzerland tour experiences."
+                : "Discover the beauty of Switzerland with our curated private tour experiences."}
             </p>
           </div>
         </div>
