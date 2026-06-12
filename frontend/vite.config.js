@@ -2,9 +2,13 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  server: {
+export default defineConfig(({ command }) => {
+  const nodeEnv = command === 'build' ? 'production' : 'development'
+  process.env.NODE_ENV = nodeEnv
+
+  return {
+    plugins: [react()],
+    server: {
     host: true,
     port: 5174,
     proxy: {
@@ -29,8 +33,8 @@ export default defineConfig({
         rewrite: path => path.replace(/^\/apache/, ''),
       },
     },
-  },
-  build: {
+    },
+    build: {
     outDir: 'dist',
     sourcemap: false,
     rollupOptions: {
@@ -41,8 +45,9 @@ export default defineConfig({
         }
       }
     }
-  },
-  define: {
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
+    },
+    define: {
+      'process.env.NODE_ENV': JSON.stringify(nodeEnv)
+    }
   }
 })
