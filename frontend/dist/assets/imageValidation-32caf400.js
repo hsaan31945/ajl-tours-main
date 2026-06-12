@@ -1,1 +1,0 @@
-const n=["image/webp","image/avif"],i=[".webp",".avif"],o=e=>{if(!e)return!1;const a=String(e.name||"").toLowerCase();return n.includes(e.type)||i.some(s=>a.endsWith(s))},t="Only WebP or AVIF images are allowed.";export{t as a,o as i};
