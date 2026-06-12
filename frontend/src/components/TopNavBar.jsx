@@ -5,7 +5,10 @@ const TopNavBar = () => (
   <nav className="w-full sticky top-0 z-50 bg-white/70 backdrop-blur border-b border-gray-200 shadow-sm">
     <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-3">
       <div className="flex items-center gap-2">
-        <img src="/logoTravel.png" alt="AJL Tours logo" className="h-10 w-auto" />
+        <picture>
+          <source type="image/png" srcSet="/logoTravel-110.png 110w, /logoTravel-160.png 160w" sizes="140px" />
+          <img src="/logoTravel-160.png" width={160} height={46} alt="AJL Tours logo" className="h-10 w-auto" />
+        </picture>
         <span className="font-extrabold text-xl text-black tracking-wide">AJL Tours</span>
       </div>
       <ul className="flex gap-6 items-center text-black font-medium">

@@ -26,8 +26,8 @@ const hero6Mobile640Avif = "/assets/images/optimized/hero6-640.avif";
 const hero6Mobile768Avif = "/assets/images/optimized/hero6-768.avif";
 const hero7Small = "/assets/images/optimized/hero7-900.webp";
 const defaultHeroImages = [hero4, hero5, hero6, hero7];
-const mobileHeroAvifSrcSet = `${hero6Mobile480Avif} 480w, ${hero6Mobile640Avif} 640w, ${hero6Mobile768Avif} 768w`;
-const mobileHeroWebpSrcSet = `${hero6Mobile480} 480w, ${hero6Mobile640} 640w, ${hero6Mobile768} 768w`;
+const mobileHeroAvifSrcSet = `${hero6Mobile480Avif} 480w, ${hero6Mobile640Avif} 640w`;
+const mobileHeroWebpSrcSet = `${hero6Mobile480} 480w, ${hero6Mobile640} 640w`;
 const heroImageSrcSets = {
   [hero4]: `${hero4Small} 900w, ${hero4} 1600w`,
   [hero5]: `${hero5Small} 900w, ${hero5} 1600w`,
@@ -261,10 +261,10 @@ const Home2 = () => {
       />
 
       {/* Hero Section - Full Width Background */}
-      <section className="relative h-[70vh] sm:h-[60vh] md:h-screen w-full overflow-hidden bg-gray-900">
+      <section className="home-hero relative h-[70vh] sm:h-[60vh] md:h-screen w-full overflow-hidden bg-gray-900">
         {/* Mobile Background */}
         {!isDesktopHero && (
-        <div className="absolute inset-0 z-0">
+        <div className="home-hero-bg home-hero-mobile absolute inset-0 z-0">
           {heroImages.length > 0 && (
             <picture>
               <source type="image/avif" srcSet={mobileHeroAvifSrcSet} sizes="100vw" />
@@ -279,7 +279,7 @@ const Home2 = () => {
                 fetchPriority="high"
                 loading="eager"
                 decoding="async"
-                className="absolute inset-0 h-full w-full object-cover object-top"
+                className="home-hero-img absolute inset-0 h-full w-full object-cover object-top"
               />
             </picture>
           )}
@@ -288,9 +288,9 @@ const Home2 = () => {
 
         {/* Desktop Background: Carousel */}
         {isDesktopHero && (
-        <div className="absolute inset-0 z-0">
+        <div className="home-hero-bg home-hero-desktop absolute inset-0 z-0">
           <div 
-            className={`flex h-full ease-in-out ${isHeroTransitioning ? "transition-transform duration-1000" : ""}`}
+            className={`home-hero-desktop-track flex h-full ease-in-out ${isHeroTransitioning ? "transition-transform duration-1000" : ""}`}
             style={{ 
               width: `${Math.max(desktopHeroImages.length, 1) * 100}%`,
               transform: desktopHeroImages.length
@@ -301,7 +301,7 @@ const Home2 = () => {
             {desktopHeroImages.map((image, index) => (
               <div
                 key={index}
-                className="relative h-full overflow-hidden"
+                className="home-hero-desktop-slide relative h-full overflow-hidden"
                 style={{ 
                   width: `${100 / desktopHeroImages.length}%`
                 }}
@@ -316,7 +316,7 @@ const Home2 = () => {
                   fetchPriority={index === 0 ? "high" : "auto"}
                   loading={index === 0 ? "eager" : "lazy"}
                   decoding="async"
-                  className="h-full w-full object-cover"
+                  className="home-hero-desktop-img h-full w-full object-cover"
                 />
               </div>
             ))}
@@ -324,23 +324,23 @@ const Home2 = () => {
         </div>
         )}
         {/* Hero Content */}
-        <div className="absolute inset-0 z-20 flex items-center h-full">
-          <div className="text-white ml-4 sm:ml-8 md:ml-16 lg:ml-24 px-4 sm:px-0 w-full max-w-4xl">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-6 drop-shadow-2xl leading-tight">
+        <div className="home-hero-content-wrap absolute inset-0 z-20 flex items-center h-full">
+          <div className="home-hero-content text-white ml-4 sm:ml-8 md:ml-16 lg:ml-24 px-4 sm:px-0 w-full max-w-4xl">
+            <h1 className="home-hero-title text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-6 drop-shadow-2xl leading-tight">
               {t("home.heroTitle")}
             </h1>
             
-            <p className="text-lg sm:text-xl md:text-2xl text-white/95 mb-10 max-w-2xl font-medium leading-relaxed drop-shadow-lg">
+            <p className="home-hero-subtitle text-lg sm:text-xl md:text-2xl text-white/95 mb-10 max-w-2xl font-medium leading-relaxed drop-shadow-lg">
               {t("home.heroSubtitle")}
             </p>
 
             {/* Search Destination Bar */}
-            <div className="w-full md:max-w-[700px] relative search-container">
-              <div className="flex items-center backdrop-blur-md rounded-full shadow-2xl px-3 sm:px-4 py-2 sm:py-4 transition-all duration-300 focus-within:ring-4 focus-within:ring-orange-500/30" style={{ backgroundColor: 'rgb(255 255 255 / 0.98)' }}>
-                <Search className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500 mr-2 sm:mr-3 shrink-0" />
+            <div className="home-hero-search w-full md:max-w-[700px] relative search-container">
+              <div className="home-hero-search-box flex items-center backdrop-blur-md rounded-full shadow-2xl px-3 sm:px-4 py-2 sm:py-4 transition-all duration-300 focus-within:ring-4 focus-within:ring-orange-500/30" style={{ backgroundColor: 'rgb(255 255 255 / 0.98)' }}>
+                <Search className="home-hero-search-icon w-5 h-5 sm:w-6 sm:h-6 text-orange-500 mr-2 sm:mr-3 shrink-0" />
                 <input
                   type="text"
-                  className="flex-1 bg-transparent outline-none text-sm sm:text-lg text-black placeholder-gray-500 min-w-0"
+                  className="home-hero-search-input flex-1 bg-transparent outline-none text-sm sm:text-lg text-black placeholder-gray-500 min-w-0"
                   placeholder={t("nav.searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
@@ -351,7 +351,7 @@ const Home2 = () => {
                   autoComplete="off"
                 />
                 <button 
-                  className="bg-orange-600 hover:bg-black text-white font-bold px-4 sm:px-10 py-2 sm:py-4 rounded-full transition-all duration-300 text-sm sm:text-lg whitespace-nowrap flex-shrink-0 shadow-lg ml-1"
+                  className="home-hero-search-button bg-orange-600 hover:bg-black text-white font-bold px-4 sm:px-10 py-2 sm:py-4 rounded-full transition-all duration-300 text-sm sm:text-lg whitespace-nowrap flex-shrink-0 shadow-lg ml-1"
                   onClick={handleSearchButtonClick}
                 >
                   {t("nav.search")}

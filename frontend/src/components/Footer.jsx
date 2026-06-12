@@ -10,7 +10,18 @@ const Footer = () => {
     <footer className="bg-white border-t-2 border-red-500 shadow-inner mt-12">
       <div className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
         <div>
-          <img src="/logoTravel.png" width={120} height={34} alt="AJL Tours logo" className="mb-4" />
+          <picture>
+            <source type="image/png" srcSet="/logoTravel-110.png 110w, /logoTravel-160.png 160w" sizes="120px" />
+            <img
+              src="/logoTravel-160.png"
+              width={160}
+              height={46}
+              alt="AJL Tours logo"
+              loading="lazy"
+              decoding="async"
+              className="mb-4 w-[120px] h-auto"
+            />
+          </picture>
           <p className="text-gray-600 text-sm">{t("footer.description")}</p>
         </div>
         <div>
