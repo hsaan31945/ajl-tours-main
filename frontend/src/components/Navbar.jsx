@@ -189,13 +189,25 @@ const Navbar = () => {
     <div className="w-full flex justify-between items-center py-2 px-3 sm:py-3 sm:px-6 md:px-16 top-0 sticky z-50 bg-white shadow-sm border-b border-gray-200">
       <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
         <Link to="/" className="shrink-0">
-          <img
-            src="/logoTravel.png"
-            width="350"
-            height="100"
-            className="w-[110px] sm:w-[150px] md:w-[190px]"
-            alt="AJL Tour logo"
-          />
+          <picture>
+            <source
+              type="image/webp"
+              srcSet="/logoTravel-160.webp 160w, /logoTravel-220.webp 220w, /logoTravel-300.webp 300w"
+              sizes="(max-width: 640px) 110px, (max-width: 768px) 150px, 190px"
+            />
+            <source
+              type="image/png"
+              srcSet="/logoTravel-160.png 160w, /logoTravel-220.png 220w, /logoTravel-300.png 300w"
+              sizes="(max-width: 640px) 110px, (max-width: 768px) 150px, 190px"
+            />
+            <img
+              src="/logoTravel-220.png"
+              width="350"
+              height="100"
+              className="w-[110px] sm:w-[150px] md:w-[190px]"
+              alt="AJL Tour logo"
+            />
+          </picture>
         </Link>
 
         {/* Compact search (shows after scroll) */}

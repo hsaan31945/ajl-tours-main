@@ -21,7 +21,43 @@ const buildBannerState = (pageKey, savedBanner = {}, fallbackImage = "", fallbac
   };
 };
 
-export const useHeroBanner = (pageKey, fallbackImage = "", fallbackImages = null) => {
+const scheduleAfterFirstPaint = (callback, delayMs = 1500) => {
+  if (typeof window === "undefined") return undefined;
+
+  let idleId;
+  let timeoutId;
+
+  const runWhenIdle = () => {
+    const run = () => callback();
+    if ("requestIdleCallback" in window) {
+      idleId = window.requestIdleCallback(run, { timeout: delayMs + 1500 });
+    } else {
+      timeoutId = window.setTimeout(run, delayMs);
+    }
+  };
+
+  if (document.readyState === "complete") {
+    timeoutId = window.setTimeout(runWhenIdle, delayMs);
+  } else {
+    const onLoad = () => {
+      timeoutId = window.setTimeout(runWhenIdle, delayMs);
+    };
+    window.addEventListener("load", onLoad, { once: true });
+    return () => {
+      window.removeEventListener("load", onLoad);
+      if (idleId) window.cancelIdleCallback?.(idleId);
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
+  }
+
+  return () => {
+    if (idleId) window.cancelIdleCallback?.(idleId);
+    if (timeoutId) window.clearTimeout(timeoutId);
+  };
+};
+
+export const useHeroBanner = (pageKey, fallbackImage = "", fallbackImages = null, options = {}) => {
+  const { deferMs = 1500, useCachedInitial = true } = options;
   const fallbackImagesKey = Array.isArray(fallbackImages) ? fallbackImages.join("|") : "";
   const initialImages = useMemo(() => {
     if (fallbackImagesKey) return fallbackImagesKey.split("|").filter(Boolean);
@@ -29,8 +65,8 @@ export const useHeroBanner = (pageKey, fallbackImage = "", fallbackImages = null
   }, [fallbackImage, fallbackImagesKey, pageKey]);
 
   const [banner, setBanner] = useState(() => {
-    const cachedBanner = readCachedHeroBanners()?.[pageKey] || {};
-    if (cachedBanner.imageUrl || (Array.isArray(cachedBanner.images) && cachedBanner.images.length)) {
+    const cachedBanner = useCachedInitial ? readCachedHeroBanners()?.[pageKey] || {} : {};
+    if (useCachedInitial && (cachedBanner.imageUrl || (Array.isArray(cachedBanner.images) && cachedBanner.images.length))) {
       return buildBannerState(pageKey, cachedBanner, fallbackImage, initialImages, true);
     }
 
@@ -60,12 +96,13 @@ export const useHeroBanner = (pageKey, fallbackImage = "", fallbackImages = null
       }
     };
 
-    loadBanner();
+    const cancelScheduledLoad = scheduleAfterFirstPaint(loadBanner, deferMs);
 
     return () => {
       cancelled = true;
+      cancelScheduledLoad?.();
     };
-  }, [fallbackImage, initialImages, pageKey]);
+  }, [deferMs, fallbackImage, initialImages, pageKey]);
 
   return banner;
 };

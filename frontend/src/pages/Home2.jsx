@@ -1,6 +1,5 @@
 import React, { Suspense, lazy, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAdmin } from "../context/AdminContext";
 import SEO from "../components/SEO";
 import { useHeroBanner } from "../hooks/useHeroBanner";
 import { fetchToursList } from "../services/toursApi";
@@ -20,14 +19,23 @@ const hero7 = "/assets/images/optimized/hero7-1600.webp";
 const hero4Small = "/assets/images/optimized/hero4-900.webp";
 const hero5Small = "/assets/images/optimized/hero5-900.webp";
 const hero6Small = "/assets/images/optimized/hero6-900.webp";
+const hero6Mobile480 = "/assets/images/optimized/hero6-480.webp";
+const hero6Mobile640 = "/assets/images/optimized/hero6-640.webp";
+const hero6Mobile768 = "/assets/images/optimized/hero6-768.webp";
+const hero6Mobile480Avif = "/assets/images/optimized/hero6-480.avif";
+const hero6Mobile640Avif = "/assets/images/optimized/hero6-640.avif";
+const hero6Mobile768Avif = "/assets/images/optimized/hero6-768.avif";
 const hero7Small = "/assets/images/optimized/hero7-900.webp";
 const defaultHeroImages = [hero4, hero5, hero6, hero7];
+const mobileHeroAvifSrcSet = `${hero6Mobile480Avif} 480w, ${hero6Mobile640Avif} 640w, ${hero6Mobile768Avif} 768w`;
+const mobileHeroWebpSrcSet = `${hero6Mobile480} 480w, ${hero6Mobile640} 640w, ${hero6Mobile768} 768w, ${hero6Small} 900w, ${hero6} 1600w`;
 const heroImageSrcSets = {
   [hero4]: `${hero4Small} 900w, ${hero4} 1600w`,
   [hero5]: `${hero5Small} 900w, ${hero5} 1600w`,
   [hero6]: `${hero6Small} 900w, ${hero6} 1600w`,
   [hero7]: `${hero7Small} 900w, ${hero7} 1600w`,
 };
+
 const heroGridImages = [
   { src: hero4Small, alt: "Swiss mountain village" },
   { src: hero7Small, alt: "Swiss alpine landscape" },
@@ -73,7 +81,6 @@ const DeferredSection = ({ children, rootMargin = "700px", minHeight = 0 }) => {
 
 const Home2 = () => {
   const navigate = useNavigate();
-  const { passcodeHeader } = useAdmin();
   const { t } = useI18n();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isHeroTransitioning, setIsHeroTransitioning] = useState(true);
@@ -86,81 +93,11 @@ const Home2 = () => {
   const [searchTours, setSearchTours] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [homepageContent, setHomepageContent] = useState({});
   const searchToursLoadedRef = useRef(false);
-  const homeHeroBanner = useHeroBanner("home", hero6Small, defaultHeroImages);
-
-  // Load homepage content on mount
-  useEffect(() => {
-    let cancelled = false;
-    const loadContent = async () => {
-      try {
-        const res = await fetch('/api/content/homepage');
-        const data = await res.json();
-        if (res.ok && !cancelled) {
-          const contentMap = {};
-          data.forEach(item => {
-            contentMap[item.section] = item.content;
-          });
-          setHomepageContent(contentMap);
-        }
-      } catch (e) {}
-    };
-
-    const schedule = window.requestIdleCallback || ((callback) => window.setTimeout(callback, 1500));
-    const cancel = window.cancelIdleCallback || window.clearTimeout;
-    const id = schedule(loadContent, { timeout: 2500 });
-
-    return () => {
-      cancelled = true;
-      cancel(id);
-    };
-  }, []);
-
-  const updateSection = async (section, content) => {
-    try {
-      const res = await fetch(`/api/admin/content/${section}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Admin-Passcode': passcodeHeader || ''
-        },
-        body: JSON.stringify({ content })
-      });
-      if (!res.ok) return false;
-      setHomepageContent(prev => ({ ...prev, [section]: content }));
-      return true;
-    } catch (e) {
-      return false;
-    }
-  };
-
-
-
-  // Handle saving tour descriptions
-  const handleSaveTourDescription = async (tourKey, newDescription) => {
-    const current = homepageContent.tour_descriptions || {};
-    const updated = {
-      ...current,
-      [tourKey]: {
-        ...current[tourKey],
-        description: newDescription
-      }
-    };
-    return await updateSection('tour_descriptions', updated);
-  };
-
-  const handleSaveTourTitle = async (tourKey, newTitle) => {
-    const current = homepageContent.tour_descriptions || {};
-    const updated = {
-      ...current,
-      [tourKey]: {
-        ...current[tourKey],
-        title: newTitle
-      }
-    };
-    return await updateSection('tour_descriptions', updated);
-  };
+  const homeHeroBanner = useHeroBanner("home", hero6Small, defaultHeroImages, {
+    deferMs: 2200,
+    useCachedInitial: false,
+  });
 
   // Hero carousel images. Always paint the fallback immediately; API content can replace it later.
   const heroImages = homeHeroBanner.isCustom && homeHeroBanner.images?.length
@@ -337,18 +274,26 @@ const Home2 = () => {
         {!isDesktopHero && (
         <div className="absolute inset-0 z-0">
           {heroImages.length > 0 && (
-            <img
-              src={mobileHeroImage || hero6Small}
-              srcSet={homeHeroBanner.isCustom ? undefined : `${hero6Small} 900w, ${hero6} 1600w`}
-              sizes="100vw"
-              alt={homeHeroBanner.alt || "Private Switzerland tour landscape"}
-              width="900"
-              height="600"
-              fetchPriority="high"
-              loading="eager"
-              decoding="async"
-              className="absolute inset-0 h-full w-full object-cover object-top"
-            />
+            <picture>
+              {!homeHeroBanner.isCustom && (
+                <>
+                  <source type="image/avif" srcSet={mobileHeroAvifSrcSet} sizes="100vw" />
+                  <source type="image/webp" srcSet={mobileHeroWebpSrcSet} sizes="100vw" />
+                </>
+              )}
+              <img
+                src={homeHeroBanner.isCustom ? mobileHeroImage : hero6Mobile640}
+                srcSet={homeHeroBanner.isCustom ? undefined : mobileHeroWebpSrcSet}
+                sizes="100vw"
+                alt={homeHeroBanner.alt || "Private Switzerland tour landscape"}
+                width="900"
+                height="600"
+                fetchPriority="high"
+                loading="eager"
+                decoding="async"
+                className="absolute inset-0 h-full w-full object-cover object-top"
+              />
+            </picture>
           )}
         </div>
         )}

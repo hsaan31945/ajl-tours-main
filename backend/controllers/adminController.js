@@ -1,5 +1,6 @@
 const Admin = require('../models/Admin');
 const HomepageContent = require('../models/HomepageContent');
+const { clearHomepageContentCache } = require('./contentController');
 
 // Basic admin login (username/email + password). For now, stub success.
 async function adminLogin(req, res) {
@@ -47,6 +48,7 @@ async function updateHomepageContent(req, res) {
       { content: content ?? {}, isActive: isActive ?? true },
       { new: true, upsert: true }
     );
+    clearHomepageContentCache();
     return res.json(doc);
   } catch (err) {
     return res.status(500).json({ message: err.message });
