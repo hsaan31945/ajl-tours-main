@@ -8,6 +8,7 @@ import TourCardSkeleton from "./TourCardSkeleton";
 
 const CARD_TRANSITION_MS = 700;
 const CARD_GAP_REM = 1.5;
+const CARD_AUTOPLAY_MS = 4500;
 
 const TopDealsSection = () => {
   const navigate = useNavigate();
@@ -17,11 +18,15 @@ const TopDealsSection = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [toursPerView, setToursPerView] = useState(3);
   const [isSliding, setIsSliding] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Calculate tours per view based on screen size
   useEffect(() => {
     const updateToursPerView = () => {
-      if (window.innerWidth < 768) {
+      const isMobileDevice = window.innerWidth < 768;
+      setIsMobile(isMobileDevice);
+
+      if (isMobileDevice) {
         setToursPerView(1); // Mobile: 1 tour
       } else if (window.innerWidth < 1024) {
         setToursPerView(2); // Tablet: 2 tours
@@ -146,6 +151,15 @@ const TopDealsSection = () => {
 
     return undefined;
   }, [canLoop, currentIndex, topSwissTours.length, toursPerView]);
+
+  // Match Explore Tours: auto-slide at a middle pace and keep the cloned track continuous.
+  useEffect(() => {
+    if (!canLoop || isMobile) return undefined;
+    const id = setInterval(() => {
+      setCurrentIndex((prev) => prev + 1);
+    }, CARD_AUTOPLAY_MS);
+    return () => clearInterval(id);
+  }, [canLoop, isMobile]);
 
   // Navigation functions
   const nextTours = () => {

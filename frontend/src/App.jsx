@@ -9,8 +9,8 @@ import { CurrencyProvider } from "./context/CurrencyContext";
 import { EditModeProvider } from "./context/EditModeContext";
 import { useAdmin } from "./context/AdminContext";
 import { useI18n } from "./i18n";
+import Home2 from "./pages/Home2";
 
-const Home2 = lazy(() => import("./pages/Home2"));
 const Tour = lazy(() => import("./pages/Tour"));
 const TourDetails = lazy(() => import("./pages/TourDetails"));
 const Login = lazy(() => import("./pages/Login"));

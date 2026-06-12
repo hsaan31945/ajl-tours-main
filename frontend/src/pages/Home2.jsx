@@ -22,6 +22,12 @@ const hero5Small = "/assets/images/optimized/hero5-900.webp";
 const hero6Small = "/assets/images/optimized/hero6-900.webp";
 const hero7Small = "/assets/images/optimized/hero7-900.webp";
 const defaultHeroImages = [hero4, hero5, hero6, hero7];
+const heroImageSrcSets = {
+  [hero4]: `${hero4Small} 900w, ${hero4} 1600w`,
+  [hero5]: `${hero5Small} 900w, ${hero5} 1600w`,
+  [hero6]: `${hero6Small} 900w, ${hero6} 1600w`,
+  [hero7]: `${hero7Small} 900w, ${hero7} 1600w`,
+};
 const heroGridImages = [
   { src: hero4Small, alt: "Swiss mountain village" },
   { src: hero7Small, alt: "Swiss alpine landscape" },
@@ -29,7 +35,7 @@ const heroGridImages = [
   { src: hero6Small, alt: "Switzerland Alps" },
 ];
 
-const DeferredSection = ({ children, rootMargin = "700px" }) => {
+const DeferredSection = ({ children, rootMargin = "700px", minHeight = 0 }) => {
   const ref = useRef(null);
   const [shouldRender, setShouldRender] = useState(false);
 
@@ -58,7 +64,11 @@ const DeferredSection = ({ children, rootMargin = "700px" }) => {
     return () => observer.disconnect();
   }, [rootMargin, shouldRender]);
 
-  return <div ref={ref}>{shouldRender ? children : null}</div>;
+  return (
+    <div ref={ref} style={shouldRender ? undefined : { minHeight }}>
+      {shouldRender ? children : null}
+    </div>
+  );
 };
 
 const Home2 = () => {
@@ -365,6 +375,8 @@ const Home2 = () => {
               >
                 <img
                   src={image}
+                  srcSet={homeHeroBanner.isCustom ? undefined : heroImageSrcSets[image]}
+                  sizes="100vw"
                   alt={homeHeroBanner.isCustom ? homeHeroBanner.alt || "" : ""}
                   width="1600"
                   height="1067"
@@ -502,14 +514,14 @@ const Home2 = () => {
 
 
       {/* Explore Tours Section */}
-      <DeferredSection>
+      <DeferredSection minHeight={720}>
         <Suspense fallback={null}>
           <ExploreTours />
         </Suspense>
       </DeferredSection>
 
       {/* Top Deals Section */}
-      <DeferredSection>
+      <DeferredSection minHeight={640}>
         <Suspense fallback={null}>
           <TopDealsSection />
         </Suspense>
