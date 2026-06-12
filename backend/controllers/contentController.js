@@ -27,6 +27,53 @@ function setPublicCacheHeaders(res) {
   res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=600, stale-while-revalidate=86400');
 }
 
+function sanitizeImageUrl(value) {
+  const url = String(value || '').trim();
+  if (!url || url.length > 2000 || /^data:/i.test(url)) return '';
+  return url;
+}
+
+function sanitizeHeroImages(value) {
+  const images = Array.isArray(value) ? value : [];
+  return images
+    .map((image) => {
+      if (typeof image === 'string') return sanitizeImageUrl(image);
+      return sanitizeImageUrl(image?.url || image?.imageUrl || image?.src);
+    })
+    .filter(Boolean)
+    .slice(0, 4);
+}
+
+function sanitizeHeroBannerContent(content = {}) {
+  return Object.entries(content || {}).reduce((acc, [pageKey, banner]) => {
+    if (!banner || typeof banner !== 'object') return acc;
+
+    const images = sanitizeHeroImages(banner.images);
+    const imageUrl = sanitizeImageUrl(banner.imageUrl || images[0]);
+
+    acc[pageKey] = {
+      imageUrl: imageUrl || images[0] || '',
+      images: images.length ? images : [imageUrl].filter(Boolean),
+      alt: String(banner.alt || '').slice(0, 160),
+      title: String(banner.title || '').slice(0, 160),
+      subtitle: String(banner.subtitle || '').slice(0, 260),
+      buttonText: String(banner.buttonText || banner.ctaText || '').slice(0, 80),
+      buttonLink: String(banner.buttonLink || banner.ctaLink || '').slice(0, 400),
+    };
+
+    return acc;
+  }, {});
+}
+
+function sanitizePublicHomepageDoc(doc) {
+  if (!doc) return doc;
+  if (doc.section !== 'hero_banners') return doc;
+  return {
+    ...doc,
+    content: sanitizeHeroBannerContent(doc.content),
+  };
+}
+
 async function getPublicHomepageContent(req, res) {
   try {
     const { section } = req.params;
@@ -42,9 +89,10 @@ async function getPublicHomepageContent(req, res) {
       .select('section content updatedAt')
       .lean();
     if (!doc) return res.status(404).json({ message: 'Section not found' });
-    setCache(cacheKey, doc);
+    const publicDoc = sanitizePublicHomepageDoc(doc);
+    setCache(cacheKey, publicDoc);
     setPublicCacheHeaders(res);
-    return res.json(doc);
+    return res.json(publicDoc);
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
@@ -64,9 +112,10 @@ async function getAllPublicHomepageContent(req, res) {
       .select('section content updatedAt')
       .sort({ section: 1 })
       .lean();
-    setCache(cacheKey, items);
+    const publicItems = items.map(sanitizePublicHomepageDoc);
+    setCache(cacheKey, publicItems);
     setPublicCacheHeaders(res);
-    return res.json(items);
+    return res.json(publicItems);
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }

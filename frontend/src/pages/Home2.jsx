@@ -1,7 +1,6 @@
 import React, { Suspense, lazy, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import SEO from "../components/SEO";
-import { useHeroBanner } from "../hooks/useHeroBanner";
 import { fetchToursList } from "../services/toursApi";
 import { getTourId } from "../utils/tourId";
 import { cleanDisplayName } from "../utils/textFormatting";
@@ -28,7 +27,7 @@ const hero6Mobile768Avif = "/assets/images/optimized/hero6-768.avif";
 const hero7Small = "/assets/images/optimized/hero7-900.webp";
 const defaultHeroImages = [hero4, hero5, hero6, hero7];
 const mobileHeroAvifSrcSet = `${hero6Mobile480Avif} 480w, ${hero6Mobile640Avif} 640w, ${hero6Mobile768Avif} 768w`;
-const mobileHeroWebpSrcSet = `${hero6Mobile480} 480w, ${hero6Mobile640} 640w, ${hero6Mobile768} 768w, ${hero6Small} 900w, ${hero6} 1600w`;
+const mobileHeroWebpSrcSet = `${hero6Mobile480} 480w, ${hero6Mobile640} 640w, ${hero6Mobile768} 768w`;
 const heroImageSrcSets = {
   [hero4]: `${hero4Small} 900w, ${hero4} 1600w`,
   [hero5]: `${hero5Small} 900w, ${hero5} 1600w`,
@@ -40,7 +39,7 @@ const heroGridImages = [
   { src: hero4Small, alt: "Swiss mountain village" },
   { src: hero7Small, alt: "Swiss alpine landscape" },
   { src: hero5Small, alt: "Swiss scenic valley" },
-  { src: hero6Small, alt: "Switzerland Alps" },
+  { src: hero6Mobile768, alt: "Switzerland Alps" },
 ];
 
 const DeferredSection = ({ children, rootMargin = "700px", minHeight = 0 }) => {
@@ -94,17 +93,10 @@ const Home2 = () => {
   const [searchLoading, setSearchLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const searchToursLoadedRef = useRef(false);
-  const homeHeroBanner = useHeroBanner("home", hero6Small, defaultHeroImages, {
-    deferMs: 2200,
-    useCachedInitial: false,
-  });
 
-  // Hero carousel images. Always paint the fallback immediately; API content can replace it later.
-  const heroImages = homeHeroBanner.isCustom && homeHeroBanner.images?.length
-    ? homeHeroBanner.images
-    : defaultHeroImages;
+  // Keep homepage LCP independent from CMS/API hero banners.
+  const heroImages = defaultHeroImages;
   const desktopHeroImages = heroImages.length > 1 ? [...heroImages, heroImages[0]] : heroImages;
-  const mobileHeroImage = homeHeroBanner.isCustom ? heroImages[0] : hero6Small;
 
   const loadSearchTours = async () => {
     if (searchToursLoadedRef.current || searchLoading) return;
@@ -275,17 +267,13 @@ const Home2 = () => {
         <div className="absolute inset-0 z-0">
           {heroImages.length > 0 && (
             <picture>
-              {!homeHeroBanner.isCustom && (
-                <>
-                  <source type="image/avif" srcSet={mobileHeroAvifSrcSet} sizes="100vw" />
-                  <source type="image/webp" srcSet={mobileHeroWebpSrcSet} sizes="100vw" />
-                </>
-              )}
+              <source type="image/avif" srcSet={mobileHeroAvifSrcSet} sizes="100vw" />
+              <source type="image/webp" srcSet={mobileHeroWebpSrcSet} sizes="100vw" />
               <img
-                src={homeHeroBanner.isCustom ? mobileHeroImage : hero6Mobile640}
-                srcSet={homeHeroBanner.isCustom ? undefined : mobileHeroWebpSrcSet}
+                src={hero6Mobile640}
+                srcSet={mobileHeroWebpSrcSet}
                 sizes="100vw"
-                alt={homeHeroBanner.alt || "Private Switzerland tour landscape"}
+                alt="Private Switzerland tour landscape"
                 width="900"
                 height="600"
                 fetchPriority="high"
@@ -320,9 +308,9 @@ const Home2 = () => {
               >
                 <img
                   src={image}
-                  srcSet={homeHeroBanner.isCustom ? undefined : heroImageSrcSets[image]}
+                  srcSet={heroImageSrcSets[image]}
                   sizes="100vw"
-                  alt={homeHeroBanner.isCustom ? homeHeroBanner.alt || "" : ""}
+                  alt=""
                   width="1600"
                   height="1067"
                   fetchPriority={index === 0 ? "high" : "auto"}
@@ -430,15 +418,19 @@ const Home2 = () => {
             </div>
             <div className="relative">
               <div className="aspect-[4/5] rounded-[2.5rem] overflow-hidden shadow-2xl">
-                <img
-                  src={hero6Small}
-                  alt="Switzerland Alps"
-                  width="900"
-                  height="600"
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover transform hover:scale-110 transition-transform duration-1000"
-                />
+                <picture>
+                  <source type="image/avif" srcSet={mobileHeroAvifSrcSet} sizes="(max-width: 1024px) 100vw, 50vw" />
+                  <source type="image/webp" srcSet={mobileHeroWebpSrcSet} sizes="(max-width: 1024px) 100vw, 50vw" />
+                  <img
+                    src={hero6Mobile640}
+                    alt="Switzerland Alps"
+                    width="900"
+                    height="600"
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-full object-cover transform hover:scale-110 transition-transform duration-1000"
+                  />
+                </picture>
               </div>
               <div className="absolute -bottom-8 -left-8 bg-white p-6 rounded-3xl shadow-xl border border-gray-100 hidden sm:block">
                 <div className="flex items-center gap-4">
@@ -472,6 +464,7 @@ const Home2 = () => {
         </Suspense>
       </DeferredSection>
 
+      <DeferredSection rootMargin="300px" minHeight={4200}>
       {/* Services Section */}
       <section className="py-24 px-6 sm:px-12 bg-gray-50">
         <div className="max-w-7xl mx-auto">
@@ -724,6 +717,7 @@ const Home2 = () => {
           </div>
         </div>
       </section>
+      </DeferredSection>
     </div>
   );
 };
