@@ -4,7 +4,7 @@ import { adminImageFormatMessage, isAllowedAdminImageFile } from "../utils/image
 const MAX_IMAGE_BYTES = 900 * 1024;
 const MAX_TOTAL_IMAGE_BYTES = 3 * 1024 * 1024;
 const MAX_IMAGE_DIMENSION = 1600;
-const MOBILE_AUTOPLAY_MS = 6500;
+const MOBILE_AUTOPLAY_MS = 5000;
 
 const dataUrlBytes = (dataUrl) => {
   const base64 = String(dataUrl || '').split(',')[1] || '';

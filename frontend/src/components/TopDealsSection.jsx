@@ -6,6 +6,9 @@ import { getTourId } from "../utils/tourId";
 import TourCard from "./TourCard";
 import TourCardSkeleton from "./TourCardSkeleton";
 
+const CARD_TRANSITION_MS = 700;
+const CARD_GAP_REM = 1.5;
+
 const TopDealsSection = () => {
   const navigate = useNavigate();
   const [topSwissTours, setTopSwissTours] = useState([]);
@@ -13,6 +16,7 @@ const TopDealsSection = () => {
   const [error, setError] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [toursPerView, setToursPerView] = useState(3);
+  const [isSliding, setIsSliding] = useState(true);
 
   // Calculate tours per view based on screen size
   useEffect(() => {
@@ -30,11 +34,6 @@ const TopDealsSection = () => {
     window.addEventListener('resize', updateToursPerView);
     return () => window.removeEventListener('resize', updateToursPerView);
   }, []);
-
-  // Reset index when tours change
-  useEffect(() => {
-    setCurrentIndex(0);
-  }, [topSwissTours.length]);
 
   const loadTopSellingTours = async () => {
     setLoading(true);
@@ -102,19 +101,62 @@ const TopDealsSection = () => {
     loadTopSellingTours();
   }, []);
 
+  const canLoop = topSwissTours.length > toursPerView;
+  const carouselTours = canLoop
+    ? [
+        ...topSwissTours.slice(-toursPerView),
+        ...topSwissTours,
+        ...topSwissTours.slice(0, toursPerView),
+      ]
+    : topSwissTours;
+  const translatePercent = (currentIndex * 100) / toursPerView;
+  const translateGap = (currentIndex * CARD_GAP_REM) / toursPerView;
+
+  useEffect(() => {
+    setIsSliding(false);
+    setCurrentIndex(canLoop ? toursPerView : 0);
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => setIsSliding(true));
+    });
+  }, [canLoop, topSwissTours.length, toursPerView]);
+
+  useEffect(() => {
+    if (!canLoop) return undefined;
+    if (currentIndex >= topSwissTours.length + toursPerView) {
+      const timeout = window.setTimeout(() => {
+        setIsSliding(false);
+        setCurrentIndex(toursPerView);
+        window.requestAnimationFrame(() => {
+          window.requestAnimationFrame(() => setIsSliding(true));
+        });
+      }, CARD_TRANSITION_MS);
+      return () => window.clearTimeout(timeout);
+    }
+
+    if (currentIndex < toursPerView) {
+      const timeout = window.setTimeout(() => {
+        setIsSliding(false);
+        setCurrentIndex(topSwissTours.length + toursPerView - 1);
+        window.requestAnimationFrame(() => {
+          window.requestAnimationFrame(() => setIsSliding(true));
+        });
+      }, CARD_TRANSITION_MS);
+      return () => window.clearTimeout(timeout);
+    }
+
+    return undefined;
+  }, [canLoop, currentIndex, topSwissTours.length, toursPerView]);
+
   // Navigation functions
   const nextTours = () => {
-    setCurrentIndex((prev) => (prev + 1) % topSwissTours.length);
+    if (!canLoop) return;
+    setCurrentIndex((prev) => prev + 1);
   };
 
   const prevTours = () => {
-    setCurrentIndex((prev) => (prev - 1 + topSwissTours.length) % topSwissTours.length);
+    if (!canLoop) return;
+    setCurrentIndex((prev) => prev - 1);
   };
-
-  const canLoop = topSwissTours.length > toursPerView;
-  const visibleTours = canLoop
-    ? Array.from({ length: toursPerView }, (_, index) => topSwissTours[(currentIndex + index) % topSwissTours.length])
-    : topSwissTours;
 
   return (
     <section className="w-full py-12 sm:py-16 bg-gray-50">
@@ -190,17 +232,18 @@ const TopDealsSection = () => {
             {/* Carousel Container */}
             <div className="overflow-hidden relative">
               <div
-                className="flex items-stretch transition-transform duration-700 ease-in-out"
+                className={`flex items-stretch ease-in-out ${isSliding ? "transition-transform duration-700" : ""}`}
                 style={{
-                  gap: '1.5rem'
+                  gap: `${CARD_GAP_REM}rem`,
+                  transform: `translateX(calc(-${translatePercent}% - ${translateGap}rem))`
                 }}
               >
-                {visibleTours.map((tour, index) => (
+                {carouselTours.map((tour, index) => (
                   <div
                     key={`${tour.id}-${index}`}
                     className="flex-shrink-0 flex flex-col"
                     style={{
-                      width: `calc((100% - ${(toursPerView - 1) * 1.5}rem) / ${toursPerView})`
+                      width: `calc((100% - ${(toursPerView - 1) * CARD_GAP_REM}rem) / ${toursPerView})`
                     }}
                   >
                     <TourCard

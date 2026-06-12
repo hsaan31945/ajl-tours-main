@@ -20,7 +20,7 @@ import hero7Small from "../assets/images/optimized/hero7-900.webp";
 
 const ExploreTours = lazy(() => import("../components/ExploreTours"));
 const TopDealsSection = lazy(() => import("../components/TopDealsSection"));
-const HERO_AUTOPLAY_MS = 6500;
+const HERO_AUTOPLAY_MS = 5000;
 const HERO_TRANSITION_MS = 1000;
 
 const DeferredSection = ({ children, rootMargin = "700px" }) => {

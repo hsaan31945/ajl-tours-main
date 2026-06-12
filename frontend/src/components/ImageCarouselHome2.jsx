@@ -9,7 +9,7 @@ const ImageCarouselHome2 = ({ images = [], alt = "", className = "" }) => {
     if (numImages <= 1) return;
     timeoutRef.current = setInterval(() => {
       setCurrent((prev) => (prev + 1) % numImages);
-    }, 6500);
+    }, 5000);
     return () => clearInterval(timeoutRef.current);
   }, [numImages]);
 

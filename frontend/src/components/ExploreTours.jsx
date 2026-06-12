@@ -8,6 +8,10 @@ import { getTourId } from "../utils/tourId";
 import { fetchToursList } from "../services/toursApi";
 import TourCardSkeleton from "./TourCardSkeleton";
 
+const CARD_AUTOPLAY_MS = 4500;
+const CARD_TRANSITION_MS = 700;
+const CARD_GAP_REM = 1.5;
+
 const ExploreTours = () => {
   const navigate = useNavigate();
   const { user } = useContext(AppContext);
@@ -18,6 +22,7 @@ const ExploreTours = () => {
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
   const [visibleCards, setVisibleCards] = useState(3);
+  const [isSliding, setIsSliding] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -92,15 +97,6 @@ const ExploreTours = () => {
   useEffect(() => {
     fetchAndSetTours();
   }, [fetchAndSetTours]);
-
-  // Auto-slide slowly and loop from the end back to the start.
-  useEffect(() => {
-    if (!randomTours.length || isMobile) return;
-    const id = setInterval(() => {
-      setCurrentIndex(prev => (prev + 1) % randomTours.length);
-    }, 6500);
-    return () => clearInterval(id);
-  }, [randomTours.length, isMobile]);
 
   const handleTourClick = (tour) => {
     if (!tour || !tour.id) {
@@ -188,15 +184,6 @@ const ExploreTours = () => {
     }
   };
 
-  // Navigation functions - responsive based on screen size
-  const goToPrevious = () => {
-    setCurrentIndex(prev => (prev - 1 + randomTours.length) % randomTours.length);
-  };
-
-  const goToNext = () => {
-    setCurrentIndex(prev => (prev + 1) % randomTours.length);
-  };
-
   // Update visible cards based on screen size
   useEffect(() => {
     const updateVisibleCards = () => {
@@ -218,6 +205,72 @@ const ExploreTours = () => {
     window.addEventListener('resize', updateVisibleCards);
     return () => window.removeEventListener('resize', updateVisibleCards);
   }, []);
+
+  const canLoop = randomTours.length > visibleCards;
+  const carouselTours = canLoop
+    ? [
+        ...randomTours.slice(-visibleCards),
+        ...randomTours,
+        ...randomTours.slice(0, visibleCards),
+      ]
+    : randomTours;
+  const translatePercent = (currentIndex * 100) / visibleCards;
+  const translateGap = (currentIndex * CARD_GAP_REM) / visibleCards;
+
+  useEffect(() => {
+    setIsSliding(false);
+    setCurrentIndex(canLoop ? visibleCards : 0);
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => setIsSliding(true));
+    });
+  }, [canLoop, randomTours.length, visibleCards]);
+
+  useEffect(() => {
+    if (!canLoop) return undefined;
+    if (currentIndex >= randomTours.length + visibleCards) {
+      const timeout = window.setTimeout(() => {
+        setIsSliding(false);
+        setCurrentIndex(visibleCards);
+        window.requestAnimationFrame(() => {
+          window.requestAnimationFrame(() => setIsSliding(true));
+        });
+      }, CARD_TRANSITION_MS);
+      return () => window.clearTimeout(timeout);
+    }
+
+    if (currentIndex < visibleCards) {
+      const timeout = window.setTimeout(() => {
+        setIsSliding(false);
+        setCurrentIndex(randomTours.length + visibleCards - 1);
+        window.requestAnimationFrame(() => {
+          window.requestAnimationFrame(() => setIsSliding(true));
+        });
+      }, CARD_TRANSITION_MS);
+      return () => window.clearTimeout(timeout);
+    }
+
+    return undefined;
+  }, [canLoop, currentIndex, randomTours.length, visibleCards]);
+
+  // Auto-slide at a middle pace while keeping the track continuous.
+  useEffect(() => {
+    if (!canLoop || isMobile) return undefined;
+    const id = setInterval(() => {
+      setCurrentIndex(prev => prev + 1);
+    }, CARD_AUTOPLAY_MS);
+    return () => clearInterval(id);
+  }, [canLoop, isMobile]);
+
+  // Navigation functions - responsive based on screen size
+  const goToPrevious = () => {
+    if (!canLoop) return;
+    setCurrentIndex(prev => prev - 1);
+  };
+
+  const goToNext = () => {
+    if (!canLoop) return;
+    setCurrentIndex(prev => prev + 1);
+  };
 
   // Touch handlers for mobile swipe support
   const handleTouchStart = (e) => {
@@ -244,17 +297,12 @@ const ExploreTours = () => {
   };
 
   const nextTours = () => {
-    setCurrentIndex(prev => (prev + 1) % randomTours.length);
+    goToNext();
   };
 
   const prevTours = () => {
-    setCurrentIndex(prev => (prev - 1 + randomTours.length) % randomTours.length);
+    goToPrevious();
   };
-
-  const canLoop = randomTours.length > visibleCards;
-  const visibleTours = canLoop
-    ? Array.from({ length: visibleCards }, (_, index) => randomTours[(currentIndex + index) % randomTours.length])
-    : randomTours;
 
   return (
     <section className="w-full py-16 sm:py-20 bg-gray-50">
@@ -326,20 +374,21 @@ const ExploreTours = () => {
 
             <div className="overflow-hidden">
               <div 
-                className="flex items-stretch transition-transform duration-700 ease-in-out"
+                className={`flex items-stretch ease-in-out ${isSliding ? "transition-transform duration-700" : ""}`}
                 style={{ 
-                  gap: '1.5rem'
+                  gap: `${CARD_GAP_REM}rem`,
+                  transform: `translateX(calc(-${translatePercent}% - ${translateGap}rem))`
                 }}
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
               >
-                {visibleTours.map((tour, index) => (
+                {carouselTours.map((tour, index) => (
                   <div 
                     key={`${tour.id}-${index}`}
                     className="flex-shrink-0 flex flex-col"
                     style={{
-                      width: `calc((100% - ${(visibleCards - 1) * 1.5}rem) / ${visibleCards})`
+                      width: `calc((100% - ${(visibleCards - 1) * CARD_GAP_REM}rem) / ${visibleCards})`
                     }}
                   >
                     <TourCard
