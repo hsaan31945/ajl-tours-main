@@ -1103,38 +1103,6 @@ const Checkout = () => {
             }}
             onAddDraft={(newItem) => setItinerary((current) => [...current, newItem])}
           />
-
-          {/* Calendar & Prices Section */}
-          <hr className="my-8 border-gray-200" />
-          <h2 className="text-2xl font-bold mb-6">{t("common.calendarPrices")}</h2>
-          {/* Only admins see the full calendar, others get a simple date picker */}
-          {adminOn ? (
-          <CalendarPrices
-            selectedDate={selectedDate}
-            setSelectedDate={setSelectedDate}
-            price={pricePerTicket}
-            currency={tour?.currency || "CHF"}
-          />
-          ) : (
-            <div className="flex items-center gap-4">
-              <label className="text-sm text-gray-600">{t("common.selectDate")}</label>
-              <input
-                type="date"
-                value={selectedDate}
-                min={todayStr}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="border rounded px-3 py-2"
-              />
-              <span className="text-red-700 font-semibold">
-                {pricing.hasDiscount && (
-                  <span className="mr-2 text-gray-400 line-through">
-                    {formatPrice(pricing.originalBaseUnitPrice)}
-                  </span>
-                )}
-                {formatPrice(pricePerTicket)}
-              </span>
-            </div>
-          )}
         </div>
         {/* Right: Book This Tour Box + Related Tours */}
         <div className="w-full md:w-[350px] flex flex-col gap-8 md:sticky md:top-24 h-fit">
