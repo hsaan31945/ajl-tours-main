@@ -9,7 +9,7 @@ const ImageCarouselHome2 = ({ images = [], alt = "", className = "" }) => {
     if (numImages <= 1) return;
     timeoutRef.current = setInterval(() => {
       setCurrent((prev) => (prev + 1) % numImages);
-    }, 2500);
+    }, 9000);
     return () => clearInterval(timeoutRef.current);
   }, [numImages]);
 
@@ -18,7 +18,7 @@ const ImageCarouselHome2 = ({ images = [], alt = "", className = "" }) => {
   return (
     <div className={"relative overflow-hidden " + className} style={{ height: "100%" }}>
       <div
-        className="flex transition-transform duration-700 ease-in-out h-full"
+        className="flex transition-transform duration-[1500ms] ease-in-out h-full"
         style={{
           width: `${numImages * 100}%`,
           transform: `translateX(-${current * (100 / numImages)}%)`,

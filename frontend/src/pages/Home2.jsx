@@ -20,6 +20,8 @@ import hero7Small from "../assets/images/optimized/hero7-900.webp";
 
 const ExploreTours = lazy(() => import("../components/ExploreTours"));
 const TopDealsSection = lazy(() => import("../components/TopDealsSection"));
+const HERO_AUTOPLAY_MS = 9000;
+const HERO_TRANSITION_MS = 1500;
 
 const DeferredSection = ({ children, rootMargin = "700px" }) => {
   const ref = useRef(null);
@@ -58,6 +60,7 @@ const Home2 = () => {
   const { passcodeHeader, isAdmin } = useAdmin();
   const { t } = useI18n();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isHeroTransitioning, setIsHeroTransitioning] = useState(true);
   const defaultHeroImages = [hero4, hero5, hero6, hero7];
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -136,6 +139,7 @@ const Home2 = () => {
   const heroImages = homeHeroBanner.isCustom && homeHeroBanner.images?.length
     ? homeHeroBanner.images
     : (shouldShowFallbackHero ? defaultHeroImages : []);
+  const desktopHeroImages = heroImages.length > 1 ? [...heroImages, heroImages[0]] : heroImages;
   const mobileHeroImage = homeHeroBanner.isCustom ? heroImages[0] : hero6Small;
 
   const heroGridImages = [
@@ -255,21 +259,38 @@ const Home2 = () => {
     }
   }, [searchTours]);
 
-  // Auto-advance carousel every 6 seconds with smooth sliding transition
+  // Auto-advance slowly and loop visually from last slide to first slide.
   React.useEffect(() => {
     if (heroImages.length <= 1) return undefined;
 
     const interval = setInterval(() => {
-      setCurrentImageIndex((prevIndex) => 
-        prevIndex === heroImages.length - 1 ? 0 : prevIndex + 1
-      );
-    }, 6000);
+      setIsHeroTransitioning(true);
+      setCurrentImageIndex((prevIndex) => prevIndex + 1);
+    }, HERO_AUTOPLAY_MS);
 
     return () => clearInterval(interval);
   }, [heroImages.length]);
 
   React.useEffect(() => {
+    if (heroImages.length <= 1 || currentImageIndex !== heroImages.length) return undefined;
+
+    const timeout = window.setTimeout(() => {
+      setIsHeroTransitioning(false);
+      setCurrentImageIndex(0);
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => setIsHeroTransitioning(true));
+      });
+    }, HERO_TRANSITION_MS);
+
+    return () => window.clearTimeout(timeout);
+  }, [currentImageIndex, heroImages.length]);
+
+  React.useEffect(() => {
+    setIsHeroTransitioning(false);
     setCurrentImageIndex(0);
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => setIsHeroTransitioning(true));
+    });
   }, [heroImages.join("|")]);
 
   const [openFaq, setOpenFaq] = useState(null);
@@ -307,20 +328,20 @@ const Home2 = () => {
         {/* Desktop Background: Carousel */}
         <div className="hidden md:block absolute inset-0 z-0">
           <div 
-            className="flex h-full transition-transform duration-1000 ease-in-out" 
+            className={`flex h-full ease-in-out ${isHeroTransitioning ? "transition-transform duration-[1500ms]" : ""}`}
             style={{ 
-              width: `${Math.max(heroImages.length, 1) * 100}%`,
-              transform: heroImages.length
-                ? `translateX(-${(currentImageIndex / heroImages.length) * 100}%)`
+              width: `${Math.max(desktopHeroImages.length, 1) * 100}%`,
+              transform: desktopHeroImages.length
+                ? `translateX(-${(currentImageIndex / desktopHeroImages.length) * 100}%)`
                 : "translateX(0)"
             }}
           >
-            {heroImages.map((image, index) => (
+            {desktopHeroImages.map((image, index) => (
               <div
                 key={index}
                 className="relative h-full overflow-hidden"
                 style={{ 
-                  width: `${100 / heroImages.length}%`
+                  width: `${100 / desktopHeroImages.length}%`
                 }}
               >
                 <img

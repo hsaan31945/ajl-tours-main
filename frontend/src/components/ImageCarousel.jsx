@@ -4,6 +4,7 @@ import { adminImageFormatMessage, isAllowedAdminImageFile } from "../utils/image
 const MAX_IMAGE_BYTES = 900 * 1024;
 const MAX_TOTAL_IMAGE_BYTES = 3 * 1024 * 1024;
 const MAX_IMAGE_DIMENSION = 1600;
+const MOBILE_AUTOPLAY_MS = 9000;
 
 const dataUrlBytes = (dataUrl) => {
   const base64 = String(dataUrl || '').split(',')[1] || '';
@@ -130,7 +131,7 @@ const ImageCarousel = ({ images, alt, className = "", adminOn = false, onSaveIma
 
   const resetTimer = useCallback(() => {
     clearInterval(timerRef.current);
-    if (total > 1) timerRef.current = setInterval(() => scrollToIndex(indexRef.current + 1), 5000);
+    if (total > 1) timerRef.current = setInterval(() => scrollToIndex(indexRef.current + 1), MOBILE_AUTOPLAY_MS);
   }, [scrollToIndex, total]);
 
   useEffect(() => {
@@ -147,7 +148,7 @@ const ImageCarousel = ({ images, alt, className = "", adminOn = false, onSaveIma
   // Auto-advance for mobile slider
   useEffect(() => {
     if (total <= 1) return;
-    timerRef.current = setInterval(() => scrollToIndex(indexRef.current + 1), 5000);
+    timerRef.current = setInterval(() => scrollToIndex(indexRef.current + 1), MOBILE_AUTOPLAY_MS);
     return () => clearInterval(timerRef.current);
   }, [scrollToIndex, total]);
 

@@ -93,12 +93,12 @@ const ExploreTours = () => {
     fetchAndSetTours();
   }, [fetchAndSetTours]);
 
-  // Auto-slide every 3 seconds (disabled on mobile for better UX)
+  // Auto-slide slowly and loop from the end back to the start.
   useEffect(() => {
     if (!randomTours.length || isMobile) return;
     const id = setInterval(() => {
       setCurrentIndex(prev => (prev + 1) % randomTours.length);
-    }, 3000);
+    }, 9000);
     return () => clearInterval(id);
   }, [randomTours.length, isMobile]);
 

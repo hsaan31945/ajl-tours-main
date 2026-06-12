@@ -105,19 +105,15 @@ const TopDealsSection = () => {
   // Navigation functions
   const nextTours = () => {
     const maxIndex = Math.max(0, topSwissTours.length - toursPerView);
-    if (currentIndex < maxIndex) {
-      setCurrentIndex((prev) => prev + 1);
-    }
+    setCurrentIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
   };
 
   const prevTours = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex((prev) => prev - 1);
-    }
+    const maxIndex = Math.max(0, topSwissTours.length - toursPerView);
+    setCurrentIndex((prev) => (prev <= 0 ? maxIndex : prev - 1));
   };
 
-  const canGoNext = currentIndex < topSwissTours.length - toursPerView;
-  const canGoPrev = currentIndex > 0;
+  const canLoop = topSwissTours.length > toursPerView;
 
   return (
     <section className="w-full py-12 sm:py-16 bg-gray-50">
@@ -169,7 +165,7 @@ const TopDealsSection = () => {
         ) : (
           <div className="relative">
             {/* Left Arrow */}
-            {canGoPrev && (
+            {canLoop && (
               <button
                 onClick={prevTours}
                 className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-white rounded-full p-2 shadow-lg hover:bg-gray-50 transition-colors border border-gray-200"
@@ -180,7 +176,7 @@ const TopDealsSection = () => {
             )}
 
             {/* Right Arrow */}
-            {canGoNext && (
+            {canLoop && (
               <button
                 onClick={nextTours}
                 className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-white rounded-full p-2 shadow-lg hover:bg-gray-50 transition-colors border border-gray-200"
@@ -193,7 +189,7 @@ const TopDealsSection = () => {
             {/* Carousel Container */}
             <div className="overflow-hidden relative">
               <div
-                className="flex items-stretch transition-transform duration-500 ease-in-out"
+                className="flex items-stretch transition-transform duration-1000 ease-in-out"
                 style={{
                   gap: '1.5rem',
                   transform: `translateX(calc(-${currentIndex} * (100% / ${toursPerView} + ${1.5 / toursPerView}rem)))`
