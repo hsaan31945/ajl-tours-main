@@ -90,6 +90,7 @@ export const resolveTourImageUrl = (image = '') => {
   if (!value) return '';
   if (isDataImage(value)) return value;
   if (isHttpUrl(value)) return value;
+  if (value.startsWith('/api/')) return value;
   if (value.startsWith('/assets/') || value.startsWith('/src/assets/') || value.startsWith('./')) return value;
   if (value.startsWith('/')) {
     const configured = (import.meta.env.VITE_API_URL || import.meta.env.REACT_APP_API_URL || '').trim();
