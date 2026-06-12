@@ -20,8 +20,8 @@ import hero7Small from "../assets/images/optimized/hero7-900.webp";
 
 const ExploreTours = lazy(() => import("../components/ExploreTours"));
 const TopDealsSection = lazy(() => import("../components/TopDealsSection"));
-const HERO_AUTOPLAY_MS = 9000;
-const HERO_TRANSITION_MS = 1500;
+const HERO_AUTOPLAY_MS = 6500;
+const HERO_TRANSITION_MS = 1000;
 
 const DeferredSection = ({ children, rootMargin = "700px" }) => {
   const ref = useRef(null);
@@ -328,7 +328,7 @@ const Home2 = () => {
         {/* Desktop Background: Carousel */}
         <div className="hidden md:block absolute inset-0 z-0">
           <div 
-            className={`flex h-full ease-in-out ${isHeroTransitioning ? "transition-transform duration-[1500ms]" : ""}`}
+            className={`flex h-full ease-in-out ${isHeroTransitioning ? "transition-transform duration-1000" : ""}`}
             style={{ 
               width: `${Math.max(desktopHeroImages.length, 1) * 100}%`,
               transform: desktopHeroImages.length

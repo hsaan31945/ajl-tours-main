@@ -98,7 +98,7 @@ const ExploreTours = () => {
     if (!randomTours.length || isMobile) return;
     const id = setInterval(() => {
       setCurrentIndex(prev => (prev + 1) % randomTours.length);
-    }, 9000);
+    }, 6500);
     return () => clearInterval(id);
   }, [randomTours.length, isMobile]);
 
@@ -244,20 +244,17 @@ const ExploreTours = () => {
   };
 
   const nextTours = () => {
-    const maxIndex = Math.max(0, randomTours.length - visibleCards);
-    if (currentIndex < maxIndex) {
-      setCurrentIndex((prev) => prev + 1);
-    }
+    setCurrentIndex(prev => (prev + 1) % randomTours.length);
   };
 
   const prevTours = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex((prev) => prev - 1);
-    }
+    setCurrentIndex(prev => (prev - 1 + randomTours.length) % randomTours.length);
   };
 
-  const canGoNext = currentIndex < randomTours.length - visibleCards;
-  const canGoPrev = currentIndex > 0;
+  const canLoop = randomTours.length > visibleCards;
+  const visibleTours = canLoop
+    ? Array.from({ length: visibleCards }, (_, index) => randomTours[(currentIndex + index) % randomTours.length])
+    : randomTours;
 
   return (
     <section className="w-full py-16 sm:py-20 bg-gray-50">
@@ -307,7 +304,7 @@ const ExploreTours = () => {
         ) : (
           <div className="relative">
             {/* Arrows */}
-            {canGoPrev && (
+            {canLoop && (
               <button
                 onClick={prevTours}
                 className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-6 z-10 bg-white rounded-full p-2.5 shadow-lg lg:flex items-center justify-center border border-gray-100"
@@ -317,7 +314,7 @@ const ExploreTours = () => {
               </button>
             )}
 
-            {canGoNext && (
+            {canLoop && (
               <button
                 onClick={nextTours}
                 className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-6 z-10 bg-white rounded-full p-2.5 shadow-lg lg:flex items-center justify-center border border-gray-100"
@@ -329,18 +326,17 @@ const ExploreTours = () => {
 
             <div className="overflow-hidden">
               <div 
-                className="flex items-stretch transition-transform duration-500 ease-in-out"
+                className="flex items-stretch transition-transform duration-700 ease-in-out"
                 style={{ 
-                  gap: '1.5rem',
-                  transform: `translateX(calc(-${currentIndex} * (100% / ${visibleCards} + ${1.5 / visibleCards}rem)))`
+                  gap: '1.5rem'
                 }}
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
               >
-                {randomTours.map((tour) => (
+                {visibleTours.map((tour, index) => (
                   <div 
-                    key={tour.id}
+                    key={`${tour.id}-${index}`}
                     className="flex-shrink-0 flex flex-col"
                     style={{
                       width: `calc((100% - ${(visibleCards - 1) * 1.5}rem) / ${visibleCards})`

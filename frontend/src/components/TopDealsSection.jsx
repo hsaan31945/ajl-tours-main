@@ -104,16 +104,17 @@ const TopDealsSection = () => {
 
   // Navigation functions
   const nextTours = () => {
-    const maxIndex = Math.max(0, topSwissTours.length - toursPerView);
-    setCurrentIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
+    setCurrentIndex((prev) => (prev + 1) % topSwissTours.length);
   };
 
   const prevTours = () => {
-    const maxIndex = Math.max(0, topSwissTours.length - toursPerView);
-    setCurrentIndex((prev) => (prev <= 0 ? maxIndex : prev - 1));
+    setCurrentIndex((prev) => (prev - 1 + topSwissTours.length) % topSwissTours.length);
   };
 
   const canLoop = topSwissTours.length > toursPerView;
+  const visibleTours = canLoop
+    ? Array.from({ length: toursPerView }, (_, index) => topSwissTours[(currentIndex + index) % topSwissTours.length])
+    : topSwissTours;
 
   return (
     <section className="w-full py-12 sm:py-16 bg-gray-50">
@@ -189,15 +190,14 @@ const TopDealsSection = () => {
             {/* Carousel Container */}
             <div className="overflow-hidden relative">
               <div
-                className="flex items-stretch transition-transform duration-1000 ease-in-out"
+                className="flex items-stretch transition-transform duration-700 ease-in-out"
                 style={{
-                  gap: '1.5rem',
-                  transform: `translateX(calc(-${currentIndex} * (100% / ${toursPerView} + ${1.5 / toursPerView}rem)))`
+                  gap: '1.5rem'
                 }}
               >
-                {topSwissTours.map((tour) => (
+                {visibleTours.map((tour, index) => (
                   <div
-                    key={tour.id}
+                    key={`${tour.id}-${index}`}
                     className="flex-shrink-0 flex flex-col"
                     style={{
                       width: `calc((100% - ${(toursPerView - 1) * 1.5}rem) / ${toursPerView})`
