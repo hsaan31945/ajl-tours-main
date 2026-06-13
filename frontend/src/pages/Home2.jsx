@@ -2,7 +2,7 @@ import React, { Suspense, lazy, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import SEO from "../components/SEO";
 import { fetchToursList } from "../services/toursApi";
-import { getTourId, getTourSeoPath } from "../utils/tourId";
+import { getTourCheckoutPath, getTourId } from "../utils/tourId";
 import { cleanDisplayName } from "../utils/textFormatting";
 import { organizationJsonLd } from "../utils/seo";
 import { Search, MapPin, ChevronDown, Star, Quote } from "lucide-react";
@@ -118,7 +118,7 @@ const Home2 = () => {
   const getTourRoute = (tour) => {
     const tourId = getTourId(tour);
     if (!tourId) return null;
-    return getTourSeoPath(tour);
+    return getTourCheckoutPath(tour);
   };
 
   const buildTourSearchResults = (query) => {

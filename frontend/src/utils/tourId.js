@@ -84,6 +84,21 @@ export const getTourSeoPath = (tour) => {
   return slug ? `/tours/${slug}` : "/tours";
 };
 
+export const getTourCheckoutPath = (tour) => {
+  const tourId = getTourId(tour);
+  if (!tourId) return getTourSeoPath(tour);
+
+  const destination = String(
+    tour?.division ||
+    tour?.destination ||
+    tour?.country ||
+    tour?.metadata?.division ||
+    "switzerland"
+  ).toLowerCase();
+  const destinationKey = destination.includes("sri") ? "srilanka" : "switzerland";
+
+  return `/${destinationKey}/${tourId}/checkout-sw`;
+};
 
 
 

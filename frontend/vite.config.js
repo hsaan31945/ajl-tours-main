@@ -8,7 +8,7 @@ const criticalCss = `
 const criticalCssPlugin = () => ({
   name: 'ajl-critical-css',
   transformIndexHtml: {
-    order: 'post',
+    order: 'pre',
     handler(html) {
       return html.replace('</head>', `<style data-critical="home-above-fold">${criticalCss}</style></head>`)
     },

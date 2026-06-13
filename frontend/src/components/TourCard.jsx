@@ -5,7 +5,7 @@ import { useCurrency } from "../context/CurrencyContext";
 import { useAdmin } from "../context/AdminContext";
 import { AppContext } from "../context/AppContext";
 import EditableField from "./EditableField";
-import { getTourId, getTourSeoPath } from "../utils/tourId";
+import { getTourCheckoutPath, getTourId } from "../utils/tourId";
 import { apiUrl } from "../utils/api";
 import { clearToursCache } from "../services/toursApi";
 import { cleanDisplayName } from "../utils/textFormatting";
@@ -161,11 +161,11 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
   const originalPrice = Number(tour.price || 0);
   const discountPrice = getDiscountPrice(tour, originalPrice);
   const hasDiscount = discountPrice !== null;
-  const detailPath = getTourSeoPath(tour);
+  const checkoutPath = getTourCheckoutPath(tour);
 
   const handleCardClick = () => {
     if (!tourId) return;
-    navigate(detailPath, { state: { tour } });
+    navigate(checkoutPath, { state: { tour } });
   };
 
   const handleCardKeyDown = (event) => {
@@ -218,7 +218,7 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
     >
       {/* Image Section */}
       <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
-        <Link to={detailPath} state={{ tour }} aria-label={`${t("common.viewDetails")} ${tourName}`}>
+        <Link to={checkoutPath} state={{ tour }} aria-label={`${t("common.bookThisTour")} ${tourName}`}>
         {displayImage && !imageFailed ? (
         <img 
           src={displayImage} 
@@ -274,7 +274,7 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
         {/* Title */}
         <div onClick={stopAdminFieldClick}>
           <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2 min-h-[3.5rem] leading-tight">
-            <Link to={detailPath} state={{ tour }} className="hover:text-orange-700">
+            <Link to={checkoutPath} state={{ tour }} className="hover:text-orange-700">
               {tourName}
             </Link>
           </h3>
@@ -341,11 +341,11 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
           </div>
           
           <Link
-            to={detailPath}
+            to={checkoutPath}
             state={{ tour }}
             className="bg-orange-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-orange-700 transition-all shadow-md hover:shadow-lg active:scale-95"
           >
-            {t("common.viewDetails")}
+            {t("common.bookThisTour")}
           </Link>
         </div>
       </div>

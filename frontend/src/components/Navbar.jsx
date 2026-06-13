@@ -4,7 +4,7 @@ import { Menu, X, Heart, ShoppingCart, History as HistoryIcon, MapPin, Globe, Bo
 import { AppContext } from "../context/AppContext.jsx";
 import { assets } from "../assets/assets.js";
 import { useAdmin } from "../context/AdminContext";
-import { getTourId, getTourSeoPath } from "../utils/tourId";
+import { getTourCheckoutPath, getTourId } from "../utils/tourId";
 import { fetchToursList } from "../services/toursApi";
 import CurrencySelector from "./CurrencySelector";
 import LanguageSelector from "./LanguageSelector";
@@ -133,7 +133,7 @@ const Navbar = () => {
       setNavQuery(tour.name);
       setShowSearchDropdown(false);
       // Use replace: false and state to ensure route change is detected
-      navigate(getTourSeoPath(tour), { 
+      navigate(getTourCheckoutPath(tour), {
         replace: false,
         state: { tour: tour, fromSearch: true }
       });
@@ -276,7 +276,7 @@ const Navbar = () => {
       </div>
 
       {/* Primary quick controls */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 lg:hidden">
         <Link to="/checkout" className="p-2 hover:bg-gray-100 rounded-full transition-colors" aria-label={t("nav.checkout")}>
           <ShoppingCart className="w-6 h-6 text-gray-700" />
         </Link>

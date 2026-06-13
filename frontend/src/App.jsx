@@ -36,7 +36,6 @@ const PaymentFailure = lazy(() => import("./pages/PaymentFailure"));
 const Contact = lazy(() => import("./pages/Contact"));
 const UserDetails = lazy(() => import("./pages/UserDetails"));
 const Flexibility = lazy(() => import("./pages/Flexibility"));
-const TestVisitCheckout = lazy(() => import("./pages/TestVisitCheckout"));
 const Favorites = lazy(() => import("./pages/Favorites"));
 const CustomerDashboard = lazy(() => import("./pages/CustomerDashboard"));
 const Blogs = lazy(() => import("./pages/Blogs"));
@@ -178,8 +177,8 @@ const App = () => {
               <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/payment-failure" element={<PaymentFailure />} />
               <Route path="/contact" element={<Contact />} />
-              <Route path="/visit-checkout-2" element={<TestVisitCheckout />} />
-              <Route path="/visit-checkout-2/:id" element={<TestVisitCheckout />} />
+              <Route path="/visit-checkout-2" element={<Navigate to="/tours" replace />} />
+              <Route path="/visit-checkout-2/:id" element={<Navigate to="/tours" replace />} />
               <Route path="/favorites" element={<Favorites />} />
               <Route path="/dashboard" element={<CustomerDashboard />} />
               <Route path="/account" element={<Navigate to="/dashboard" replace />} />
@@ -196,7 +195,7 @@ const App = () => {
               <Route path="/admin/orders" element={<AdminOrders />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
               <Route path="/admin/tour-wizard" element={<TourWizard />} />
-              <Route path="/tour-wizard" element={<TourWizard />} />
+              <Route path="/tour-wizard" element={<Navigate to="/admin/tour-wizard" replace />} />
             </Routes>
             </Suspense>
           </main>
