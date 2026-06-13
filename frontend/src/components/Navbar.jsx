@@ -187,8 +187,8 @@ const Navbar = () => {
   }, [showSearchDropdown]);
 
   return (
-    <div className="site-navbar w-full flex justify-between items-center py-2 px-3 sm:py-3 sm:px-6 md:px-16 top-0 sticky z-50 bg-white shadow-sm border-b border-gray-200">
-      <div className="site-navbar-left flex items-center gap-2 md:gap-4 flex-1 min-w-0">
+    <div className="site-navbar w-full flex justify-between items-center py-2 px-3 sm:py-3 sm:px-6 lg:px-8 2xl:px-16 top-0 sticky z-50 bg-white shadow-sm border-b border-gray-200">
+      <div className="site-navbar-left flex items-center gap-2 md:gap-4 shrink-0">
         <Link to="/" className="site-logo-link shrink-0">
           <picture>
             <source
@@ -205,7 +205,7 @@ const Navbar = () => {
               src="/logoTravel-220.png"
               width="220"
               height="63"
-              className="site-logo-img w-[110px] sm:w-[150px] md:w-[190px]"
+              className="site-logo-img w-[110px] sm:w-[150px] lg:w-[170px] xl:w-[190px]"
               alt="AJL Tour logo"
             />
           </picture>
@@ -213,7 +213,7 @@ const Navbar = () => {
 
         {/* Compact search (shows after scroll) */}
         {showCompactSearch && (
-          <div ref={searchContainerRef} className="hidden lg:block relative" style={{ minWidth: "280px", maxWidth: "440px" }}>
+          <div ref={searchContainerRef} className="hidden lg:block relative" style={{ width: "clamp(220px, 18vw, 300px)" }}>
             <form
               onSubmit={handleNavSearch}
               className="flex items-center gap-2 bg-white rounded-full px-4 py-2.5 shadow-lg border-2 border-gray-200 hover:border-orange-400 focus-within:border-orange-500 focus-within:shadow-xl transition-all duration-200"
@@ -241,7 +241,7 @@ const Navbar = () => {
               />
               <button
                 type="submit"
-                className="px-6 py-2 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white rounded-full text-sm font-semibold transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-100"
+                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white rounded-full text-sm font-semibold transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-100"
               >
                 {t("nav.search")}
               </button>
@@ -275,11 +275,8 @@ const Navbar = () => {
         )}
       </div>
 
-      {/* Compact controls for mobile and tablet screens */}
-      <div className="flex items-center gap-3 lg:hidden">
-        <Link to="/favorites" className="p-2 hover:bg-gray-100 rounded-full transition-colors" aria-label={t("nav.favorites")}>
-          <Heart className="w-6 h-6 text-gray-700" />
-        </Link>
+      {/* Primary quick controls */}
+      <div className="flex items-center gap-2">
         <Link to="/checkout" className="p-2 hover:bg-gray-100 rounded-full transition-colors" aria-label={t("nav.checkout")}>
           <ShoppingCart className="w-6 h-6 text-gray-700" />
         </Link>
@@ -297,12 +294,12 @@ const Navbar = () => {
       </div>
 
       {/* Menu for desktop */}
-      <div className="hidden lg:flex items-center gap-4">
-        <ul className="flex items-center gap-2 text-sm font-semibold">
+      <div className="hidden lg:flex items-center gap-2">
+        <ul className="flex items-center gap-1 text-sm font-semibold">
           <li>
             <Link
               to="/"
-              className={`inline-flex items-center rounded-full px-4 py-2 transition-colors ${
+              className={`inline-flex items-center rounded-full px-3 py-2 transition-colors ${
                 location.pathname === "/"
                   ? "bg-orange-50 text-orange-700"
                   : "text-gray-700 hover:bg-gray-100 hover:text-orange-600"
@@ -323,7 +320,7 @@ const Navbar = () => {
               to="/destinations"
               title="Destinations"
               onFocus={() => setDestinationsOpen(true)}
-              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 transition-colors ${
+              className={`inline-flex items-center gap-1 rounded-full px-3 py-2 transition-colors ${
                 isDestinationsActive
                   ? "bg-orange-50 text-orange-700"
                   : "text-gray-700 hover:bg-gray-100 hover:text-orange-600"
@@ -364,7 +361,7 @@ const Navbar = () => {
           <li>
             <Link
               to="/tours"
-              className={`inline-flex items-center rounded-full px-4 py-2 transition-colors ${
+              className={`inline-flex items-center rounded-full px-3 py-2 transition-colors ${
                 location.pathname === "/tours"
                   ? "bg-orange-50 text-orange-700"
                   : "text-gray-700 hover:bg-gray-100 hover:text-orange-600"
@@ -376,7 +373,7 @@ const Navbar = () => {
           <li>
             <Link
               to="/blogs"
-              className={`inline-flex items-center rounded-full px-4 py-2 transition-colors ${
+              className={`inline-flex items-center rounded-full px-3 py-2 transition-colors ${
                 location.pathname.startsWith("/blogs")
                   ? "bg-orange-50 text-orange-700"
                   : "text-gray-700 hover:bg-gray-100 hover:text-orange-600"
@@ -388,7 +385,7 @@ const Navbar = () => {
           <li>
             <Link
               to="/about"
-              className={`inline-flex items-center rounded-full px-4 py-2 transition-colors ${
+              className={`inline-flex items-center rounded-full px-3 py-2 transition-colors ${
                 location.pathname === "/about"
                   ? "bg-orange-50 text-orange-700"
                   : "text-gray-700 hover:bg-gray-100 hover:text-orange-600"
@@ -400,7 +397,7 @@ const Navbar = () => {
           <li>
             <Link
               to="/contact"
-              className={`inline-flex items-center rounded-full px-4 py-2 transition-colors ${
+              className={`inline-flex items-center rounded-full px-3 py-2 transition-colors ${
                 location.pathname === "/contact"
                   ? "bg-orange-50 text-orange-700"
                   : "text-gray-700 hover:bg-gray-100 hover:text-orange-600"
@@ -489,12 +486,12 @@ const Navbar = () => {
             {/* Overlay */}
             <div
               onClick={() => setMenuOpen(false)}
-              className="lg:hidden fixed inset-0 bg-black/50 z-[60]"
+              className="fixed inset-0 bg-black/50 z-[60]"
             />
 
             {/* Side Drawer */}
             <div
-              className="lg:hidden fixed top-0 right-0 h-screen w-[85%] max-w-[320px] bg-white z-[70] shadow-2xl flex flex-col"
+              className="fixed top-0 right-0 h-screen w-[85%] max-w-[320px] bg-white z-[70] shadow-2xl flex flex-col"
             >
               {/* Drawer Header */}
               <div className="bg-[#ff6b35] py-6 px-4 flex justify-end items-center">
