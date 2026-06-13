@@ -251,13 +251,15 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
         <button 
           type="button"
           onClick={handleFavoriteClick}
-          className="absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-white transition-colors z-10"
+          className="absolute right-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-gray-800 shadow-md backdrop-blur-sm transition-colors hover:bg-white sm:right-3 sm:top-3 sm:h-8 sm:w-8"
           aria-pressed={effectiveFavorite}
           aria-label={effectiveFavorite ? t("common.removeFromWishlist") : t("common.addToWishlist")}
           title={effectiveFavorite ? t("common.removeFromWishlist") : t("common.addToWishlist")}
         >
           <Heart 
-            className={`w-5 h-5 ${effectiveFavorite ? "text-red-500 fill-current" : "text-gray-600"}`} 
+            strokeWidth={2.5}
+            className={`h-5 w-5 ${effectiveFavorite ? "fill-current text-red-500" : "text-gray-800"}`}
+            aria-hidden="true"
           />
         </button>
 

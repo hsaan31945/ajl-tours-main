@@ -6,7 +6,7 @@ const Tour = require('../../models/Tour');
 const Division = require('../../models/Division');
 const User = require('../../models/User');
 const { getTourId, normalizeTourId, isValidObjectId } = require('../utils/tourId');
-const { getTourThumbnail, getTourImageDebugPayload, stripDataImages } = require('../utils/tourImages');
+const { getTourImageEndpoint, getTourThumbnail, getTourImageDebugPayload, stripDataImages } = require('../utils/tourImages');
 const mongoose = require('mongoose');
 
 const LIST_CACHE_TTL_MS = 2 * 60 * 1000;
@@ -444,7 +444,9 @@ class TourService {
     const reviewSummary = getReviewSummary(tour);
     const legacyReviewCount = Number(tour.metadata?.reviews);
     const legacyRating = Number(tour.metadata?.rating);
-    const thumbnail = getTourThumbnail(tour);
+    const thumbnail = Number(tour.imageCount || 0) > 0
+      ? getTourImageEndpoint(tour)
+      : getTourThumbnail(tour);
 
     return {
       id,
@@ -471,7 +473,9 @@ class TourService {
         ? tour.division.name
         : null);
     const legacyRating = Number(tour.metadata?.rating);
-    const thumbnail = getTourThumbnail(tour);
+    const thumbnail = Number(tour.imageCount || 0) > 0
+      ? getTourImageEndpoint(tour)
+      : getTourThumbnail(tour);
 
     return {
       _id: id,

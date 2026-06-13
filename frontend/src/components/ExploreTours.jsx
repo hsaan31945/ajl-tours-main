@@ -34,12 +34,23 @@ const ExploreTours = () => {
     return data
       .filter(t => t?.isActive !== false)
       .map(t => ({
+        ...t,
         id: t.id ?? t._id ?? t.id_str ?? t.name,
+        _id: t._id ?? t.id ?? t.id_str,
+        slug: t.slug,
         name: t.name,
+        title: t.title || t.name,
         price: Number(t.price ?? 0),
         discountEnabled: Boolean(t.discountEnabled),
         discountPrice: t.discountPrice ?? null,
-        images: Array.isArray(t.images) && t.images.length ? t.images : (t.photo ? [t.photo] : []),
+        thumbnail: t.thumbnail || t.photo || '',
+        cardImage: t.cardImage,
+        coverImage: t.coverImage,
+        gallery: t.gallery,
+        media: t.media,
+        images: Array.isArray(t.images) && t.images.length
+          ? t.images
+          : (t.thumbnail || t.photo ? [t.thumbnail || t.photo] : []),
         description: t.description,
         destination: t.divisionName || 'switzerland',
         address: t.startLocation || t.location || '',
