@@ -440,21 +440,19 @@ const Home2 = () => {
             </div>
             <div className="relative">
               <div className="aspect-[4/5] rounded-[2.5rem] overflow-hidden shadow-2xl">
-                <DeferredSection rootMargin="0px" className="h-full">
-                  <picture className="block h-full">
-                    <source type="image/avif" srcSet={mobileHeroAvifSrcSet} sizes="(max-width: 1024px) 100vw, 50vw" />
-                    <source type="image/webp" srcSet={mobileHeroWebpSrcSet} sizes="(max-width: 1024px) 100vw, 50vw" />
-                    <img
-                      src={hero6Mobile640Avif}
-                      alt="Swiss Alps scenery for a private Switzerland tour"
-                      width="900"
-                      height="600"
-                      loading="lazy"
-                      decoding="async"
-                      className="w-full h-full object-cover transform hover:scale-110 transition-transform duration-1000"
-                    />
-                  </picture>
-                </DeferredSection>
+                <picture>
+                  <source type="image/avif" srcSet={mobileHeroAvifSrcSet} sizes="(max-width: 1024px) 100vw, 50vw" />
+                  <source type="image/webp" srcSet={mobileHeroWebpSrcSet} sizes="(max-width: 1024px) 100vw, 50vw" />
+                  <img
+                    src={hero6Mobile640Avif}
+                    alt="Swiss Alps scenery for a private Switzerland tour"
+                    width="900"
+                    height="600"
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-full object-cover transform hover:scale-110 transition-transform duration-1000"
+                  />
+                </picture>
               </div>
               <div className="absolute -bottom-8 -left-8 bg-white p-6 rounded-3xl shadow-xl border border-gray-100 hidden sm:block">
                 <div className="flex items-center gap-4">
@@ -475,20 +473,20 @@ const Home2 = () => {
 
 
       {/* Explore Tours Section */}
-      <DeferredSection rootMargin="0px" minHeight={720}>
+      <DeferredSection minHeight={720}>
         <Suspense fallback={null}>
           <ExploreTours />
         </Suspense>
       </DeferredSection>
 
       {/* Top Deals Section */}
-      <DeferredSection rootMargin="0px" minHeight={640}>
+      <DeferredSection minHeight={640}>
         <Suspense fallback={null}>
           <TopDealsSection />
         </Suspense>
       </DeferredSection>
 
-      <DeferredSection rootMargin="0px" minHeight={4200}>
+      <DeferredSection minHeight={4200}>
         <Suspense fallback={null}>
           <HomeDeferredContent />
         </Suspense>

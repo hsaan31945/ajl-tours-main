@@ -275,8 +275,8 @@ const Navbar = () => {
         )}
       </div>
 
-      {/* Flex container for small screens */}
-      <div className="flex items-center gap-3 sm:hidden">
+      {/* Compact controls for mobile and tablet screens */}
+      <div className="flex items-center gap-3 lg:hidden">
         <Link to="/favorites" className="p-2 hover:bg-gray-100 rounded-full transition-colors" aria-label={t("nav.favorites")}>
           <Heart className="w-6 h-6 text-gray-700" />
         </Link>
@@ -297,7 +297,7 @@ const Navbar = () => {
       </div>
 
       {/* Menu for desktop */}
-      <div className="hidden sm:flex items-center gap-4">
+      <div className="hidden lg:flex items-center gap-4">
         <ul className="flex items-center gap-2 text-sm font-semibold">
           <li>
             <Link
@@ -489,12 +489,12 @@ const Navbar = () => {
             {/* Overlay */}
             <div
               onClick={() => setMenuOpen(false)}
-              className="sm:hidden fixed inset-0 bg-black/50 z-[60]"
+              className="lg:hidden fixed inset-0 bg-black/50 z-[60]"
             />
 
             {/* Side Drawer */}
             <div
-              className="sm:hidden fixed top-0 right-0 h-screen w-[85%] max-w-[320px] bg-white z-[70] shadow-2xl flex flex-col"
+              className="lg:hidden fixed top-0 right-0 h-screen w-[85%] max-w-[320px] bg-white z-[70] shadow-2xl flex flex-col"
             >
               {/* Drawer Header */}
               <div className="bg-[#ff6b35] py-6 px-4 flex justify-end items-center">
