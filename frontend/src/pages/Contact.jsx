@@ -7,6 +7,8 @@ import { assets } from "../assets/assets";
 const contactEmail = "hey@ajltour.com";
 const facebookUrl = "https://www.facebook.com/p/Ajl-Tour-61575927044542/";
 const emailHref = `mailto:${contactEmail}?subject=Private%20Switzerland%20Tour%20Inquiry&body=Hello%20AJL%20Tours%2C%0A%0AI%20would%20like%20to%20plan%20a%20private%20tour.%0A%0ATravel%20date%3A%0AGroup%20size%3A%0APickup%20location%3A%0ADestinations%3A%0A%0AThank%20you.`;
+const gmailHref = `https://mail.google.com/mail/?view=cm&fs=1&to=${contactEmail}&su=Private%20Switzerland%20Tour%20Inquiry&body=Hello%20AJL%20Tours%2C%0A%0AI%20would%20like%20to%20plan%20a%20private%20tour.%0A%0ATravel%20date%3A%0AGroup%20size%3A%0APickup%20location%3A%0ADestinations%3A%0A%0AThank%20you.`;
+const emailButtonClass = "inline-flex rounded-lg bg-orange-600 px-6 py-3 font-bold text-white transition hover:bg-orange-700";
 
 const Contact = () => {
   return (
@@ -81,7 +83,15 @@ const Contact = () => {
           <div className="mt-6">
             <a
               href={emailHref}
-              className="inline-flex rounded-lg bg-orange-600 px-6 py-3 font-bold text-white transition hover:bg-orange-700"
+              className={`${emailButtonClass} lg:hidden`}
+            >
+              Email Our Team
+            </a>
+            <a
+              href={gmailHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${emailButtonClass} hidden lg:inline-flex`}
             >
               Email Our Team
             </a>
