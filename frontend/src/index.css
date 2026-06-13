@@ -197,6 +197,30 @@ nav .button-31 {
   overflow: hidden;
 }
 
+.tour-favorite-button {
+  width: 2.75rem !important;
+  height: 2.75rem !important;
+  padding: 0 !important;
+  min-width: 2.75rem !important;
+  min-height: 2.75rem !important;
+  line-height: 1 !important;
+}
+
+.tour-favorite-icon {
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  display: block;
+}
+
+@media (min-width: 640px) {
+  .tour-favorite-button {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    min-width: 2.5rem !important;
+    min-height: 2.5rem !important;
+  }
+}
+
 /* Mobile responsive tour cards - Force single card layout */
 @media (max-width: 1023px) {
   /* Target the flex container with transform */
@@ -259,7 +283,7 @@ nav .button-31 {
   }
   
   /* Mobile button improvements */
-  .bg-white.rounded-xl.shadow-lg.overflow-hidden button {
+  .bg-white.rounded-xl.shadow-lg.overflow-hidden button:not([aria-pressed]) {
     font-size: 0.875rem !important;
     padding: 0.75rem 1rem !important;
   }

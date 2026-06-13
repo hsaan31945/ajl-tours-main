@@ -344,27 +344,13 @@ const ExploreTours = () => {
           <div className="text-center py-14 bg-white rounded-xl border border-gray-100">
             <p className="text-gray-700 font-semibold">No tours available at the moment.</p>
           </div>
-        ) : isMobile ? (
-          <div className="space-y-8">
-            {randomTours.map((tour) => (
-              <TourCard
-                key={tour.id}
-                tour={tour}
-                isFavorite={favorites[tour.id?.toString()] || favorites[tour.id]}
-                onFavoriteToggle={(t) => toggleFavorite(null, t)}
-                onUpdate={(updated) => {
-                  setRandomTours(prev => prev.map(pt => pt.id === updated.id ? updated : pt));
-                }}
-              />
-            ))}
-          </div>
         ) : (
           <div className="relative">
             {/* Arrows */}
             {canLoop && (
               <button
                 onClick={prevTours}
-                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-6 z-10 bg-white rounded-full p-2.5 shadow-lg lg:flex items-center justify-center border border-gray-100"
+                className="absolute left-0 top-1/2 z-10 flex -translate-x-3 -translate-y-1/2 items-center justify-center rounded-full border border-gray-100 bg-white p-2 shadow-lg sm:-translate-x-6 sm:p-2.5"
                 aria-label="Previous"
               >
                 <ChevronLeft className="w-6 h-6 text-gray-700" />
@@ -374,7 +360,7 @@ const ExploreTours = () => {
             {canLoop && (
               <button
                 onClick={nextTours}
-                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-6 z-10 bg-white rounded-full p-2.5 shadow-lg lg:flex items-center justify-center border border-gray-100"
+                className="absolute right-0 top-1/2 z-10 flex translate-x-3 -translate-y-1/2 items-center justify-center rounded-full border border-gray-100 bg-white p-2 shadow-lg sm:translate-x-6 sm:p-2.5"
                 aria-label="Next"
               >
                 <ChevronRight className="w-6 h-6 text-gray-700" />

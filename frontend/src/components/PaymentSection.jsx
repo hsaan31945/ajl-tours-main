@@ -7,6 +7,7 @@ import { calculateBookingPricing, getGroupDiscountLabel } from "../utils/booking
 import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Users } from "lucide-react";
 import EditableField from "./EditableField";
 import ParticipantStepper from "./ParticipantStepper";
+import ApproxPriceNote from "./ApproxPriceNote";
 import { useCurrency } from "../context/CurrencyContext";
 import { useI18n } from "../i18n";
 
@@ -285,6 +286,7 @@ function PaymentSection({
             )}
           </div>
         </div>
+        <ApproxPriceNote className="text-right" />
         {pricing.hasGroupDiscount && (
           <div className="flex justify-between items-center rounded-lg bg-green-50 px-3 py-2 text-sm">
             <span className="font-semibold text-green-700">

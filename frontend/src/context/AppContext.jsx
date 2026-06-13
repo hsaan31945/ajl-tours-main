@@ -27,7 +27,13 @@ const AppContextProvider = (props) => {
 
   const loadAdminBookings = async () => {
     try {
-      const bookingsRes = await axios.get(apiUrl('/api/bookings'));
+      const token = localStorage.getItem('adminToken');
+      const passcode = localStorage.getItem('adminPasscode') || import.meta.env.VITE_ADMIN_PASSCODE || '';
+      const bookingsRes = await axios.get(apiUrl('/api/admin/bookings'), {
+        headers: token
+          ? { Authorization: `Bearer ${token}` }
+          : (passcode ? { 'X-Admin-Passcode': passcode } : {}),
+      });
       setBookings(getCollection(bookingsRes.data));
     } catch (e) {
       console.error('Failed to load bookings:', e?.response?.data || e.message);

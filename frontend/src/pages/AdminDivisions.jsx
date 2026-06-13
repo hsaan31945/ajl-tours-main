@@ -1,364 +1,223 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { Edit, Plus, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { useAdmin } from "../context/AdminContext";
-import { apiUrl } from "../utils/api";
+import { AdminCard, AdminPage, Alert, ConfirmModal, EmptyState, LoadingState, StatusBadge } from "../components/admin/AdminUI";
+import { adminRequest, asArray } from "../utils/adminApi";
+
+const emptyForm = { name: "", slug: "", description: "", bannerImage: "", isActive: true };
+
+const slugify = (value) => String(value || "")
+  .trim()
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, "-")
+  .replace(/^-+|-+$/g, "");
 
 const AdminDivisions = () => {
-  const { isAdmin, passcodeHeader, getAuthHeader } = useAdmin();
   const navigate = useNavigate();
+  const { isAdmin, loading: adminLoading, getAuthHeader } = useAdmin();
   const [divisions, setDivisions] = useState([]);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [deleteMode, setDeleteMode] = useState(false);
-  const [selected, setSelected] = useState([]);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [currentDivision, setCurrentDivision] = useState(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    banner_image: ""
-  });
-
-  const divisionId = (division) => division?._id || division?.id;
-  const authHeaders = () => (
-    getAuthHeader ? getAuthHeader() : (passcodeHeader ? { 'X-Admin-Passcode': passcodeHeader } : {})
-  );
-
-  const fetchDivisions = useCallback(async () => {
-    try {
-      const res = await axios.get(apiUrl('/api/divisions'));
-      setDivisions(Array.isArray(res.data) ? res.data : []);
-    } catch (err) {
-      console.error("Failed to fetch divisions:", err);
-      setDivisions([]);
-    }
-  }, []);
+  const [form, setForm] = useState(emptyForm);
+  const [editing, setEditing] = useState(null);
+  const [deleteDivision, setDeleteDivision] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
-    if (!isAdmin) {
-      navigate("/admin");
-      return;
-    }
+    if (!adminLoading && !isAdmin) navigate("/admin");
+  }, [adminLoading, isAdmin, navigate]);
 
-    fetchDivisions();
-  }, [fetchDivisions, isAdmin, navigate]);
-
-  const handleAddDivision = async (e) => {
-    e.preventDefault();
+  const loadDivisions = async () => {
+    setLoading(true);
+    setError("");
     try {
-      const res = await axios.post(
-        apiUrl('/api/divisions'),
-        {
-          name: formData.name,
-          description: formData.description,
-          banner_image: formData.banner_image,
-        },
-        { headers: authHeaders() }
-      );
-      setDivisions((prev) => [...prev, res.data]);
-      setShowAddModal(false);
-      setFormData({ name: "", description: "", banner_image: "" });
+      const payload = await adminRequest("/api/admin/divisions?includeInactive=true", { getAuthHeader });
+      setDivisions(asArray(payload));
     } catch (err) {
-      alert("Failed to add division: " + (err.response?.data?.message || err.message));
+      setError(err.message || "Could not load divisions");
+      setDivisions([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleEditDivision = async (e) => {
-    e.preventDefault();
-    try {
-      const id = divisionId(currentDivision);
-      const res = await axios.put(
-        apiUrl(`/api/divisions/${id}`),
-        {
-          name: formData.name,
-          description: formData.description,
-          banner_image: formData.banner_image,
-        },
-        { headers: authHeaders() }
-      );
-      setDivisions((prev) => prev.map((division) => (
-        divisionId(division) === id ? res.data : division
-      )));
-      setShowEditModal(false);
-      setCurrentDivision(null);
-      setFormData({ name: "", description: "", banner_image: "" });
-    } catch (err) {
-      alert("Failed to update division: " + (err.response?.data?.message || err.message));
-    }
-  };
+  useEffect(() => {
+    if (isAdmin) loadDivisions();
+  }, [isAdmin]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleDeleteDivisions = async () => {
-    try {
-      await Promise.all(selected.map((id) => (
-        axios.delete(apiUrl(`/api/divisions/${id}`), { headers: authHeaders() })
-      )));
-      setDivisions((prev) => prev.filter((division) => !selected.includes(divisionId(division))));
-      setSelected([]);
-      setDeleteMode(false);
-      setShowConfirm(false);
-    } catch (err) {
-      alert("Failed to delete divisions: " + (err.response?.data?.message || err.message));
-    }
-  };
-
-  const openEditModal = (division) => {
-    setCurrentDivision(division);
-    setFormData({
-      name: division.name,
+  const openForm = (division = null) => {
+    setEditing(division);
+    setForm(division ? {
+      name: division.name || "",
+      slug: division.slug || slugify(division.name),
       description: division.description || "",
-      banner_image: division.banner_image || division.bannerImage || ""
-    });
-    setShowEditModal(true);
+      bannerImage: division.bannerImage || division.banner_image || "",
+      isActive: division.isActive !== false,
+    } : emptyForm);
+    setShowForm(true);
   };
 
-  const toggleSelect = (id) => {
-    setSelected((prev) => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const saveDivision = async (event) => {
+    event.preventDefault();
+    setError("");
+    setMessage("");
+    try {
+      const path = editing ? `/api/admin/divisions/${editing.id}` : "/api/admin/divisions";
+      await adminRequest(path, {
+        method: editing ? "PUT" : "POST",
+        getAuthHeader,
+        body: { ...form, slug: form.slug || slugify(form.name) },
+      });
+      setMessage(editing ? "Division updated." : "Division created.");
+      setShowForm(false);
+      setEditing(null);
+      setForm(emptyForm);
+      loadDivisions();
+    } catch (err) {
+      setError(err.message || "Could not save division");
+    }
   };
+
+  const confirmDelete = async () => {
+    if (!deleteDivision) return;
+    try {
+      await adminRequest(`/api/admin/divisions/${deleteDivision.id}`, {
+        method: "DELETE",
+        getAuthHeader,
+      });
+      setMessage("Division deactivated.");
+      setDeleteDivision(null);
+      loadDivisions();
+    } catch (err) {
+      setError(err.message || "Could not delete division");
+      setDeleteDivision(null);
+    }
+  };
+
+  if (adminLoading || loading) return <LoadingState label="Loading divisions..." />;
 
   return (
-    <div className="min-h-screen p-8 bg-gray-50">
-      <h1 className="text-4xl font-bold mb-8 text-center">Division Management</h1>
-      
-      <div className="flex gap-4 mb-6">
-        {!deleteMode && (
-          <button
-            className="px-4 py-2 bg-green-600 text-white rounded font-bold hover:bg-green-800"
-            onClick={() => setShowAddModal(true)}
-          >
-            Add Division
-          </button>
-        )}
-        {!deleteMode && (
-          <button
-            className="px-4 py-2 bg-red-600 text-white rounded font-bold hover:bg-red-800"
-            onClick={() => setDeleteMode(true)}
-          >
-            Remove Division
-          </button>
-        )}
-        {deleteMode && (
-          <button
-            className="px-4 py-2 bg-red-700 text-white rounded font-bold hover:bg-black"
-            onClick={() => setShowConfirm(true)}
-            disabled={selected.length === 0}
-          >
-            Delete Selected
-          </button>
-        )}
-        {deleteMode && (
-          <button
-            className="px-4 py-2 bg-gray-400 text-white rounded font-bold hover:bg-gray-600"
-            onClick={() => { setDeleteMode(false); setSelected([]); }}
-          >
-            Cancel
-          </button>
-        )}
-      </div>
+    <AdminPage
+      title="Division Management"
+      description="Manage public destinations and the destination banner images used across the website."
+      actions={(
+        <button onClick={() => openForm()} className="inline-flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2 font-bold text-white hover:bg-orange-700">
+          <Plus className="h-4 w-4" /> Add Division
+        </button>
+      )}
+    >
+      {message && <Alert type="success">{message}</Alert>}
+      {error && <Alert>{error}</Alert>}
 
-      <div className="bg-white p-6 rounded-lg shadow">
-        <table className="min-w-full">
-          <thead>
-            <tr>
-              {deleteMode && <th className="py-2 px-4">Select</th>}
-              <th className="py-2 px-4">Division Name</th>
-              <th className="py-2 px-4">Description</th>
-              <th className="py-2 px-4">Banner Image</th>
-              <th className="py-2 px-4">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {divisions.length === 0 ? (
-              <tr>
-                <td colSpan={deleteMode ? 5 : 4} className="text-center py-4">No divisions found.</td>
-              </tr>
-            ) : (
-              divisions.map((division) => (
-                <tr key={divisionId(division)}>
-                  {deleteMode && (
-                    <td className="py-2 px-4 text-center">
-                      <input
-                        type="checkbox"
-                        checked={selected.includes(divisionId(division))}
-                        onChange={() => toggleSelect(divisionId(division))}
-                      />
-                    </td>
+      <AdminCard>
+        {!divisions.length ? (
+          <EmptyState title="No divisions found" message="Create Switzerland, Sri Lanka, or other destinations here." />
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {divisions.map((division) => (
+              <div key={division.id} className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+                <div className="h-36 bg-gray-100">
+                  {division.bannerImage ? (
+                    <img src={division.bannerImage} alt={division.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-sm font-semibold text-gray-400">No banner image</div>
                   )}
-                  <td className="py-2 px-4 font-semibold">{division.name}</td>
-                  <td className="py-2 px-4">{division.description || "No description"}</td>
-                  <td className="py-2 px-4">
-                    {division.banner_image || division.bannerImage ? (
-                      <img src={division.banner_image || division.bannerImage} alt={division.name} className="w-16 h-12 object-cover rounded" />
-                    ) : (
-                      "No image"
-                    )}
-                  </td>
-                  <td className="py-2 px-4">
-                    {!deleteMode && (
-                      <button
-                        className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-800 mr-2"
-                        onClick={() => openEditModal(division)}
-                      >
-                        Edit
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+                </div>
+                <div className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h2 className="font-bold text-gray-900">{division.name}</h2>
+                      <p className="text-sm text-gray-500">/{division.slug || slugify(division.name)}</p>
+                    </div>
+                    <StatusBadge status={division.isActive ? "active" : "inactive"} />
+                  </div>
+                  <p className="mt-3 line-clamp-3 text-sm text-gray-600">{division.description || "No description yet."}</p>
+                  <div className="mt-4 flex gap-3">
+                    <button onClick={() => openForm(division)} className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50">
+                      <Edit className="h-4 w-4" /> Edit
+                    </button>
+                    <button onClick={() => setDeleteDivision(division)} className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-50">
+                      <Trash2 className="h-4 w-4" /> Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </AdminCard>
 
-      {/* Add Division Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
-          <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full relative">
-            <button
-              className="absolute top-2 right-2 text-2xl text-red-600 hover:text-black"
-              onClick={() => setShowAddModal(false)}
-              aria-label="Close"
-            >
-              &times;
-            </button>
-            <h3 className="text-xl font-bold mb-4">Add New Division</h3>
-            <form onSubmit={handleAddDivision} className="space-y-4">
-              <div>
-                <label className="block text-md font-medium">Division Name</label>
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <form onSubmit={saveDivision} className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
+            <h2 className="text-xl font-bold text-gray-900">{editing ? "Edit Division" : "Add Division"}</h2>
+            <div className="mt-5 grid gap-4">
+              <label>
+                <span className="text-sm font-bold text-gray-700">Name</span>
                 <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  placeholder="e.g., Switzerland"
+                  value={form.name}
+                  onChange={(event) => setForm((current) => ({ ...current, name: event.target.value, slug: current.slug || slugify(event.target.value) }))}
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100"
                   required
                 />
-              </div>
-              <div>
-                <label className="block text-md font-medium">Description</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  placeholder="Describe this division/country/region"
-                  rows="3"
-                />
-              </div>
-              <div>
-                <label className="block text-md font-medium">Banner Image URL</label>
+              </label>
+              <label>
+                <span className="text-sm font-bold text-gray-700">Slug</span>
                 <input
-                  type="url"
-                  value={formData.banner_image}
-                  onChange={(e) => setFormData({ ...formData, banner_image: e.target.value })}
-                  className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  placeholder="https://example.com/image.jpg"
+                  value={form.slug}
+                  onChange={(event) => setForm((current) => ({ ...current, slug: slugify(event.target.value) }))}
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100"
+                  placeholder="switzerland"
                 />
-              </div>
-              <button
-                type="submit"
-                className="w-full px-4 py-2 bg-green-600 text-white rounded font-bold hover:bg-green-800"
-              >
-                Create Division
-              </button>
-            </form>
-          </div>
+              </label>
+              <label>
+                <span className="text-sm font-bold text-gray-700">Description</span>
+                <textarea
+                  value={form.description}
+                  onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
+                  rows={4}
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100"
+                />
+              </label>
+              <label>
+                <span className="text-sm font-bold text-gray-700">Banner Image URL</span>
+                <input
+                  value={form.bannerImage}
+                  onChange={(event) => setForm((current) => ({ ...current, bannerImage: event.target.value }))}
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100"
+                  placeholder="https://example.com/banner.webp"
+                />
+              </label>
+              <label className="flex items-center gap-3 rounded-lg border border-gray-200 p-3">
+                <input
+                  type="checkbox"
+                  checked={form.isActive}
+                  onChange={(event) => setForm((current) => ({ ...current, isActive: event.target.checked }))}
+                />
+                <span className="font-bold text-gray-700">Active destination</span>
+              </label>
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <button type="button" onClick={() => setShowForm(false)} className="rounded-lg border border-gray-300 px-4 py-2 font-bold text-gray-700">Cancel</button>
+              <button className="rounded-lg bg-orange-600 px-4 py-2 font-bold text-white hover:bg-orange-700">Save Division</button>
+            </div>
+          </form>
         </div>
       )}
 
-      {/* Edit Division Modal */}
-      {showEditModal && currentDivision && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
-          <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full relative">
-            <button
-              className="absolute top-2 right-2 text-2xl text-red-600 hover:text-black"
-              onClick={() => setShowEditModal(false)}
-              aria-label="Close"
-            >
-              &times;
-            </button>
-            <h3 className="text-xl font-bold mb-4">Edit Division: {currentDivision.name}</h3>
-            <form onSubmit={handleEditDivision} className="space-y-4">
-              <div>
-                <label className="block text-md font-medium">Division Name</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-md font-medium">Description</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  rows="3"
-                />
-              </div>
-              <div>
-                <label className="block text-md font-medium">Banner Image URL</label>
-                <input
-                  type="url"
-                  value={formData.banner_image}
-                  onChange={(e) => setFormData({ ...formData, banner_image: e.target.value })}
-                  className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded font-bold hover:bg-blue-800"
-              >
-                Update Division
-              </button>
-            </form>
-          </div>
-        </div>
+      {deleteDivision && (
+        <ConfirmModal
+          title="Delete Division"
+          message={`Deactivate ${deleteDivision.name}? Divisions assigned to tours cannot be deleted until tours are moved or removed.`}
+          confirmLabel="Delete"
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteDivision(null)}
+        />
       )}
-
-      {/* Confirm Delete Popup */}
-      {showConfirm && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
-          <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full relative">
-            <button
-              className="absolute top-2 right-2 text-2xl text-red-600 hover:text-black"
-              onClick={() => setShowConfirm(false)}
-              aria-label="Close"
-            >
-              &times;
-            </button>
-            <h3 className="text-xl font-bold mb-4">Confirm Delete</h3>
-            <div className="mb-6">
-              Are you sure you want to remove the selected location(s) from the active list?
-              <br /><br />
-              <strong>Note:</strong> Existing tour records are not deleted, but removed locations will no longer appear in the tour location dropdown.
-            </div>
-            <div className="flex gap-4">
-              <button
-                className="px-4 py-2 bg-red-700 text-white rounded font-bold hover:bg-black"
-                onClick={handleDeleteDivisions}
-              >
-                Yes, Delete
-              </button>
-              <button
-                className="px-4 py-2 bg-gray-400 text-white rounded font-bold hover:bg-gray-600"
-                onClick={() => setShowConfirm(false)}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </AdminPage>
   );
 };
 
 export default AdminDivisions;
-
-
-
-
-
-

@@ -1,446 +1,264 @@
-import React, { useContext, useEffect, useState } from "react";
-import { AppContext } from "../context/AppContext";
+import React, { useEffect, useMemo, useState } from "react";
+import { Eye, Search, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { io } from "socket.io-client";
-import { useCurrency } from "../context/CurrencyContext";
 import { useAdmin } from "../context/AdminContext";
+import { AdminCard, AdminPage, Alert, ConfirmModal, EmptyState, LoadingState, StatusBadge } from "../components/admin/AdminUI";
+import { adminRequest, asArray, formatDate, money, statusLabel } from "../utils/adminApi";
 
-// Use environment variables for production compatibility
-const API_URL = process.env.NODE_ENV === 'production' ? '/api' : "/api";
-const SOCKET_URL = process.env.NODE_ENV === 'production' ? window.location.origin : window.location.origin;
+const statuses = ["all", "pending", "confirmed", "completed", "cancelled"];
 
 const AdminOrders = () => {
-  const { bookings, users, trips, setBookings } = useContext(AppContext);
-  const { isAdmin } = useAdmin();
   const navigate = useNavigate();
-  const [month, setMonth] = useState("");
-  const [showRequest, setShowRequest] = useState(false);
-  const [requestText, setRequestText] = useState("");
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [addForm, setAddForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    travelers: 1,
-    specialRequests: "",
-    tourTitle: "",
-    totalPrice: "",
-    tripDate: "",
-    address: "",
-    lat: "",
-    lng: "",
-    status: "Pending"
-  });
-  const [deleteMode, setDeleteMode] = useState(false);
-  const [selected, setSelected] = useState([]);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const { symbol, rate } = useCurrency();
+  const { isAdmin, loading: adminLoading, getAuthHeader } = useAdmin();
+  const [orders, setOrders] = useState([]);
+  const [tours, setTours] = useState([]);
+  const [filters, setFilters] = useState({ q: "", status: "all", month: "", tourId: "all" });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [details, setDetails] = useState(null);
+  const [deleteOrder, setDeleteOrder] = useState(null);
 
   useEffect(() => {
-    if (!isAdmin) {
-      navigate("/admin");
-    }
-    // Listen for real-time booking updates
-    const socket = io(SOCKET_URL);
-    socket.on("bookingUpdated", (updatedBooking) => {
-      setBookings((prev) => prev.map(b => b.id === updatedBooking.id ? updatedBooking : b));
-    });
-    socket.on("bookingDeleted", (id) => {
-      setBookings((prev) => prev.filter(b => b.id !== Number(id)));
-    });
-    return () => socket.disconnect();
-  }, [isAdmin, navigate, setBookings]);
+    if (!adminLoading && !isAdmin) navigate("/admin");
+  }, [adminLoading, isAdmin, navigate]);
 
-  // Helper to get user name by email
-  const getUserName = (email) => {
-    const user = users.find((u) => u.email === email);
-    return user ? user.name : email;
-  };
-
-  // Filter bookings by selected month/year
-  const filteredBookings = month
-    ? bookings.filter((b) => {
-        if (!b.tripDate) return false;
-        const d = new Date(b.tripDate);
-        return (
-          d.getMonth() + 1 === parseInt(month.split("-")[1]) &&
-          d.getFullYear() === parseInt(month.split("-")[0])
-        );
-      })
-    : bookings;
-
-  // Handle status update
-  const handleStatusChange = async (id, status) => {
+  const loadOrders = async () => {
+    setLoading(true);
+    setError("");
     try {
-      await axios.put(`${API_URL}/bookings/${id}/status`, { status });
-      // Real-time update will update state
-    } catch (err) {
-      alert("Failed to update status: " + (err.response?.data?.message || err.message));
-    }
-  };
-
-  const handleAddOrder = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await axios.post(`${API_URL}/bookings`, addForm);
-      setBookings((prev) => [...prev, res.data]);
-      setShowAddModal(false);
-      setAddForm({
-        name: "",
-        email: "",
-        phone: "",
-        travelers: 1,
-        specialRequests: "",
-        tourTitle: "",
-        totalPrice: "",
-        tripDate: "",
-        address: "",
-        lat: "",
-        lng: "",
-        status: "Pending"
+      const params = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value && value !== "all") params.set(key, value);
       });
+      const payload = await adminRequest(`/api/admin/bookings?${params.toString()}`, { getAuthHeader });
+      setOrders(asArray(payload));
     } catch (err) {
-      alert("Failed to add order: " + (err.response?.data?.message || err.message));
+      setError(err.message || "Could not load orders");
+      setOrders([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleDeleteOrders = async () => {
+  useEffect(() => {
+    if (!isAdmin) return;
+    loadOrders();
+  }, [isAdmin]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    const loadTours = async () => {
+      try {
+        const payload = await fetch("/api/tours?full=true", { cache: "no-store" }).then((res) => res.json());
+        setTours(Array.isArray(payload) ? payload : []);
+      } catch {
+        setTours([]);
+      }
+    };
+    loadTours();
+  }, [isAdmin]);
+
+  const total = useMemo(() => orders.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0), [orders]);
+
+  const updateStatus = async (order, status) => {
+    setError("");
+    setMessage("");
     try {
-      await Promise.all(selected.map(id => axios.delete(`${API_URL}/bookings/${id}`)));
-      setBookings((prev) => prev.filter(b => !selected.includes(b.id)));
-      setSelected([]);
-      setDeleteMode(false);
-      setShowConfirm(false);
+      const payload = await adminRequest(`/api/admin/bookings/${order.id}/status`, {
+        method: "PUT",
+        getAuthHeader,
+        body: { status },
+      });
+      const updated = payload.data || payload.booking || payload;
+      setOrders((current) => current.map((item) => (
+        item.id === order.id ? { ...item, status: updated.status || status } : item
+      )));
+      setMessage("Order status updated.");
     } catch (err) {
-      alert("Failed to delete orders: " + (err.response?.data?.message || err.message));
+      setError(err.message || "Could not update status");
     }
   };
 
-  const toggleSelect = (id) => {
-    setSelected((prev) => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const confirmDelete = async () => {
+    if (!deleteOrder) return;
+    try {
+      await adminRequest(`/api/admin/bookings/${deleteOrder.id}`, {
+        method: "DELETE",
+        getAuthHeader,
+      });
+      setOrders((current) => current.filter((order) => order.id !== deleteOrder.id));
+      setDeleteOrder(null);
+      setMessage("Order deleted.");
+    } catch (err) {
+      setError(err.message || "Could not delete order");
+    }
   };
+
+  const handleFilterSubmit = (event) => {
+    event.preventDefault();
+    loadOrders();
+  };
+
+  if (adminLoading || loading) return <LoadingState label="Loading orders..." />;
 
   return (
-    <div className="min-h-screen p-8 bg-gray-50">
-      <h1 className="text-4xl font-bold mb-8 text-center">Order Management</h1>
-      <div className="flex gap-4 mb-6">
-        {!deleteMode && (
-          <button
-            className="px-4 py-2 bg-green-600 text-white rounded font-bold hover:bg-green-800"
-            onClick={() => setShowAddModal(true)}
-          >
-            Add Order
-          </button>
-        )}
-        {!deleteMode && (
-          <button
-            className="px-4 py-2 bg-red-600 text-white rounded font-bold hover:bg-red-800"
-            onClick={() => setDeleteMode(true)}
-          >
-            Remove Order
-          </button>
-        )}
-        {deleteMode && (
-          <button
-            className="px-4 py-2 bg-red-700 text-white rounded font-bold hover:bg-black"
-            onClick={() => setShowConfirm(true)}
-            disabled={selected.length === 0}
-          >
-            Delete Selected
-          </button>
-        )}
-        {deleteMode && (
-          <button
-            className="px-4 py-2 bg-gray-400 text-white rounded font-bold hover:bg-gray-600"
-            onClick={() => { setDeleteMode(false); setSelected([]); }}
-          >
-            Cancel
-          </button>
-        )}
+    <AdminPage
+      title="Orders Management"
+      description="View every public booking, inspect customer details, and persist order status changes."
+    >
+      {message && <Alert type="success">{message}</Alert>}
+      {error && <Alert>{error}</Alert>}
+
+      <div className="mb-5 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <AdminCard><p className="text-sm font-bold text-gray-500">Orders Shown</p><p className="mt-2 text-2xl font-bold">{orders.length}</p></AdminCard>
+        <AdminCard><p className="text-sm font-bold text-gray-500">Shown Revenue</p><p className="mt-2 text-2xl font-bold">{money(total)}</p></AdminCard>
+        <AdminCard><p className="text-sm font-bold text-gray-500">Pending in View</p><p className="mt-2 text-2xl font-bold">{orders.filter((order) => order.status === "pending").length}</p></AdminCard>
       </div>
-      <div className="bg-white p-6 rounded-lg shadow mb-8 max-w-md mx-auto">
-        <label className="block text-md font-medium mb-2">Filter by Month/Year</label>
-        <input
-          type="month"
-          value={month}
-          onChange={(e) => setMonth(e.target.value)}
-          className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-        />
-      </div>
-      <div className="bg-white p-6 rounded-lg shadow overflow-x-auto">
-        <h2 className="text-2xl font-semibold mb-4">All Orders</h2>
-        <table className="min-w-full">
-          <thead>
-            <tr>
-              {deleteMode && <th className="py-2 px-2">Sel</th>}
-              <th className="py-2 px-2">#</th>
-              <th className="py-2 px-2">User</th>
-              <th className="py-2 px-2">Email</th>
-              <th className="py-2 px-2">Addr</th>
-              <th className="py-2 px-2">Trip</th>
-              <th className="py-2 px-2">Trav</th>
-              <th className="py-2 px-2">Price</th>
-              <th className="py-2 px-2">Reg</th>
-              <th className="py-2 px-2">Date</th>
-              <th className="py-2 px-2">Status</th>
-              <th className="py-2 px-2">Req</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredBookings.length === 0 ? (
-              <tr>
-                <td colSpan={deleteMode ? 12 : 11} className="text-center py-4">No orders found.</td>
-              </tr>
-            ) : (
-              filteredBookings.map((b, idx) => {
-                const user = users.find((u) => u.email === b.email);
-                return (
-                  <tr key={b.id}>
-                    {deleteMode && (
-                      <td className="py-2 px-2 text-center">
-                        <input
-                          type="checkbox"
-                          checked={selected.includes(b.id)}
-                          onChange={() => toggleSelect(b.id)}
-                        />
-                      </td>
-                    )}
-                    <td className="py-2 px-2">{idx + 1}</td>
-                    <td className="py-2 px-2">{getUserName(b.email)}</td>
-                    <td className="py-2 px-2">{b.email}</td>
-                    <td className="py-2 px-2">{b.address || "-"}</td>
-                    <td className="py-2 px-2">{b.tourTitle || b.tripName || "-"}</td>
-                    <td className="py-2 px-2">{b.travelers}</td>
-                    <td className="py-2 px-2">
-                      <div>{symbol}{(b.totalPrice * rate).toFixed(2)}</div>
-                      {Number(b.groupDiscountTotal || 0) > 0 && (
-                        <div className="text-xs font-semibold text-green-700">
-                          Group{Number(b.groupDiscountPercent || 0) > 0 ? ` ${Number(b.groupDiscountPercent).toFixed(2).replace(/\.00$/, "")}%` : ""} -{symbol}{(Number(b.groupDiscountTotal) * rate).toFixed(2)}
-                        </div>
+
+      <AdminCard>
+        <form onSubmit={handleFilterSubmit} className="mb-5 grid gap-3 lg:grid-cols-[1fr_160px_160px_220px_110px]">
+          <div className="relative">
+            <Search className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
+            <input
+              value={filters.q}
+              onChange={(event) => setFilters((current) => ({ ...current, q: event.target.value }))}
+              className="w-full rounded-lg border border-gray-300 py-3 pl-10 pr-4 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100"
+              placeholder="Search user, email, phone, tour"
+            />
+          </div>
+          <select value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))} className="rounded-lg border border-gray-300 px-3 py-3">
+            {statuses.map((status) => <option key={status} value={status}>{statusLabel(status)}</option>)}
+          </select>
+          <input type="month" value={filters.month} onChange={(event) => setFilters((current) => ({ ...current, month: event.target.value }))} className="rounded-lg border border-gray-300 px-3 py-3" />
+          <select value={filters.tourId} onChange={(event) => setFilters((current) => ({ ...current, tourId: event.target.value }))} className="rounded-lg border border-gray-300 px-3 py-3">
+            <option value="all">All tours</option>
+            {tours.map((tour) => <option key={tour._id || tour.id} value={tour._id || tour.id}>{tour.name}</option>)}
+          </select>
+          <button className="rounded-lg bg-gray-900 px-4 py-3 font-bold text-white hover:bg-black">Apply</button>
+        </form>
+
+        {!orders.length ? (
+          <EmptyState title="No orders found" message="Bookings from the public website will appear here with customer and tour details." />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 text-sm">
+              <thead>
+                <tr className="text-left text-xs font-bold uppercase text-gray-500">
+                  <th className="py-3 pr-4">Customer</th>
+                  <th className="py-3 pr-4">Contact</th>
+                  <th className="py-3 pr-4">Trip</th>
+                  <th className="py-3 pr-4">Travel</th>
+                  <th className="py-3 pr-4">Amount</th>
+                  <th className="py-3 pr-4">Status</th>
+                  <th className="py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {orders.map((order) => (
+                  <tr key={order.id}>
+                    <td className="py-3 pr-4">
+                      <div className="font-bold text-gray-900">{order.customerName}</div>
+                      <div className="text-xs text-gray-500">Booked {formatDate(order.bookingDate)}</div>
+                    </td>
+                    <td className="py-3 pr-4">
+                      <div>{order.email || "-"}</div>
+                      <div className="text-xs text-gray-500">{order.phone || "-"}</div>
+                    </td>
+                    <td className="py-3 pr-4">
+                      <div className="font-semibold text-gray-900">{order.tourName}</div>
+                      <div className="text-xs text-gray-500">{order.address || "No pickup address"}</div>
+                    </td>
+                    <td className="py-3 pr-4">
+                      <div>{formatDate(order.travelDate)}</div>
+                      <div className="text-xs text-gray-500">{order.travelers} traveler{order.travelers === 1 ? "" : "s"}</div>
+                    </td>
+                    <td className="py-3 pr-4">
+                      <div className="font-bold text-gray-900">{money(order.totalAmount, order.currency)}</div>
+                      {Number(order.groupDiscountTotal || 0) > 0 && (
+                        <div className="text-xs font-semibold text-green-700">Group -{money(order.groupDiscountTotal, order.currency)}</div>
                       )}
                     </td>
-                    <td className="py-2 px-2">{user && user.registrationDate ? new Date(user.registrationDate).toLocaleDateString("en-US", { year: "2-digit", month: "short", day: "numeric" }) : "-"}</td>
-                    <td className="py-2 px-2">{b.tripDate ? new Date(b.tripDate).toLocaleDateString("en-US", { year: "2-digit", month: "short", day: "numeric" }) : "-"}</td>
-                    <td className="py-2 px-2 font-semibold">
+                    <td className="py-3 pr-4">
                       <select
-                        value={b.status || "Pending"}
-                        onChange={e => handleStatusChange(b.id, e.target.value)}
-                        className="border rounded px-1 py-1 text-xs"
+                        value={order.status}
+                        onChange={(event) => updateStatus(order, event.target.value)}
+                        className="rounded-lg border border-gray-300 px-2 py-2 text-sm font-semibold capitalize"
                       >
-                        <option value="Pending">Pending</option>
-                        <option value="Confirmed">Confirmed</option>
-                        <option value="Not Confirmed">Not Confirmed</option>
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
                       </select>
                     </td>
-                    <td className="py-2 px-2">
-                      {b.specialRequests ? (
-                        <button
-                          className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-800 text-xs"
-                          onClick={() => { setShowRequest(true); setRequestText(b.specialRequests); }}
-                        >
-                          View
-                        </button>
-                      ) : (
-                        <span className="text-gray-400 text-xs">None</span>
-                      )}
+                    <td className="py-3 text-right">
+                      <button onClick={() => setDetails(order)} className="mr-3 inline-flex items-center gap-1 font-bold text-orange-700">
+                        <Eye className="h-4 w-4" /> View
+                      </button>
+                      <button onClick={() => setDeleteOrder(order)} className="inline-flex items-center gap-1 font-bold text-red-600">
+                        <Trash2 className="h-4 w-4" /> Delete
+                      </button>
                     </td>
                   </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-        {/* Special Request Popup */}
-        {showRequest && (
-          <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
-            <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full relative">
-              <button
-                className="absolute top-2 right-2 text-2xl text-red-600 hover:text-black"
-                onClick={() => setShowRequest(false)}
-                aria-label="Close"
-              >
-                &times;
-              </button>
-              <h3 className="text-xl font-bold mb-4">Special Request</h3>
-              <div className="text-gray-800 whitespace-pre-line">{requestText}</div>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
-      </div>
-      {/* Add Order Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
-          <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full relative">
-            <button
-              className="absolute top-2 right-2 text-2xl text-red-600 hover:text-black"
-              onClick={() => setShowAddModal(false)}
-              aria-label="Close"
-            >
-              &times;
-            </button>
-            <h3 className="text-xl font-bold mb-4">Add Order</h3>
-            <form onSubmit={handleAddOrder} className="space-y-4">
+      </AdminCard>
+
+      {details && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
               <div>
-                <label className="block text-md font-medium">Name</label>
-                <input
-                  type="text"
-                  value={addForm.name}
-                  onChange={e => setAddForm(f => ({ ...f, name: e.target.value }))}
-                  className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-                  required
-                />
+                <h2 className="text-xl font-bold text-gray-900">Order Details</h2>
+                <p className="text-sm text-gray-500">#{details.id}</p>
               </div>
-              <div>
-                <label className="block text-md font-medium">Email</label>
-                <input
-                  type="email"
-                  value={addForm.email}
-                  onChange={e => setAddForm(f => ({ ...f, email: e.target.value }))}
-                  className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-md font-medium">Phone</label>
-                <input
-                  type="tel"
-                  value={addForm.phone}
-                  onChange={e => setAddForm(f => ({ ...f, phone: e.target.value }))}
-                  className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-md font-medium">Number of Travelers</label>
-                <input
-                  type="number"
-                  value={addForm.travelers}
-                  onChange={e => setAddForm(f => ({ ...f, travelers: e.target.value }))}
-                  className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-md font-medium">Total Price</label>
-                <input
-                  type="number"
-                  value={addForm.totalPrice}
-                  onChange={e => setAddForm(f => ({ ...f, totalPrice: e.target.value }))}
-                  className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-md font-medium">Trip Name</label>
-                <input
-                  type="text"
-                  value={addForm.tourTitle}
-                  onChange={e => setAddForm(f => ({ ...f, tourTitle: e.target.value }))}
-                  className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-md font-medium">Trip Date</label>
-                <input
-                  type="date"
-                  value={addForm.tripDate}
-                  onChange={e => setAddForm(f => ({ ...f, tripDate: e.target.value }))}
-                  className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-                  required
-                  min={new Date().toISOString().split("T")[0]}
-                />
-              </div>
-              <div>
-                <label className="block text-md font-medium">Address</label>
-                <input
-                  type="text"
-                  value={addForm.address}
-                  onChange={e => setAddForm(f => ({ ...f, address: e.target.value }))}
-                  className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-                />
-              </div>
-              <div>
-                <label className="block text-md font-medium">Latitude</label>
-                <input
-                  type="number"
-                  value={addForm.lat}
-                  onChange={e => setAddForm(f => ({ ...f, lat: e.target.value }))}
-                  className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-                />
-              </div>
-              <div>
-                <label className="block text-md font-medium">Longitude</label>
-                <input
-                  type="number"
-                  value={addForm.lng}
-                  onChange={e => setAddForm(f => ({ ...f, lng: e.target.value }))}
-                  className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-                />
-              </div>
-              <div>
-                <label className="block text-md font-medium">Status</label>
-                <select
-                  value={addForm.status}
-                  onChange={e => setAddForm(f => ({ ...f, status: e.target.value }))}
-                  className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-                >
-                  <option value="Pending">Pending</option>
-                  <option value="Confirmed">Confirmed</option>
-                  <option value="Not Confirmed">Not Confirmed</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-md font-medium">Special Requests</label>
-                <textarea
-                  value={addForm.specialRequests}
-                  onChange={e => setAddForm(f => ({ ...f, specialRequests: e.target.value }))}
-                  className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full px-4 py-2 bg-green-600 text-white rounded font-bold hover:bg-green-800"
-              >
-                Add Order
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-      {/* Confirm Delete Popup */}
-      {showConfirm && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
-          <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full relative">
-            <button
-              className="absolute top-2 right-2 text-2xl text-red-600 hover:text-black"
-              onClick={() => setShowConfirm(false)}
-              aria-label="Close"
-            >
-              &times;
-            </button>
-            <h3 className="text-xl font-bold mb-4">Confirm Delete</h3>
-            <div className="mb-6">Are you sure you want to permanently delete the selected order(s)?</div>
-            <div className="flex gap-4">
-              <button
-                className="px-4 py-2 bg-red-700 text-white rounded font-bold hover:bg-black"
-                onClick={handleDeleteOrders}
-              >
-                Yes, Delete
-              </button>
-              <button
-                className="px-4 py-2 bg-gray-400 text-white rounded font-bold hover:bg-gray-600"
-                onClick={() => setShowConfirm(false)}
-              >
-                Cancel
-              </button>
+              <button onClick={() => setDetails(null)} className="rounded-lg border px-3 py-2 font-bold">Close</button>
+            </div>
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <Detail label="Customer" value={details.customerName} />
+              <Detail label="Email" value={details.email} />
+              <Detail label="Phone" value={details.phone} />
+              <Detail label="Address" value={details.address} />
+              <Detail label="Tour" value={details.tourName} />
+              <Detail label="Travel Date" value={formatDate(details.travelDate)} />
+              <Detail label="Travelers" value={details.travelers} />
+              <Detail label="Booking Date" value={formatDate(details.bookingDate)} />
+              <Detail label="Total" value={money(details.totalAmount, details.currency)} />
+              <Detail label="Payment" value={statusLabel(details.paymentStatus)} />
+            </div>
+            <div className="mt-5">
+              <p className="text-sm font-bold text-gray-500">Status</p>
+              <div className="mt-1"><StatusBadge status={details.status} /></div>
+            </div>
+            <div className="mt-5 rounded-lg bg-gray-50 p-4">
+              <p className="text-sm font-bold text-gray-500">Special Request</p>
+              <p className="mt-1 whitespace-pre-line text-gray-800">{details.specialRequests || "None"}</p>
             </div>
           </div>
         </div>
       )}
-    </div>
+
+      {deleteOrder && (
+        <ConfirmModal
+          title="Delete Order"
+          message={`Delete booking for ${deleteOrder.customerName}? This cannot be undone.`}
+          confirmLabel="Delete"
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteOrder(null)}
+        />
+      )}
+    </AdminPage>
   );
 };
 
-export default AdminOrders; 
+const Detail = ({ label, value }) => (
+  <div className="rounded-lg border border-gray-200 p-4">
+    <p className="text-xs font-bold uppercase text-gray-500">{label}</p>
+    <p className="mt-1 font-semibold text-gray-900">{value || "-"}</p>
+  </div>
+);
+
+export default AdminOrders;

@@ -1,176 +1,131 @@
-import React, { useContext, useEffect, useState } from "react";
-import { AppContext } from "../context/AppContext";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { CalendarCheck, CheckCircle, Clock, Compass, Image, Map, Plus, ShoppingBag, Users, XCircle } from "lucide-react";
 import { useAdmin } from "../context/AdminContext";
-import { apiUrl } from "../utils/api";
+import { AdminCard, AdminPage, Alert, EmptyState, LoadingState, StatCard, StatusBadge } from "../components/admin/AdminUI";
+import { adminRequest, asObject, formatDate, money } from "../utils/adminApi";
+
+const quickActions = [
+  { label: "Create Tour", path: "/admin/tour-wizard", icon: Plus },
+  { label: "Manage Tours", path: "/admin/tours", icon: Compass },
+  { label: "Manage Bookings", path: "/admin/orders", icon: ShoppingBag },
+  { label: "Manage Hero Banners", path: "/admin/hero-banners", icon: Image },
+  { label: "Manage Divisions", path: "/admin/divisions", icon: Map },
+];
 
 const AdminDashboard = () => {
-  const { users, bookings, loading: appLoading } = useContext(AppContext);
-  const { isAdmin, loading: adminLoading, getAuthHeader, passcodeHeader } = useAdmin();
   const navigate = useNavigate();
-  const [divisions, setDivisions] = useState([]);
-  const [selectedLocation, setSelectedLocation] = useState("switzerland");
-  const [creatingTour, setCreatingTour] = useState(false);
-  
-  const loading = appLoading || adminLoading;
+  const { isAdmin, loading: adminLoading, getAuthHeader } = useAdmin();
+  const [summary, setSummary] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const pageLocations = [
-    { slug: "switzerland", name: "Switzerland" },
-    { slug: "srilanka", name: "Srilanka" },
-  ];
-
-  const normalizeLocation = (value) => String(value || "").toLowerCase().replace(/[^a-z]/g, "");
-  
   useEffect(() => {
-    if (!adminLoading && !isAdmin) {
-      navigate("/admin");
-    }
-  }, [isAdmin, navigate, adminLoading]);
+    if (!adminLoading && !isAdmin) navigate("/admin");
+  }, [adminLoading, isAdmin, navigate]);
 
   useEffect(() => {
     if (!isAdmin) return;
-
-    const fetchDivisions = async () => {
+    const loadSummary = async () => {
+      setLoading(true);
+      setError("");
       try {
-        const response = await fetch(apiUrl("/api/divisions"));
-        if (!response.ok) return;
-
-        const data = await response.json();
-        const divisionList = Array.isArray(data) ? data : [];
-        setDivisions(divisionList);
-      } catch (error) {
-        console.error("Error fetching divisions:", error);
-        setDivisions([]);
+        const payload = await adminRequest("/api/admin/summary", { getAuthHeader });
+        setSummary(asObject(payload));
+      } catch (err) {
+        setError(err.message || "Could not load dashboard");
+      } finally {
+        setLoading(false);
       }
     };
+    loadSummary();
+  }, [getAuthHeader, isAdmin]);
 
-    fetchDivisions();
-  }, [isAdmin]);
-
-  const findDivisionForLocation = (location) => {
-    const target = normalizeLocation(location.name);
-    return divisions.find((division) => normalizeLocation(division.name) === target);
-  };
-
-  const handleCreateTour = async () => {
-    const location = pageLocations.find((item) => item.slug === selectedLocation) || pageLocations[0];
-    let division = findDivisionForLocation(location);
-
-    setCreatingTour(true);
-    try {
-      if (!division) {
-        const headers = getAuthHeader
-          ? getAuthHeader()
-          : (passcodeHeader ? { "X-Admin-Passcode": passcodeHeader } : {});
-        const response = await fetch(apiUrl("/api/divisions"), {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...headers,
-          },
-          body: JSON.stringify({
-            name: location.name,
-            description: `Tours in ${location.name}`,
-          }),
-        });
-
-        if (!response.ok) {
-          const error = await response.json().catch(() => ({}));
-          throw new Error(error.message || "Could not create location");
-        }
-
-        division = await response.json();
-        setDivisions((current) => [...current, division]);
-      }
-
-      const divisionId = division?._id || division?.id;
-      const params = divisionId ? `?division=${encodeURIComponent(divisionId)}` : "";
-      navigate(`/admin/tour-wizard${params}`);
-    } catch (error) {
-      alert(`Could not prepare ${location.name}. Please add it from Manage Locations first.\n\n${error.message}`);
-    } finally {
-      setCreatingTour(false);
-    }
-  };
-
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-2xl">Loading...</div>;
-  }
+  if (adminLoading || loading) return <LoadingState label="Loading dashboard..." />;
 
   return (
-    <div className="min-h-screen p-8 bg-gray-50">
-      <h1 className="text-4xl font-bold mb-8 text-center">Admin Dashboard</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* User Management Section */}
-        <section className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-2xl font-semibold mb-4">User Management</h2>
-          <div className="text-lg">Total Users: {users.length}</div>
-        </section>
-        {/* Trip Management Section */}
-        <section className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-2xl font-semibold mb-4">Trip Management</h2>
-          <div className="flex flex-col gap-3">
-            <label className="text-sm font-semibold text-gray-700" htmlFor="tour-location">
-              Add tour to location
-            </label>
-            <select
-              id="tour-location"
-              value={selectedLocation}
-              onChange={(event) => setSelectedLocation(event.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100"
-            >
-              {pageLocations.map((location) => (
-                <option key={location.slug} value={location.slug}>
-                  {location.name}
-                </option>
-              ))}
-            </select>
-            <button
-              onClick={handleCreateTour}
-              disabled={creatingTour}
-              className="px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-            >
-              {creatingTour ? "Preparing..." : "Create New Tour"}
-            </button>
-            <button
-              onClick={() => navigate("/admin/divisions")}
-              className="px-6 py-3 bg-gray-800 text-white rounded-lg font-bold hover:bg-gray-900"
-            >
-              Manage Locations
-            </button>
-            <button
-              onClick={() => navigate("/admin/tours")}
-              className="px-6 py-3 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700"
-            >
-              Update Tours
-            </button>
-          </div>
-        </section>
-        {/* Stats Section */}
-        <section className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-2xl font-semibold mb-4">Statistics</h2>
-          <div className="text-lg">Total Bookings: {bookings.length}</div>
-        </section>
-        {/* Admin Settings Section */}
-        <section className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-2xl font-semibold mb-4">Admin Settings</h2>
-          <div className="flex flex-col gap-3">
-            <button
-              onClick={() => navigate("/admin/hero-banners")}
-              className="px-6 py-3 bg-orange-600 text-white rounded-lg font-bold hover:bg-orange-700"
-            >
-              Change Hero Banner Pictures
-            </button>
-            <button
-              onClick={() => navigate("/admin/settings")}
-              className="px-6 py-3 bg-gray-800 text-white rounded-lg font-bold hover:bg-gray-900"
-            >
-              Admin Settings
-            </button>
-          </div>
-        </section>
+    <AdminPage
+      title="Admin Dashboard"
+      description="Live overview of AJL Tours users, tours, destinations, bookings, and revenue."
+    >
+      {error && <Alert>{error}</Alert>}
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <StatCard title="Total Users" value={summary?.totalUsers || 0} icon={Users} tone="blue" />
+        <StatCard title="Total Tours" value={summary?.totalTours || 0} icon={Compass} tone="orange" />
+        <StatCard title="Destinations" value={summary?.totalDivisions || 0} icon={Map} tone="green" />
+        <StatCard title="Bookings" value={summary?.totalBookings || 0} icon={ShoppingBag} tone="gray" />
+        <StatCard title="Revenue" value={money(summary?.totalRevenue || 0)} icon={CheckCircle} tone="green" />
       </div>
-    </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard title="Pending" value={summary?.pendingBookings || 0} icon={Clock} tone="yellow" />
+        <StatCard title="Confirmed" value={summary?.confirmedBookings || 0} icon={CheckCircle} tone="green" />
+        <StatCard title="Completed" value={summary?.completedBookings || 0} icon={CalendarCheck} tone="blue" />
+        <StatCard title="Cancelled" value={summary?.cancelledBookings || 0} icon={XCircle} tone="red" />
+      </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_360px]">
+        <AdminCard>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-xl font-bold text-gray-900">Recent Bookings</h2>
+            <button onClick={() => navigate("/admin/orders")} className="text-sm font-bold text-orange-700 hover:text-orange-800">
+              View all
+            </button>
+          </div>
+
+          {!summary?.recentBookings?.length ? (
+            <EmptyState title="No bookings yet" message="New customer bookings will appear here." />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 text-sm">
+                <thead>
+                  <tr className="text-left text-xs font-bold uppercase text-gray-500">
+                    <th className="py-3 pr-4">Customer</th>
+                    <th className="py-3 pr-4">Tour</th>
+                    <th className="py-3 pr-4">Travel Date</th>
+                    <th className="py-3 pr-4">Price</th>
+                    <th className="py-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {summary.recentBookings.map((booking) => (
+                    <tr key={booking.id}>
+                      <td className="py-3 pr-4">
+                        <div className="font-bold text-gray-900">{booking.customerName}</div>
+                        <div className="text-xs text-gray-500">{booking.email || "-"}</div>
+                      </td>
+                      <td className="py-3 pr-4 text-gray-700">{booking.tourName}</td>
+                      <td className="py-3 pr-4 text-gray-700">{formatDate(booking.travelDate)}</td>
+                      <td className="py-3 pr-4 font-bold text-gray-900">{money(booking.totalAmount, booking.currency)}</td>
+                      <td className="py-3"><StatusBadge status={booking.status} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </AdminCard>
+
+        <AdminCard>
+          <h2 className="text-xl font-bold text-gray-900">Quick Actions</h2>
+          <div className="mt-4 grid gap-3">
+            {quickActions.map(({ label, path, icon: Icon }) => (
+              <button
+                key={path}
+                onClick={() => navigate(path)}
+                className="flex items-center gap-3 rounded-lg border border-gray-200 px-4 py-3 text-left font-bold text-gray-800 hover:border-orange-300 hover:bg-orange-50"
+              >
+                <span className="rounded-lg bg-orange-50 p-2 text-orange-700">
+                  <Icon className="h-4 w-4" />
+                </span>
+                {label}
+              </button>
+            ))}
+          </div>
+        </AdminCard>
+      </div>
+    </AdminPage>
   );
 };
 

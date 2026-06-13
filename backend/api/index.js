@@ -4,7 +4,7 @@
  */
 
 // Wrap all imports in try-catch to identify which module is failing
-let connectDB, setCORSHeaders, errorHandler, tourController, tourService, bookingController, authController, emailController, customerController, Division, Tour, Booking, User, getPasswordPolicyMessage, attachPerfLogger;
+let connectDB, setCORSHeaders, errorHandler, tourController, tourService, bookingController, authController, emailController, customerController, exchangeRateController, adminDataController, Division, Tour, Booking, User, getPasswordPolicyMessage, attachPerfLogger;
 
 try {
   connectDB = require('../src/config/database').connectDB;
@@ -16,6 +16,8 @@ try {
   authController = require('../src/controllers/authController');
   emailController = require('../src/controllers/emailController');
   customerController = require('../src/controllers/customerController');
+  exchangeRateController = require('../src/controllers/exchangeRateController');
+  adminDataController = require('../src/controllers/adminDataController');
   getPasswordPolicyMessage = require('../src/utils/passwordPolicy').getPasswordPolicyMessage;
   attachPerfLogger = require('../src/middleware/perfLogger').attachPerfLogger;
   Division = require('../models/Division');
@@ -108,7 +110,13 @@ module.exports = async (req, res) => {
     };
 
     // Route handling
-    if (normalizedPath.startsWith('/tours')) {
+    if (normalizedPath === '/exchange-rates') {
+      if (method === 'GET') {
+        await asyncHandler(exchangeRateController.getExchangeRates)(req, res);
+      } else {
+        res.status(405).json({ success: false, error: 'Method not allowed' });
+      }
+    } else if (normalizedPath.startsWith('/tours')) {
       if (normalizedPath === '/tours') {
         if (method === 'GET') {
           await asyncHandler(tourController.getAllTours.bind(tourController))(req, res);
@@ -192,6 +200,14 @@ module.exports = async (req, res) => {
         }
       } else if (normalizedPath === '/bookings/stats' || normalizedPath === '/bookings/stats/summary') {
         if (method === 'GET') {
+          const { authenticateAdmin } = require('../src/middleware/auth');
+          try {
+            await new Promise((resolve, reject) => {
+              authenticateAdmin(req, res, (err) => err ? reject(err) : resolve());
+            });
+          } catch (authError) {
+            return errorHandler(authError, req, res);
+          }
           await asyncHandler(bookingController.getBookingStats.bind(bookingController))(req, res);
         } else {
           res.status(405).json({ success: false, error: 'Method not allowed' });
@@ -203,6 +219,14 @@ module.exports = async (req, res) => {
         if (statusMatch) {
           req.params = { id: statusMatch[1] };
           if (method === 'PUT') {
+            const { authenticateAdmin } = require('../src/middleware/auth');
+            try {
+              await new Promise((resolve, reject) => {
+                authenticateAdmin(req, res, (err) => err ? reject(err) : resolve());
+              });
+            } catch (authError) {
+              return errorHandler(authError, req, res);
+            }
             await asyncHandler(bookingController.updateBookingStatus.bind(bookingController))(req, res);
           } else {
             res.status(405).json({ success: false, error: 'Method not allowed' });
@@ -212,6 +236,14 @@ module.exports = async (req, res) => {
           if (method === 'GET') {
             await asyncHandler(bookingController.getBookingById.bind(bookingController))(req, res);
           } else if (method === 'DELETE') {
+            const { authenticateAdmin } = require('../src/middleware/auth');
+            try {
+              await new Promise((resolve, reject) => {
+                authenticateAdmin(req, res, (err) => err ? reject(err) : resolve());
+              });
+            } catch (authError) {
+              return errorHandler(authError, req, res);
+            }
             await asyncHandler(bookingController.deleteBooking.bind(bookingController))(req, res);
           } else {
             res.status(405).json({ success: false, error: 'Method not allowed' });
@@ -369,6 +401,62 @@ module.exports = async (req, res) => {
       await user.save();
 
       res.status(200).json(user);
+    } else if (normalizedPath === '/admin/summary' || normalizedPath.startsWith('/admin/bookings') || normalizedPath.startsWith('/admin/users') || normalizedPath.startsWith('/admin/divisions') || normalizedPath === '/admin/settings') {
+      const { authenticateAdmin } = require('../src/middleware/auth');
+      try {
+        await new Promise((resolve, reject) => {
+          authenticateAdmin(req, res, (err) => err ? reject(err) : resolve());
+        });
+      } catch (authError) {
+        return errorHandler(authError, req, res);
+      }
+
+      if (normalizedPath === '/admin/summary' && method === 'GET') {
+        await asyncHandler(adminDataController.getDashboardSummary)(req, res);
+      } else if (normalizedPath === '/admin/bookings' && method === 'GET') {
+        await asyncHandler(adminDataController.listAdminBookings)(req, res);
+      } else if (normalizedPath === '/admin/bookings/stats' && method === 'GET') {
+        await asyncHandler(adminDataController.getAdminBookingStats)(req, res);
+      } else {
+        const adminBookingStatusMatch = normalizedPath.match(/^\/admin\/bookings\/([^/]+)\/status$/);
+        const adminBookingMatch = normalizedPath.match(/^\/admin\/bookings\/([^/]+)$/);
+        const adminUserMatch = normalizedPath.match(/^\/admin\/users\/([^/]+)$/);
+        const adminDivisionMatch = normalizedPath.match(/^\/admin\/divisions\/([^/]+)$/);
+
+        if (adminBookingStatusMatch && method === 'PUT') {
+          req.params = { id: decodeURIComponent(adminBookingStatusMatch[1]) };
+          await asyncHandler(bookingController.updateBookingStatus.bind(bookingController))(req, res);
+        } else if (adminBookingMatch && method === 'DELETE') {
+          req.params = { id: decodeURIComponent(adminBookingMatch[1]) };
+          await asyncHandler(bookingController.deleteBooking.bind(bookingController))(req, res);
+        } else if (normalizedPath === '/admin/users' && method === 'GET') {
+          await asyncHandler(adminDataController.listUsers)(req, res);
+        } else if (normalizedPath === '/admin/users' && method === 'POST') {
+          await asyncHandler(adminDataController.addUser)(req, res);
+        } else if (adminUserMatch && method === 'GET') {
+          req.params = { id: decodeURIComponent(adminUserMatch[1]) };
+          await asyncHandler(adminDataController.getUserDetails)(req, res);
+        } else if (adminUserMatch && method === 'DELETE') {
+          req.params = { id: decodeURIComponent(adminUserMatch[1]) };
+          await asyncHandler(adminDataController.deleteUser)(req, res);
+        } else if (normalizedPath === '/admin/divisions' && method === 'GET') {
+          await asyncHandler(adminDataController.listDivisions)(req, res);
+        } else if (normalizedPath === '/admin/divisions' && method === 'POST') {
+          await asyncHandler(adminDataController.saveDivision)(req, res);
+        } else if (adminDivisionMatch && (method === 'PUT' || method === 'PATCH')) {
+          req.params = { id: decodeURIComponent(adminDivisionMatch[1]) };
+          await asyncHandler(adminDataController.saveDivision)(req, res);
+        } else if (adminDivisionMatch && method === 'DELETE') {
+          req.params = { id: decodeURIComponent(adminDivisionMatch[1]) };
+          await asyncHandler(adminDataController.deleteDivision)(req, res);
+        } else if (normalizedPath === '/admin/settings' && method === 'GET') {
+          await asyncHandler(adminDataController.getSettings)(req, res);
+        } else if (normalizedPath === '/admin/settings' && method === 'PUT') {
+          await asyncHandler(adminDataController.updateSettings)(req, res);
+        } else {
+          res.status(404).json({ success: false, error: 'Route not found' });
+        }
+      }
     } else if (normalizedPath === '/admin/content' || normalizedPath.startsWith('/admin/content/')) {
       const adminController = require('../controllers/adminController');
       const { authenticateAdmin } = require('../src/middleware/auth');

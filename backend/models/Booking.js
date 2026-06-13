@@ -12,6 +12,10 @@ const bookingSchema = new mongoose.Schema({
     lowercase: true,
     trim: true
   },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
   phone: {
     type: String,
     trim: true

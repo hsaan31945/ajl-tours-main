@@ -52,6 +52,8 @@ const adminRoutes = require('./routes/admin');
 const contentRoutes = require('./routes/content');
 const tourRoutes = require('./routes/tours');
 const customerRoutes = require('./src/routes/customer');
+const exchangeRateRoutes = require('./routes/exchangeRates');
+const adminDataRoutes = require('./src/routes/adminData');
 const { sendResetOtp } = require('./src/controllers/emailController');
 const { resetPassword } = require('./controllers/authController');
 
@@ -60,6 +62,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/tours', tourRoutes);
 app.use('/api/customer', customerRoutes);
+app.use('/api/exchange-rates', exchangeRateRoutes);
+app.use('/api/admin', adminDataRoutes);
 app.post('/api/auth/send-reset-otp', sendResetOtp);
 app.post('/api/auth/reset-password', resetPassword);
 

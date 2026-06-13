@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
+import React, { createContext, useState, useContext, useEffect, useCallback, useMemo } from "react";
 import axios from "axios";
 import { apiUrl } from "../utils/api";
 
@@ -36,7 +36,7 @@ export function AdminProvider({ children }) {
 	/**
 	 * Login with password only (JWT)
 	 */
-	const login = async (password) => {
+	const login = useCallback(async (password) => {
 		try {
 			let response;
 			try {
@@ -62,13 +62,13 @@ export function AdminProvider({ children }) {
 				error: error.response?.data?.error || error.message || 'Login failed'
 			};
 		}
-	};
+	}, []);
 
 	/**
 	 * Legacy passcode login (deprecated but kept for backward compatibility)
 	 * @deprecated Use login() with email/password instead
 	 */
-	const enableWithPasscode = async (code) => {
+	const enableWithPasscode = useCallback(async (code) => {
 		try {
 			const trimmedCode = String(code || '').trim();
 			const response = await axios.post(
@@ -88,45 +88,45 @@ export function AdminProvider({ children }) {
 			return false;
 		}
 		return false;
-	};
+	}, []);
 
 	/**
 	 * Logout
 	 */
-	const disableAdmin = () => {
+	const disableAdmin = useCallback(() => {
 		setIsAdmin(false);
 		setToken(null);
 		localStorage.removeItem(TOKEN_KEY);
 		localStorage.removeItem(ADMIN_KEY);
 		localStorage.removeItem('isAdmin');
 		localStorage.removeItem('adminPasscode');
-	};
+	}, []);
 
 	/**
 	 * Get authorization header for API requests
 	 */
-	const getAuthHeader = () => {
+	const getAuthHeader = useCallback(() => {
 		if (token) {
 			return { 'Authorization': `Bearer ${token}` };
 		}
 		// Fallback to passcode for backward compatibility
 		const PASSCODE = localStorage.getItem('adminPasscode') || import.meta.env.VITE_ADMIN_PASSCODE || '';
 		return PASSCODE ? { 'X-Admin-Passcode': PASSCODE } : {};
-	};
+	}, [token]);
 
 	/**
 	 * Get passcode header (for backward compatibility)
 	 * @deprecated Use getAuthHeader() instead
 	 */
-	const getPasscodeHeader = () => {
+	const getPasscodeHeader = useCallback(() => {
 		if (token) {
 			return null; // Prefer JWT
 		}
 		const PASSCODE = localStorage.getItem('adminPasscode') || import.meta.env.VITE_ADMIN_PASSCODE || '';
 		return PASSCODE || null;
-	};
+	}, [token]);
 
-	const value = {
+	const value = useMemo(() => ({
 		isAdmin,
 		token,
 		loading,
@@ -135,7 +135,7 @@ export function AdminProvider({ children }) {
 		disableAdmin,
 		getAuthHeader,
 		passcodeHeader: getPasscodeHeader(), // Deprecated - for backward compatibility
-	};
+	}), [disableAdmin, enableWithPasscode, getAuthHeader, getPasscodeHeader, isAdmin, loading, login, token]);
 
 	return (
 		<AdminContext.Provider value={value}>

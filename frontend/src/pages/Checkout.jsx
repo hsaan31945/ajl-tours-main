@@ -7,6 +7,7 @@ import EditableText from "../components/EditableText";
 import EditableField from "../components/EditableField";
 import TourEditWizard from "../components/TourEditWizard";
 import AdminModeIndicator from "../components/AdminModeIndicator";
+import ApproxPriceNote from "../components/ApproxPriceNote";
 import { normalizeTourData } from '../utils/tourDataMapper';
 import { normalizeTourId, isValidObjectId, getTourId } from '../utils/tourId';
 import { apiUrl, getBackendUrl } from '../utils/api';
@@ -708,6 +709,7 @@ const Checkout = () => {
               {t("common.from")} {formatPrice(pricePerTicket)}
             </span>
           )}
+          <ApproxPriceNote />
         </div>
         <div className="flex flex-col items-start">
           <span className="text-xs text-gray-500">{t("common.duration")}</span>

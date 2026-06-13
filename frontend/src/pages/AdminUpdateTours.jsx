@@ -4,6 +4,8 @@ import TourEditWizard from "../components/TourEditWizard";
 import { getTourId } from "../utils/tourId";
 import { apiUrl } from "../utils/api";
 import { normalizeTourData } from "../utils/tourDataMapper";
+import { AdminCard, AdminPage, Alert, EmptyState, LoadingState, StatusBadge } from "../components/admin/AdminUI";
+import { money } from "../utils/adminApi";
 
 const roundMoney = (value) => Math.round((Number(value) || 0) * 100) / 100;
 
@@ -26,36 +28,57 @@ const getPriceAfterPercent = (price, percent) => {
 };
 
 const AdminUpdateTours = () => {
-  const { isAdmin, passcodeHeader } = useAdmin();
+  const { isAdmin, passcodeHeader, getAuthHeader } = useAdmin();
   const [tours, setTours] = useState([]);
+  const [divisions, setDivisions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingTour, setEditingTour] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [destinationFilter, setDestinationFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
   const fetchTours = useCallback(async () => {
     try {
+      setError("");
       const response = await fetch(apiUrl('/api/tours?full=true'), {
-        headers: {
-          'X-Admin-Passcode': passcodeHeader || ''
-        },
+        headers: getAuthHeader ? getAuthHeader() : { 'X-Admin-Passcode': passcodeHeader || '' },
         cache: 'no-store',
       });
       if (response.ok) {
         const data = await response.json();
         setTours(Array.isArray(data) ? data.map(normalizeTourData) : []);
+      } else {
+        throw new Error('Could not load tours');
       }
     } catch (error) {
       console.error('Error fetching tours:', error);
+      setError(error.message || 'Could not load tours');
     } finally {
       setLoading(false);
     }
-  }, [passcodeHeader]);
+  }, [getAuthHeader, passcodeHeader]);
 
   useEffect(() => {
     if (isAdmin) {
       fetchTours();
     }
   }, [fetchTours, isAdmin]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    const fetchDivisions = async () => {
+      try {
+        const res = await fetch(apiUrl('/api/divisions'), { cache: 'no-store' });
+        const data = await res.json();
+        setDivisions(Array.isArray(data) ? data : []);
+      } catch {
+        setDivisions([]);
+      }
+    };
+    fetchDivisions();
+  }, [isAdmin]);
 
   const handleEditClick = (tour) => {
     setEditingTour(tour);
@@ -81,10 +104,10 @@ const AdminUpdateTours = () => {
       await fetchTours();
       
       // Show success message
-      alert('Tour updated successfully!');
+      setMessage('Tour updated successfully.');
     } catch (error) {
       console.error('Error handling saved tour:', error);
-      alert('Error updating tour list: ' + error.message);
+      setError('Error updating tour list: ' + error.message);
     }
   };
 
@@ -101,60 +124,103 @@ const AdminUpdateTours = () => {
     try {
       const response = await fetch(apiUrl(`/api/tours/${tourId}`), {
         method: 'DELETE',
-        headers: {
-          'X-Admin-Passcode': passcodeHeader || ''
-        }
+        headers: getAuthHeader ? getAuthHeader() : { 'X-Admin-Passcode': passcodeHeader || '' }
       });
       
       if (response.ok) {
         // Remove from local state
         setTours((currentTours) => currentTours.filter(t => getTourId(t)?.toString() !== tourId?.toString()));
-        alert('Tour deleted successfully!');
+        setMessage('Tour deleted successfully.');
       } else {
         const data = await response.json();
-        alert(`Failed to delete tour: ${data.error || 'Unknown error'}`);
+        setError(`Failed to delete tour: ${data.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error deleting tour:', error);
-      alert('Error deleting tour: ' + error.message);
+      setError('Error deleting tour: ' + error.message);
     }
   };
 
-  const filteredTours = tours.filter(tour =>
-    tour.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (tour.destination && tour.destination.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const getDestinationName = (tour) => {
+    if (typeof tour.division === 'object' && tour.division?.name) return tour.division.name;
+    if (typeof tour.divisionName === 'object' && tour.divisionName?.name) return tour.divisionName.name;
+    if (typeof tour.divisionName === 'string') return tour.divisionName;
+    const division = divisions.find((item) => (item._id || item.id) === tour.division);
+    return division?.name || tour.destination || 'N/A';
+  };
+
+  const handleStatusToggle = async (tour) => {
+    const tourId = getTourId(tour);
+    const nextActive = tour.isActive === false;
+    setError("");
+    setMessage("");
+    try {
+      const response = await fetch(apiUrl(`/api/tours/${tourId}`), {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(getAuthHeader ? getAuthHeader() : { 'X-Admin-Passcode': passcodeHeader || '' }),
+        },
+        body: JSON.stringify({ isActive: nextActive }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || data.message || 'Could not update status');
+      setTours((current) => current.map((item) => (
+        getTourId(item) === tourId ? { ...item, isActive: nextActive } : item
+      )));
+      setMessage(`Tour marked ${nextActive ? 'active' : 'inactive'}.`);
+    } catch (err) {
+      setError(err.message || 'Could not update tour status');
+    }
+  };
+
+  const filteredTours = tours.filter((tour) => {
+    const destinationName = getDestinationName(tour);
+    const matchesSearch = tour.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      destinationName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesDestination = destinationFilter === 'all' || destinationName === destinationFilter;
+    const matchesStatus = statusFilter === 'all' ||
+      (statusFilter === 'active' ? tour.isActive !== false : tour.isActive === false);
+    return matchesSearch && matchesDestination && matchesStatus;
+  });
 
   if (!isAdmin) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-lg text-gray-600">Access denied. Admin privileges required.</p>
-      </div>
-    );
+    return <LoadingState label="Checking admin access..." />;
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Update Tours</h1>
+    <AdminPage title="Manage Tours" description="Search, edit, activate, deactivate, and delete live tours.">
+      {message && <Alert type="success">{message}</Alert>}
+      {error && <Alert>{error}</Alert>}
         
         {/* Search Bar */}
-        <div className="mb-6">
+        <AdminCard className="mb-6">
+          <div className="grid gap-3 md:grid-cols-3">
           <input
             type="text"
             placeholder="Search tours..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full md:w-1/2 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            className="w-full rounded-lg border border-gray-300 p-3 focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
           />
-        </div>
+          <select value={destinationFilter} onChange={(event) => setDestinationFilter(event.target.value)} className="rounded-lg border border-gray-300 p-3">
+            <option value="all">All destinations</option>
+            {[...new Set(tours.map(getDestinationName))].filter(Boolean).map((destination) => (
+              <option key={destination} value={destination}>{destination}</option>
+            ))}
+          </select>
+          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="rounded-lg border border-gray-300 p-3">
+            <option value="all">All statuses</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+          </div>
+        </AdminCard>
 
         {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <p className="text-lg text-gray-600">Loading tours...</p>
-          </div>
+          <LoadingState label="Loading tours..." />
         ) : editingTour ? (
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <AdminCard>
             <h2 className="text-xl font-semibold mb-4">Editing: {editingTour.name}</h2>
             <TourEditWizard 
               initialTourData={editingTour}
@@ -163,9 +229,9 @@ const AdminUpdateTours = () => {
               onSave={handleSaveTour} 
               onClose={handleCancelEdit}
             />
-          </div>
+          </AdminCard>
         ) : (
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <AdminCard className="overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -173,6 +239,7 @@ const AdminUpdateTours = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tour Name</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Destination</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Images</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Group Discount</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -192,23 +259,30 @@ const AdminUpdateTours = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-500">
-                          {tour.divisionName?.name || tour.destination || 'N/A'}
+                          {getDestinationName(tour)}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
                           {tour.discountEnabled && Number(tour.discountPrice) < Number(tour.price) ? (
                             <>
-                              <span className="text-gray-400 line-through mr-2">CHF {tour.price || 0}</span>
-                              <span className="font-semibold text-red-600">CHF {Number(tour.discountPrice).toFixed(2)}</span>
+                              <span className="text-gray-400 line-through mr-2">{money(tour.price || 0)}</span>
+                              <span className="font-semibold text-red-600">{money(tour.discountPrice || 0)}</span>
                               {discountPercent !== null && (
                                 <span className="ml-2 text-xs text-gray-500">({discountPercent}% off)</span>
                               )}
                             </>
                           ) : (
-                            <>CHF {tour.price || 0}</>
+                            <>{money(tour.price || 0)}</>
                           )}
                         </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-700">
+                        {[
+                          ...(Array.isArray(tour.images) ? tour.images : []),
+                          ...(tour.thumbnail ? [tour.thumbnail] : []),
+                          ...(tour.cardImage ? [tour.cardImage] : []),
+                        ].filter(Boolean).length}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {tour.groupDiscountEnabled ? (
@@ -223,12 +297,15 @@ const AdminUpdateTours = () => {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                          ${tour.isActive === false ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
-                          {tour.isActive === false ? 'Draft' : 'Active'}
-                        </span>
+                        <StatusBadge status={tour.isActive === false ? 'inactive' : 'active'} />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button
+                          onClick={() => handleStatusToggle(tour)}
+                          className="text-gray-700 hover:text-gray-950 mr-4"
+                        >
+                          {tour.isActive === false ? 'Activate' : 'Deactivate'}
+                        </button>
                         <button
                           onClick={() => handleEditClick(tour)}
                           className="text-orange-600 hover:text-orange-900 mr-4"
@@ -249,14 +326,11 @@ const AdminUpdateTours = () => {
             </div>
             
             {filteredTours.length === 0 && (
-              <div className="text-center py-8">
-                <p className="text-gray-500">No tours found.</p>
-              </div>
+              <EmptyState title="No tours found" message="Try changing your search or filters." />
             )}
-          </div>
+          </AdminCard>
         )}
-      </div>
-    </div>
+    </AdminPage>
   );
 };
 

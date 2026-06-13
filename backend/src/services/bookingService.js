@@ -3,6 +3,7 @@
  * Business logic for booking operations
  */
 const Booking = require('../../models/Booking');
+const User = require('../../models/User');
 const { normalizeTourId, isValidObjectId } = require('../utils/tourId');
 const { getValidatedTourPricing } = require('./bookingPricingService');
 
@@ -35,6 +36,7 @@ class BookingService {
     }
     
     return await Booking.find(query)
+      .populate('user', 'name email phone createdAt')
       .populate('tourId', 'name price discountEnabled discountPrice groupDiscountEnabled groupDiscount4 groupDiscount5 groupDiscount6Plus')
       .sort({ createdAt: -1 })
       .lean();
@@ -51,6 +53,7 @@ class BookingService {
     }
     
     const booking = await Booking.findById(bookingId)
+      .populate('user', 'name email phone createdAt')
       .populate('tourId', 'name price discountEnabled discountPrice groupDiscountEnabled groupDiscount4 groupDiscount5 groupDiscount6Plus')
       .lean();
     
@@ -103,8 +106,19 @@ class BookingService {
       throw new Error('Valid tourId is required');
     }
     
+    if (!bookingData.user && bookingData.email) {
+      const user = await User.findOne({
+        email: String(bookingData.email).toLowerCase().trim(),
+        isActive: true,
+      }).select('_id').lean();
+      if (user?._id) {
+        bookingData.user = user._id;
+      }
+    }
+
     const booking = new Booking(bookingData);
     await booking.save();
+    await booking.populate('user', 'name email phone createdAt');
     await booking.populate('tourId', 'name price discountEnabled discountPrice groupDiscountEnabled groupDiscount4 groupDiscount5 groupDiscount6Plus');
     return booking.toObject({ virtuals: true });
   }
@@ -123,7 +137,9 @@ class BookingService {
       bookingId,
       { status: normalizeBookingStatus(status) },
       { new: true }
-    ).populate('tourId', 'name price discountEnabled discountPrice groupDiscountEnabled groupDiscount4 groupDiscount5 groupDiscount6Plus');
+    )
+      .populate('user', 'name email phone createdAt')
+      .populate('tourId', 'name price discountEnabled discountPrice groupDiscountEnabled groupDiscount4 groupDiscount5 groupDiscount6Plus');
     
     if (!booking) {
       throw new Error('Booking not found');
@@ -166,9 +182,11 @@ class BookingService {
       ]),
       Booking.aggregate([
         {
+          $match: { status: { $in: ['confirmed', 'completed'] } }
+        },
+        {
           $group: {
             _id: null,
-            totalBookings: { $sum: 1 },
             totalRevenue: { $sum: { $ifNull: ['$totalPrice', 0] } }
           }
         }
@@ -182,7 +200,7 @@ class BookingService {
     }, {});
 
     return {
-      totalBookings: revenue?.totalBookings || 0,
+      totalBookings: Object.values(byStatus).reduce((sum, count) => sum + count, 0),
       pendingBookings: byStatus.pending || 0,
       confirmedBookings: byStatus.confirmed || 0,
       cancelledBookings: byStatus.cancelled || 0,

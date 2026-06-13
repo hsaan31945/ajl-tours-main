@@ -9,6 +9,7 @@ import { getDiscountPrice } from '../utils/bookingPricing';
 import { useCurrency } from '../context/CurrencyContext';
 import { getTourGalleryImages } from '../utils/tourImages';
 import SEO from '../components/SEO';
+import ApproxPriceNote from '../components/ApproxPriceNote';
 import { fetchToursList } from '../services/toursApi';
 import { absoluteUrl, createBreadcrumbJsonLd } from '../utils/seo';
 
@@ -264,6 +265,7 @@ const TourDetails = () => {
                 )}
                 {formatPrice(discountPrice ?? tour.price)}
                 <span className="text-lg font-normal text-gray-600"> per person</span>
+                <ApproxPriceNote />
               </div>
             </div>
 

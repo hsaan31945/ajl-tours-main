@@ -1,240 +1,257 @@
-import React, { useContext, useEffect, useState } from "react";
-import { AppContext } from "../context/AppContext";
+import React, { useEffect, useMemo, useState } from "react";
+import { Eye, Plus, Search, Trash2, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { io } from "socket.io-client";
 import { useAdmin } from "../context/AdminContext";
+import { AdminCard, AdminPage, Alert, ConfirmModal, EmptyState, LoadingState } from "../components/admin/AdminUI";
+import { adminRequest, asArray, asObject, formatDate, money } from "../utils/adminApi";
 
-// Use environment variables for production compatibility
-const API_URL = process.env.NODE_ENV === 'production' ? '/api' : "/api";
-const SOCKET_URL = process.env.NODE_ENV === 'production' ? window.location.origin : window.location.origin;
+const emptyForm = { name: "", email: "", phone: "", password: "" };
 
 const AdminUsers = () => {
-  const { users, bookings, setUsers } = useContext(AppContext);
-  const { isAdmin } = useAdmin();
   const navigate = useNavigate();
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [addForm, setAddForm] = useState({ name: "", email: "", password: "", phone: "" });
-  const [deleteMode, setDeleteMode] = useState(false);
-  const [selected, setSelected] = useState([]);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const { isAdmin, loading: adminLoading, getAuthHeader } = useAdmin();
+  const [users, setUsers] = useState([]);
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [showAdd, setShowAdd] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [deleteUser, setDeleteUser] = useState(null);
 
   useEffect(() => {
-    if (!isAdmin) {
-      navigate("/admin");
-    }
-    // Real-time user delete
-    const socket = io(SOCKET_URL);
-    socket.on("userDeleted", (id) => {
-      setUsers((prev) => prev.filter(u => u.id !== Number(id)));
-    });
-    return () => socket.disconnect();
-  }, [isAdmin, navigate, setUsers]);
+    if (!adminLoading && !isAdmin) navigate("/admin");
+  }, [adminLoading, isAdmin, navigate]);
 
-  const handleAddUser = async (e) => {
-    e.preventDefault();
+  const loadUsers = async () => {
+    setLoading(true);
+    setError("");
     try {
-      const res = await axios.post(`${API_URL}/users`, addForm);
-      setUsers((prev) => [...prev, res.data]);
-      setShowAddModal(false);
-      setAddForm({ name: "", email: "", password: "", phone: "" });
-      alert("User added successfully!");
+      const params = new URLSearchParams({ page: String(page), limit: "10" });
+      if (search.trim()) params.set("q", search.trim());
+      const payload = await adminRequest(`/api/admin/users?${params.toString()}`, { getAuthHeader });
+      setUsers(asArray(payload));
+      setPagination(payload.pagination || { page, totalPages: 1, total: asArray(payload).length });
     } catch (err) {
-      const errorMessage = err.response?.data?.message || err.message || "Failed to add user";
-      alert("Error: " + errorMessage);
-      console.error('Add user error:', err);
+      setError(err.message || "Could not load users");
+      setUsers([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleDeleteUsers = async () => {
+  useEffect(() => {
+    if (isAdmin) loadUsers();
+  }, [isAdmin, page]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const visibleUsers = useMemo(() => users, [users]);
+
+  const handleSearch = (event) => {
+    event.preventDefault();
+    setPage(1);
+    loadUsers();
+  };
+
+  const handleAddUser = async (event) => {
+    event.preventDefault();
+    setError("");
+    setMessage("");
     try {
-      await Promise.all(selected.map(id => axios.delete(`${API_URL}/users/${id}`)));
-      setUsers((prev) => prev.filter(u => !selected.includes(u.id)));
-      setSelected([]);
-      setDeleteMode(false);
-      setShowConfirm(false);
+      await adminRequest("/api/admin/users", {
+        method: "POST",
+        getAuthHeader,
+        body: form,
+      });
+      setMessage("User created.");
+      setShowAdd(false);
+      setForm(emptyForm);
+      loadUsers();
     } catch (err) {
-      alert("Failed to delete users: " + (err.response?.data?.message || err.message));
+      setError(err.message || "Could not create user");
     }
   };
 
-  const toggleSelect = (id) => {
-    setSelected((prev) => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const openDetails = async (user) => {
+    setError("");
+    try {
+      const payload = await adminRequest(`/api/admin/users/${user.id}`, { getAuthHeader });
+      setSelectedUser(asObject(payload));
+    } catch (err) {
+      setError(err.message || "Could not load user details");
+    }
   };
+
+  const confirmDelete = async () => {
+    if (!deleteUser) return;
+    try {
+      await adminRequest(`/api/admin/users/${deleteUser.id}`, {
+        method: "DELETE",
+        getAuthHeader,
+      });
+      setDeleteUser(null);
+      setMessage("User deactivated.");
+      loadUsers();
+    } catch (err) {
+      setError(err.message || "Could not deactivate user");
+    }
+  };
+
+  if (adminLoading || loading) return <LoadingState label="Loading users..." />;
 
   return (
-    <div className="min-h-screen p-8 bg-gray-50">
-      <h1 className="text-4xl font-bold mb-8 text-center">User Management</h1>
-      <div className="flex gap-4 mb-6">
-        {!deleteMode && (
-          <button
-            className="px-4 py-2 bg-green-600 text-white rounded font-bold hover:bg-green-800"
-            onClick={() => setShowAddModal(true)}
-          >
-            Add User
-          </button>
-        )}
-        {!deleteMode && (
-          <button
-            className="px-4 py-2 bg-red-600 text-white rounded font-bold hover:bg-red-800"
-            onClick={() => setDeleteMode(true)}
-          >
-            Remove User
-          </button>
-        )}
-        {deleteMode && (
-          <button
-            className="px-4 py-2 bg-red-700 text-white rounded font-bold hover:bg-black"
-            onClick={() => setShowConfirm(true)}
-            disabled={selected.length === 0}
-          >
-            Delete Selected
-          </button>
-        )}
-        {deleteMode && (
-          <button
-            className="px-4 py-2 bg-gray-400 text-white rounded font-bold hover:bg-gray-600"
-            onClick={() => { setDeleteMode(false); setSelected([]); }}
-          >
-            Cancel
-          </button>
-        )}
-      </div>
-      <div className="bg-white p-6 rounded-lg shadow">
-        <table className="min-w-full">
-          <thead>
-            <tr>
-              {deleteMode && <th className="py-2 px-4">Select</th>}
-              <th className="py-2 px-4">Name</th>
-              <th className="py-2 px-4">Email</th>
-              <th className="py-2 px-4">Phone</th>
-              <th className="py-2 px-4">Registration Date</th>
-              <th className="py-2 px-4">Orders</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.length === 0 ? (
-              <tr>
-                <td colSpan={deleteMode ? 6 : 5} className="text-center py-4">No users found.</td>
-              </tr>
-            ) : (
-              users.map((user) => (
-                <tr key={user.id}>
-                  {deleteMode && (
-                    <td className="py-2 px-4 text-center">
-                      <input
-                        type="checkbox"
-                        checked={selected.includes(user.id)}
-                        onChange={() => toggleSelect(user.id)}
-                      />
-                    </td>
-                  )}
-                  <td className="py-2 px-4">{user.name}</td>
-                  <td className="py-2 px-4">{user.email}</td>
-                  <td className="py-2 px-4">{user.phone}</td>
-                  <td className="py-2 px-4">N/A</td>
-                  <td className="py-2 px-4">{bookings.filter((b) => b.email === user.email).length}</td>
+    <AdminPage
+      title="Users Management"
+      description="Search customers, view booking history, and create manual user accounts when needed."
+      actions={(
+        <button onClick={() => setShowAdd(true)} className="inline-flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2 font-bold text-white hover:bg-orange-700">
+          <Plus className="h-4 w-4" /> Add User
+        </button>
+      )}
+    >
+      {message && <Alert type="success">{message}</Alert>}
+      {error && <Alert>{error}</Alert>}
+
+      <AdminCard>
+        <form onSubmit={handleSearch} className="mb-5 flex flex-col gap-3 sm:flex-row">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              className="w-full rounded-lg border border-gray-300 py-3 pl-10 pr-4 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100"
+              placeholder="Search by name, email, or phone"
+            />
+          </div>
+          <button className="rounded-lg bg-gray-900 px-5 py-3 font-bold text-white hover:bg-black">Search</button>
+        </form>
+
+        {!visibleUsers.length ? (
+          <EmptyState title="No users found" message="Users who register on the public website will appear here." />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 text-sm">
+              <thead>
+                <tr className="text-left text-xs font-bold uppercase text-gray-500">
+                  <th className="py-3 pr-4">User</th>
+                  <th className="py-3 pr-4">Phone</th>
+                  <th className="py-3 pr-4">Registered</th>
+                  <th className="py-3 pr-4">Bookings</th>
+                  <th className="py-3 text-right">Actions</th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-      {/* Add User Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
-          <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full relative">
-            <button
-              className="absolute top-2 right-2 text-2xl text-red-600 hover:text-black"
-              onClick={() => setShowAddModal(false)}
-              aria-label="Close"
-            >
-              &times;
-            </button>
-            <h3 className="text-xl font-bold mb-4">Add User</h3>
-            <form onSubmit={handleAddUser} className="space-y-4">
-              <div>
-                <label className="block text-md font-medium">Full Name</label>
-                <input
-                  type="text"
-                  value={addForm.name}
-                  onChange={e => setAddForm(f => ({ ...f, name: e.target.value }))}
-                  className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-md font-medium">Email</label>
-                <input
-                  type="email"
-                  value={addForm.email}
-                  onChange={e => setAddForm(f => ({ ...f, email: e.target.value }))}
-                  className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-md font-medium">Password</label>
-                <input
-                  type="password"
-                  value={addForm.password}
-                  onChange={e => setAddForm(f => ({ ...f, password: e.target.value }))}
-                  className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-md font-medium">Phone</label>
-                <input
-                  type="tel"
-                  value={addForm.phone}
-                  onChange={e => setAddForm(f => ({ ...f, phone: e.target.value }))}
-                  className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full px-4 py-2 bg-green-600 text-white rounded font-bold hover:bg-green-800"
-              >
-                Add User
-              </button>
-            </form>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {visibleUsers.map((user) => (
+                  <tr key={user.id}>
+                    <td className="py-3 pr-4">
+                      <div className="font-bold text-gray-900">{user.name}</div>
+                      <div className="text-xs text-gray-500">{user.email}</div>
+                    </td>
+                    <td className="py-3 pr-4 text-gray-700">{user.phone || "-"}</td>
+                    <td className="py-3 pr-4 text-gray-700">{formatDate(user.createdAt)}</td>
+                    <td className="py-3 pr-4 font-bold text-gray-900">{user.totalBookings || 0}</td>
+                    <td className="py-3 text-right">
+                      <button onClick={() => openDetails(user)} className="mr-3 inline-flex items-center gap-1 font-bold text-orange-700">
+                        <Eye className="h-4 w-4" /> View
+                      </button>
+                      <button onClick={() => setDeleteUser(user)} className="inline-flex items-center gap-1 font-bold text-red-600">
+                        <Trash2 className="h-4 w-4" /> Deactivate
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div className="mt-5 flex items-center justify-between text-sm text-gray-600">
+          <span>{pagination.total || 0} user{pagination.total === 1 ? "" : "s"}</span>
+          <div className="flex gap-2">
+            <button disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))} className="rounded-lg border px-3 py-2 font-bold disabled:opacity-40">Prev</button>
+            <button disabled={page >= pagination.totalPages} onClick={() => setPage((value) => value + 1)} className="rounded-lg border px-3 py-2 font-bold disabled:opacity-40">Next</button>
           </div>
         </div>
+      </AdminCard>
+
+      {showAdd && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <form onSubmit={handleAddUser} className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
+            <h2 className="text-xl font-bold text-gray-900">Add User</h2>
+            <div className="mt-5 grid gap-4">
+              {[
+                ["name", "Full Name", "text"],
+                ["email", "Email", "email"],
+                ["phone", "Phone", "tel"],
+                ["password", "Password", "password"],
+              ].map(([key, label, type]) => (
+                <label key={key} className="block">
+                  <span className="text-sm font-bold text-gray-700">{label}</span>
+                  <input
+                    type={type}
+                    value={form[key]}
+                    onChange={(event) => setForm((current) => ({ ...current, [key]: event.target.value }))}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100"
+                    required={key !== "phone"}
+                    minLength={key === "password" ? 6 : undefined}
+                  />
+                </label>
+              ))}
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <button type="button" onClick={() => setShowAdd(false)} className="rounded-lg border px-4 py-2 font-bold">Cancel</button>
+              <button className="rounded-lg bg-orange-600 px-4 py-2 font-bold text-white hover:bg-orange-700">Create User</button>
+            </div>
+          </form>
+        </div>
       )}
-      {/* Confirm Delete Popup */}
-      {showConfirm && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
-          <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full relative">
-            <button
-              className="absolute top-2 right-2 text-2xl text-red-600 hover:text-black"
-              onClick={() => setShowConfirm(false)}
-              aria-label="Close"
-            >
-              &times;
-            </button>
-            <h3 className="text-xl font-bold mb-4">Confirm Delete</h3>
-            <div className="mb-6">Are you sure you want to permanently delete the selected user(s)?</div>
-            <div className="flex gap-4">
-              <button
-                className="px-4 py-2 bg-red-700 text-white rounded font-bold hover:bg-black"
-                onClick={handleDeleteUsers}
-              >
-                Yes, Delete
-              </button>
-              <button
-                className="px-4 py-2 bg-gray-400 text-white rounded font-bold hover:bg-gray-600"
-                onClick={() => setShowConfirm(false)}
-              >
-                Cancel
-              </button>
+
+      {selectedUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">{selectedUser.user?.name}</h2>
+                <p className="text-sm text-gray-500">{selectedUser.user?.email}</p>
+              </div>
+              <button onClick={() => setSelectedUser(null)} className="rounded-lg border px-3 py-2 font-bold">Close</button>
+            </div>
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              <AdminCard><User className="mb-2 h-5 w-5 text-orange-700" /><p className="text-xs font-bold text-gray-500">Phone</p><p className="font-bold">{selectedUser.user?.phone || "-"}</p></AdminCard>
+              <AdminCard><p className="text-xs font-bold text-gray-500">Registered</p><p className="font-bold">{formatDate(selectedUser.user?.createdAt)}</p></AdminCard>
+              <AdminCard><p className="text-xs font-bold text-gray-500">Bookings</p><p className="font-bold">{selectedUser.bookings?.length || 0}</p></AdminCard>
+            </div>
+            <h3 className="mt-6 font-bold text-gray-900">Booking History</h3>
+            <div className="mt-3 space-y-3">
+              {!selectedUser.bookings?.length ? <EmptyState title="No bookings" /> : selectedUser.bookings.map((booking) => (
+                <div key={booking.id} className="rounded-lg border border-gray-200 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="font-bold text-gray-900">{booking.tourName}</p>
+                      <p className="text-sm text-gray-500">{formatDate(booking.travelDate)} - {booking.travelers} traveler{booking.travelers === 1 ? "" : "s"}</p>
+                    </div>
+                    <p className="font-bold">{money(booking.totalAmount, booking.currency)}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       )}
-    </div>
+
+      {deleteUser && (
+        <ConfirmModal
+          title="Deactivate User"
+          message={`Deactivate ${deleteUser.name}? Their booking records will remain available for reporting.`}
+          confirmLabel="Deactivate"
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteUser(null)}
+        />
+      )}
+    </AdminPage>
   );
 };
 
-export default AdminUsers; 
+export default AdminUsers;

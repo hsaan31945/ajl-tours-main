@@ -74,6 +74,13 @@ const useAfterFirstPaint = (delay = 1200) => {
   return ready;
 };
 
+const AdminRoute = ({ children }) => {
+  const { isAdmin: legacyAdmin, loading: appLoading } = useContext(AppContext);
+  const { isAdmin: jwtAdmin, loading: adminLoading } = useAdmin();
+  if (appLoading || adminLoading) return <PlaneLoader label="Checking admin access" />;
+  return legacyAdmin || jwtAdmin ? children : <Navigate to="/admin" replace />;
+};
+
 const App = () => {
   const location = useLocation();
   const { isAdmin } = useContext(AppContext);
@@ -185,16 +192,16 @@ const App = () => {
               <Route path="/blogs" element={<Blogs />} />
               <Route path="/blogs/:id" element={<BlogPost />} />
               <Route path="/admin" element={<AdminLogin />} />
-              <Route path="/admin/dashboard" element={<AdminDashboard />} />
-              <Route path="/admin/users" element={<AdminUsers />} />
-              <Route path="/admin/trips" element={<AdminTrips />} />
-              <Route path="/admin/divisions" element={<AdminDivisions />} />
-              <Route path="/admin/tours" element={<AdminUpdateTours />} />
-              <Route path="/admin/hero-banners" element={<AdminHeroBanners />} />
-              <Route path="/admin/travel-records" element={<AdminTravelRecords />} />
-              <Route path="/admin/orders" element={<AdminOrders />} />
-              <Route path="/admin/settings" element={<AdminSettings />} />
-              <Route path="/admin/tour-wizard" element={<TourWizard />} />
+              <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+              <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+              <Route path="/admin/trips" element={<AdminRoute><AdminTrips /></AdminRoute>} />
+              <Route path="/admin/divisions" element={<AdminRoute><AdminDivisions /></AdminRoute>} />
+              <Route path="/admin/tours" element={<AdminRoute><AdminUpdateTours /></AdminRoute>} />
+              <Route path="/admin/hero-banners" element={<AdminRoute><AdminHeroBanners /></AdminRoute>} />
+              <Route path="/admin/travel-records" element={<AdminRoute><AdminTravelRecords /></AdminRoute>} />
+              <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
+              <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
+              <Route path="/admin/tour-wizard" element={<AdminRoute><TourWizard /></AdminRoute>} />
               <Route path="/tour-wizard" element={<Navigate to="/admin/tour-wizard" replace />} />
             </Routes>
             </Suspense>
