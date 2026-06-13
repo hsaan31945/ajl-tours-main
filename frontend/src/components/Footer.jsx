@@ -5,6 +5,7 @@ import { useI18n } from "../i18n";
 
 const Footer = () => {
   const { t } = useI18n();
+  const facebookUrl = "https://www.facebook.com/p/Ajl-Tour-61575927044542/";
 
   return (
     <footer className="bg-white border-t-2 border-red-500 shadow-inner mt-12">
@@ -41,14 +42,32 @@ const Footer = () => {
         <div>
           <h3 className="text-lg font-semibold mb-2 text-black">{t("footer.contactInfo")}</h3>
           <ul className="text-gray-600 text-sm space-y-1">
-            <li>{t("footer.email")}: hey@ajltour.com</li>
-            <li>{t("footer.phone")}: +41 78 207 89 02</li>
+            <li>
+              {t("footer.email")}:{" "}
+              <a href="mailto:hey@ajltour.com" className="hover:text-red-600">
+                hey@ajltour.com
+              </a>
+            </li>
+            <li>
+              {t("footer.phone")}:{" "}
+              <a href="tel:+41782078902" className="hover:text-red-600">
+                +41 78 207 89 02
+              </a>
+            </li>
             <li>{t("footer.address")}: Plattenstrasse 7, 8152 Opfikon, Switzerland</li>
           </ul>
         </div>
         <div>
           <h3 className="text-lg font-semibold mb-2 text-black">{t("footer.followUs")}</h3>
           <div className="flex gap-3 mt-2">
+            <a
+              href={facebookUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="AJL Tour on Facebook"
+            >
+              <img src={assets.facebook_icon} alt="Facebook" width={32} height={32} loading="lazy" decoding="async" className="hover:scale-110 transition-transform" />
+            </a>
             <a
               href="https://www.instagram.com/ajltransfer?igsh=MXdheGhmcTc3MGxkZA=="
               target="_blank"

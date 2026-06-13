@@ -2,6 +2,11 @@ import React from "react";
 import { Mail, MapPin, Phone } from "lucide-react";
 import SEO from "../components/SEO";
 import { createBreadcrumbJsonLd } from "../utils/seo";
+import { assets } from "../assets/assets";
+
+const contactEmail = "hey@ajltour.com";
+const facebookUrl = "https://www.facebook.com/p/Ajl-Tour-61575927044542/";
+const emailHref = `mailto:${contactEmail}?subject=Private%20Switzerland%20Tour%20Inquiry&body=Hello%20AJL%20Tours%2C%0A%0AI%20would%20like%20to%20plan%20a%20private%20tour.%0A%0ATravel%20date%3A%0AGroup%20size%3A%0APickup%20location%3A%0ADestinations%3A%0A%0AThank%20you.`;
 
 const Contact = () => {
   return (
@@ -31,14 +36,14 @@ const Contact = () => {
       </section>
 
       <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:px-8">
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <a
-            href="mailto:hey@ajltour.com"
+            href={emailHref}
             className="rounded-lg border border-gray-100 bg-white p-6 shadow-sm transition hover:border-orange-200 hover:shadow-md"
           >
             <Mail className="mb-4 h-8 w-8 text-orange-600" aria-hidden="true" />
             <h2 className="text-xl font-bold text-gray-900">Email</h2>
-            <p className="mt-2 text-gray-600">hey@ajltour.com</p>
+            <p className="mt-2 text-gray-600">{contactEmail}</p>
           </a>
 
           <a
@@ -55,6 +60,17 @@ const Contact = () => {
             <h2 className="text-xl font-bold text-gray-900">Office</h2>
             <p className="mt-2 text-gray-600">Plattenstrasse 7, 8152 Opfikon, Switzerland</p>
           </div>
+
+          <a
+            href={facebookUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-lg border border-gray-100 bg-white p-6 shadow-sm transition hover:border-orange-200 hover:shadow-md"
+          >
+            <img src={assets.facebook_icon} alt="" width={32} height={32} className="mb-4 h-8 w-8" />
+            <h2 className="text-xl font-bold text-gray-900">Facebook</h2>
+            <p className="mt-2 text-gray-600">AJL Tour</p>
+          </a>
         </div>
 
         <div className="mt-10 rounded-lg bg-white p-6 shadow-sm">
@@ -64,7 +80,7 @@ const Contact = () => {
           </p>
           <div className="mt-6">
             <a
-              href="mailto:hey@ajltour.com?subject=Private%20Switzerland%20Tour%20Inquiry"
+              href={emailHref}
               className="inline-flex rounded-lg bg-orange-600 px-6 py-3 font-bold text-white transition hover:bg-orange-700"
             >
               Email Our Team
