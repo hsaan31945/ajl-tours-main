@@ -616,6 +616,34 @@ module.exports = async (req, res) => {
         }
       }
     } else if (normalizedPath === '/create-payment-intent' && method === 'POST') {
+      const { getValidatedTourPricing } = require('../src/services/bookingPricingService');
+      const pricing = await getValidatedTourPricing(req.body || {});
+      const pricingPayload = {
+        unitPrice: pricing.pricedUnit,
+        baseUnitPrice: pricing.unitPrice,
+        originalUnitPrice: pricing.originalUnitPrice,
+        discountUnitPrice: pricing.discountUnitPrice,
+        saleUnitPrice: pricing.saleUnitPrice,
+        groupDiscount: pricing.groupDiscount,
+        groupDiscountTier: pricing.groupDiscountTier,
+        groupDiscountUnitAmount: pricing.groupDiscountUnitAmount,
+        groupDiscountTotal: pricing.groupDiscountTotal,
+        hasGroupDiscount: pricing.hasGroupDiscount,
+        tickets: pricing.tickets,
+        minTickets: pricing.minTickets,
+        total: pricing.total,
+        flexibility: pricing.flexibility,
+      };
+      if (pricing.amountInCents <= 0) {
+        return res.json({
+          success: true,
+          freeCheckout: true,
+          clientSecret: null,
+          amount: 0,
+          currency: pricing.currency.toUpperCase(),
+          pricing: pricingPayload,
+        });
+      }
       const config = require('../config');
       let stripeSecretKey = (config.stripe?.secretKey || process.env.STRIPE_SECRET_KEY || '').trim();
       stripeSecretKey = stripeSecretKey.replace(/^["']|["']$/g, '');
@@ -626,8 +654,6 @@ module.exports = async (req, res) => {
         });
       }
       const stripe = require('stripe')(stripeSecretKey);
-      const { getValidatedTourPricing } = require('../src/services/bookingPricingService');
-      const pricing = await getValidatedTourPricing(req.body || {});
       const paymentIntent = await stripe.paymentIntents.create({
         amount: pricing.amountInCents,
         currency: pricing.currency,
@@ -652,22 +678,46 @@ module.exports = async (req, res) => {
         clientSecret: paymentIntent.client_secret,
         amount: pricing.total,
         currency: pricing.currency.toUpperCase(),
-        pricing: {
-          unitPrice: pricing.pricedUnit,
-          baseUnitPrice: pricing.unitPrice,
-          originalUnitPrice: pricing.originalUnitPrice,
-          discountUnitPrice: pricing.discountUnitPrice,
-          saleUnitPrice: pricing.saleUnitPrice,
-          groupDiscount: pricing.groupDiscount,
-          groupDiscountTier: pricing.groupDiscountTier,
-          groupDiscountUnitAmount: pricing.groupDiscountUnitAmount,
-          groupDiscountTotal: pricing.groupDiscountTotal,
-          hasGroupDiscount: pricing.hasGroupDiscount,
-          tickets: pricing.tickets,
-          minTickets: pricing.minTickets,
-          total: pricing.total,
-          flexibility: pricing.flexibility,
-        },
+        pricing: pricingPayload,
+      });
+    } else if (normalizedPath === '/confirm-free-booking' && method === 'POST') {
+      const { getValidatedTourPricing } = require('../src/services/bookingPricingService');
+      const bookingService = require('../src/services/bookingService');
+      const { bookingData = {} } = req.body || {};
+      const pricing = await getValidatedTourPricing({
+        tourId: req.body?.tourId || bookingData.tourId,
+        tickets: req.body?.tickets ?? bookingData.tickets ?? bookingData.travelers,
+        selectedDate: req.body?.selectedDate || bookingData.selectedDate || bookingData.tripDate,
+        flexibility: req.body?.flexibility || bookingData.flexibility,
+      });
+
+      if (pricing.amountInCents > 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'This booking requires payment and cannot use free checkout.',
+        });
+      }
+
+      const selectedDate = req.body?.selectedDate || bookingData.selectedDate || bookingData.tripDate || new Date();
+      const freePaymentId = `free_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+      const booking = await bookingService.createBooking({
+        ...bookingData,
+        tourId: String(pricing.tour._id),
+        tickets: pricing.tickets,
+        travelers: pricing.tickets,
+        selectedDate,
+        tripDate: selectedDate,
+        flexibility: pricing.flexibility,
+        status: 'confirmed',
+        paymentStatus: 'paid',
+        stripePaymentId: freePaymentId,
+      });
+
+      res.json({
+        success: true,
+        freeCheckout: true,
+        paymentIntentId: freePaymentId,
+        booking,
       });
     } else if (normalizedPath === '/confirm-payment' && method === 'POST') {
       const config = require('../config');

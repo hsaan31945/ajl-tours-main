@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useBooking } from "../context/BookingContext";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
-import { Lock, CreditCard } from "lucide-react";
+import { CheckCircle, Lock } from "lucide-react";
 import axios from "axios";
 import { apiUrl } from "../utils/api";
 import { getTourId } from "../utils/tourId";
@@ -17,6 +17,40 @@ if (!publishableKey) {
   console.error('VITE_STRIPE_PUBLISHABLE_KEY is not set');
 }
 const stripePromise = publishableKey ? loadStripe(publishableKey) : null;
+
+const getStoredCheckoutData = () => {
+  const tryParse = (key) => {
+    try {
+      return JSON.parse(localStorage.getItem(key) || "null");
+    } catch {
+      return null;
+    }
+  };
+
+  return tryParse("recentTourData") || tryParse("currentTourData") || {};
+};
+
+const buildBookingPayload = ({ booking, tour, pricing }) => {
+  const stored = getStoredCheckoutData();
+  const contact = booking?.contact || {};
+  const selectedDate = booking?.date || stored.selectedDate || stored.date || new Date().toISOString().split("T")[0];
+  const tickets = Number(pricing?.tickets || booking?.tickets || stored.tickets || 1);
+
+  return {
+    name: contact.fullName || stored.userName || stored.name || "Guest customer",
+    email: contact.email || stored.userEmail || stored.email || "",
+    phone: contact.phone || stored.userPhone || stored.phone || "",
+    address: contact.pickupAddress || stored.pickupAddress || stored.address || "",
+    pickupAddress: contact.pickupAddress || stored.pickupAddress || stored.address || "",
+    tourId: getTourId(tour) || stored.tourId,
+    tickets,
+    travelers: tickets,
+    selectedDate,
+    tripDate: selectedDate,
+    specialRequests: stored.specialRequests || "",
+    flexibility: booking?.flexibility || stored.flexibility || "standard",
+  };
+};
 
 const PaymentForm = ({ clientSecret, paymentSummary }) => {
   const navigate = useNavigate();
@@ -170,10 +204,145 @@ const PaymentForm = ({ clientSecret, paymentSummary }) => {
   );
 };
 
+const FreeCheckoutForm = ({ paymentSummary }) => {
+  const navigate = useNavigate();
+  const { booking } = useBooking();
+  const { formatPrice } = useCurrency();
+  const { t } = useI18n();
+  const { tour, tickets = 1, date, time, flexibility } = booking || {};
+  const displayPricing = paymentSummary || calculateBookingPricing({ tour, tickets, selectedDate: date, flexibility });
+  const totalPrice = Number(displayPricing.total || displayPricing.amount || 0);
+  const displayTickets = Number(displayPricing.tickets || tickets || 1);
+  const tourName = cleanDisplayName(tour?.title || tour?.name || "Tour");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleFreeBooking = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const bookingData = buildBookingPayload({ booking, tour, pricing: displayPricing });
+      if (!bookingData.email) {
+        throw new Error("Please go back and enter your contact details before completing this booking.");
+      }
+
+      const response = await axios.post(apiUrl('/api/confirm-free-booking'), {
+        tourId: getTourId(tour),
+        tickets: displayTickets,
+        selectedDate: date,
+        flexibility,
+        bookingData,
+      });
+
+      const databaseBooking = response.data?.booking?.data || response.data?.booking || response.data?.data || null;
+      const bookingId = databaseBooking?._id || databaseBooking?.id || response.data?.paymentIntentId || `FREE${Date.now()}`;
+      const stored = getStoredCheckoutData();
+      const successData = {
+        ...stored,
+        ...bookingData,
+        tourName,
+        amount: Number(databaseBooking?.totalPrice ?? 0),
+        tickets: Number(databaseBooking?.travelers ?? displayTickets),
+        tourId: bookingData.tourId,
+        currency: databaseBooking?.paymentCurrency || displayPricing.currency || stored.currency || "CHF",
+        selectedDate: bookingData.selectedDate,
+        date: bookingData.selectedDate,
+        time: time || stored.time || "09:00",
+        groupDiscountTier: databaseBooking?.groupDiscountTier || displayPricing.groupDiscountTier || null,
+        groupDiscountUnitAmount: Number(databaseBooking?.groupDiscountUnitAmount ?? displayPricing.groupDiscountUnitAmount ?? 0),
+        groupDiscountTotal: Number(databaseBooking?.groupDiscountTotal ?? displayPricing.groupDiscountTotal ?? 0),
+        groupDiscountPercent: Number(databaseBooking?.groupDiscountPercent ?? displayPricing.groupDiscountPercent ?? 0),
+        hasGroupDiscount: Number(databaseBooking?.groupDiscountTotal ?? displayPricing.groupDiscountTotal ?? 0) > 0,
+        paymentMethod: "Free checkout",
+      };
+
+      navigate(`/payment-success?free_checkout=1&booking_id=${encodeURIComponent(bookingId)}`, {
+        state: {
+          freeCheckout: true,
+          bookingId,
+          bookingData: successData,
+          databaseBooking,
+          paymentIntentId: response.data?.paymentIntentId,
+        },
+      });
+    } catch (err) {
+      console.error('Error completing free booking:', err);
+      const apiMessage = err.response?.data?.error || err.response?.data?.message;
+      setError(apiMessage || err.message || "Could not complete this booking. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!tour) {
+    return (
+      <div className="min-h-screen bg-neutral-100 py-8 px-2 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">{t("payment.noTourTitle")}</h2>
+          <p className="text-gray-600 mb-6">{t("payment.noTourText")}</p>
+          <button
+            type="button"
+            onClick={() => navigate("/switzerland")}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-xl transition"
+          >
+            {t("common.viewTours")}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-neutral-100 py-8 px-2">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-3xl font-bold text-center mb-8">{t("payment.title")}</h1>
+        <div className="bg-white rounded-xl shadow p-6">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold mb-4">{t("payment.details")}</h2>
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+              <h3 className="font-bold">{tourName}</h3>
+              <p className="text-gray-600">{date} • {time}</p>
+              <p className="text-gray-600">{displayTickets} adult{displayTickets > 1 ? "s" : ""} • {formatPrice(totalPrice)}</p>
+              <p className="text-sm font-semibold text-green-700 mt-2">No card required for this 100% discount.</p>
+            </div>
+
+            {error && (
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-600 text-sm">{error}</p>
+              </div>
+            )}
+
+            <button
+              type="button"
+              disabled={loading}
+              className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white font-bold py-3 rounded-xl transition-all duration-300 flex items-center justify-center gap-2"
+              onClick={handleFreeBooking}
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  {t("payment.processing")}
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-5 h-5" />
+                  Complete Booking
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Payment = () => {
   const [clientSecret, setClientSecret] = useState("");
+  const [freeCheckout, setFreeCheckout] = useState(false);
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(!publishableKey);
+  const [isLoading, setIsLoading] = useState(true);
   const [freshTour, setFreshTour] = useState(null);
   const [tourRefreshComplete, setTourRefreshComplete] = useState(false);
   const [paymentSummary, setPaymentSummary] = useState(null);
@@ -255,15 +424,22 @@ const Payment = () => {
           selectedDate: date,
           flexibility,
         });
-        const cs = response?.data?.clientSecret || response?.data?.client_secret;
-        if (!cs) throw new Error('No client secret returned');
-        setClientSecret(cs);
-        setPaymentSummary({
+        const summary = {
           ...(response.data?.pricing || {}),
           total: Number(response.data?.amount ?? response.data?.pricing?.total ?? totalPrice),
           currency: response.data?.currency || pricing.currency,
           tickets: response.data?.pricing?.tickets || currentTickets,
-        });
+        };
+        setPaymentSummary(summary);
+        if (response?.data?.freeCheckout || Number(response?.data?.amount ?? summary.total) <= 0) {
+          setFreeCheckout(true);
+          setClientSecret("");
+          return;
+        }
+        const cs = response?.data?.clientSecret || response?.data?.client_secret;
+        if (!cs) throw new Error('No client secret returned');
+        setFreeCheckout(false);
+        setClientSecret(cs);
       } catch (err) {
         console.error('Error creating payment intent:', err);
         const apiMessage = err.response?.data?.error || err.response?.data?.message;
@@ -280,14 +456,14 @@ const Payment = () => {
       return;
     }
 
-    if (totalPrice > 0 && tour) {
+    if (tour) {
       createPaymentIntent();
     } else {
       setIsLoading(false);
     }
   }, [tourRefreshComplete, tour, currentTickets, minTickets, pricing.validTickets, pricing.currency, totalPrice, date, flexibility, error]);
 
-  if (!publishableKey) {
+  if (!publishableKey && !freeCheckout && !isLoading) {
     return (
       <div className="min-h-screen bg-neutral-100 py-8 px-2 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto">
@@ -338,6 +514,10 @@ const Payment = () => {
   }
 
   if (!clientSecret) {
+    if (freeCheckout) {
+      return <FreeCheckoutForm paymentSummary={paymentSummary} />;
+    }
+
     return (
       <div className="min-h-screen bg-neutral-100 py-8 px-2 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto">

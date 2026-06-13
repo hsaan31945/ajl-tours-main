@@ -128,7 +128,90 @@ const sendSupportTicketNotification = async ({ ticket, booking }) => {
   });
 };
 
+const formatDate = (value) => {
+  if (!value) return 'Not selected';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+};
+
+const formatMoney = (value, currency = 'CHF') => {
+  const amount = Number(value);
+  return `${currency}${Number.isFinite(amount) ? amount.toFixed(2) : '0.00'}`;
+};
+
+const sendBookingStatusUpdateEmail = async ({ booking }) => {
+  const status = String(booking?.status || '').toLowerCase();
+  const toEmail = String(booking?.email || booking?.user?.email || '').trim().toLowerCase();
+
+  if (!toEmail) {
+    const error = new Error("Email isn't provided.");
+    error.code = 'EMAIL_NOT_PROVIDED';
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const customerName = booking?.name || booking?.user?.name || 'Guest customer';
+  const tourName = booking?.tourTitle || booking?.tourId?.name || 'Tour';
+  const bookingId = booking?._id ? String(booking._id) : '';
+  const isCancelled = status === 'cancelled';
+  const statusLabel = isCancelled ? 'Cancelled' : 'Confirmed';
+  const subject = isCancelled
+    ? `Your AJL Tours booking has been cancelled`
+    : `Your AJL Tours booking is confirmed`;
+  const intro = isCancelled
+    ? 'Your booking status has been updated to cancelled.'
+    : 'Good news, your booking has been confirmed.';
+
+  return sendEmail({
+    to: toEmail,
+    subject,
+    html: `
+      <div style="font-family: Arial, sans-serif; color: #111827; line-height: 1.6;">
+        <h2 style="margin: 0 0 16px;">Booking ${escapeHtml(statusLabel)}</h2>
+        <p>Hello ${escapeHtml(customerName)},</p>
+        <p>${escapeHtml(intro)}</p>
+        <table style="border-collapse: collapse; width: 100%; max-width: 680px; margin: 20px 0;">
+          ${bookingId ? `<tr><td style="padding: 8px; border: 1px solid #e5e7eb;"><strong>Booking ID</strong></td><td style="padding: 8px; border: 1px solid #e5e7eb;">${escapeHtml(bookingId)}</td></tr>` : ''}
+          <tr><td style="padding: 8px; border: 1px solid #e5e7eb;"><strong>Tour</strong></td><td style="padding: 8px; border: 1px solid #e5e7eb;">${escapeHtml(tourName)}</td></tr>
+          <tr><td style="padding: 8px; border: 1px solid #e5e7eb;"><strong>Status</strong></td><td style="padding: 8px; border: 1px solid #e5e7eb;">${escapeHtml(statusLabel)}</td></tr>
+          <tr><td style="padding: 8px; border: 1px solid #e5e7eb;"><strong>Travel Date</strong></td><td style="padding: 8px; border: 1px solid #e5e7eb;">${escapeHtml(formatDate(booking?.tripDate))}</td></tr>
+          <tr><td style="padding: 8px; border: 1px solid #e5e7eb;"><strong>Travelers</strong></td><td style="padding: 8px; border: 1px solid #e5e7eb;">${escapeHtml(booking?.travelers || 1)}</td></tr>
+          <tr><td style="padding: 8px; border: 1px solid #e5e7eb;"><strong>Total</strong></td><td style="padding: 8px; border: 1px solid #e5e7eb;">${escapeHtml(formatMoney(booking?.totalPrice, booking?.paymentCurrency || 'CHF'))}</td></tr>
+          <tr><td style="padding: 8px; border: 1px solid #e5e7eb;"><strong>Pickup Address</strong></td><td style="padding: 8px; border: 1px solid #e5e7eb;">${escapeHtml(booking?.address || 'Not provided')}</td></tr>
+        </table>
+        <p>If you have any questions, reply to this email or contact hey@ajltour.com.</p>
+        <p>Thanks,<br />AJL Tours</p>
+      </div>
+    `,
+    text: [
+      `Booking ${statusLabel}`,
+      '',
+      `Hello ${customerName},`,
+      intro,
+      '',
+      bookingId ? `Booking ID: ${bookingId}` : '',
+      `Tour: ${tourName}`,
+      `Status: ${statusLabel}`,
+      `Travel Date: ${formatDate(booking?.tripDate)}`,
+      `Travelers: ${booking?.travelers || 1}`,
+      `Total: ${formatMoney(booking?.totalPrice, booking?.paymentCurrency || 'CHF')}`,
+      `Pickup Address: ${booking?.address || 'Not provided'}`,
+      '',
+      'If you have any questions, reply to this email or contact hey@ajltour.com.',
+      '',
+      'Thanks,',
+      'AJL Tours',
+    ].filter(Boolean).join('\n'),
+  });
+};
+
 module.exports = {
   sendPasswordResetOtp,
+  sendBookingStatusUpdateEmail,
   sendSupportTicketNotification,
 };

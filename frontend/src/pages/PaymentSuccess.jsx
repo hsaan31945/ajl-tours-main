@@ -17,10 +17,11 @@ const PaymentSuccess = () => {
   const [bookingData, setBookingData] = useState(null);
   const [bookingId, setBookingId] = useState("");
 
-  const saveBookingToHistory = useCallback(async (data, id, paymentIntentId) => {
+  const saveBookingToHistory = useCallback(async (data, id, paymentIntentId, options = {}) => {
     try {
       const userEmail = user?.email || 'guest';
       const existingBookings = JSON.parse(localStorage.getItem(`bookings_${userEmail}`) || '[]');
+      const paymentMethod = options.paymentMethod || data.paymentMethod || "Credit Card";
       const bookingPayload = {
         name: data.userName || data.name || user?.name || "Guest User",
         email: data.userEmail || userEmail,
@@ -38,30 +39,33 @@ const PaymentSuccess = () => {
         flexibility: data.flexibility || "standard"
       };
 
-      if (!paymentIntentId) {
+      if (!paymentIntentId && !options.databaseBooking) {
         console.error('Payment intent ID is missing; not creating a booking without Stripe confirmation.');
         return false;
       }
 
-      const response = await fetch(apiUrl('/api/confirm-payment'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          paymentIntentId,
-          bookingData: bookingPayload,
-        })
-      });
+      let databaseBooking = options.databaseBooking || null;
+      if (!databaseBooking) {
+        const response = await fetch(apiUrl('/api/confirm-payment'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            paymentIntentId,
+            bookingData: bookingPayload,
+          })
+        });
 
-      if (!response.ok) {
-        const errorPayload = await response.json().catch(() => ({}));
-        console.error('Failed to confirm payment and save booking:', errorPayload.error || response.statusText);
-        return false;
+        if (!response.ok) {
+          const errorPayload = await response.json().catch(() => ({}));
+          console.error('Failed to confirm payment and save booking:', errorPayload.error || response.statusText);
+          return false;
+        }
+
+        const result = await response.json();
+        databaseBooking = result?.booking?.data || result?.booking || result?.data || null;
       }
-
-      const result = await response.json();
-      const databaseBooking = result?.booking?.data || result?.booking || result?.data || null;
       
       const newBooking = {
         bookingId: id,
@@ -80,7 +84,7 @@ const PaymentSuccess = () => {
         currency: databaseBooking?.paymentCurrency || data.tourCurrency || data.currency || "$",
         selectedDate: data.selectedDate || data.date || new Date().toISOString().split('T')[0],
         status: "Confirmed",
-        paymentMethod: "Credit Card",
+        paymentMethod,
         flexibility: data.flexibility || "standard"
       };
       
@@ -99,7 +103,9 @@ const PaymentSuccess = () => {
   // Get tour data from localStorage (stored during checkout flow)
   useEffect(() => {
     const initializeBooking = async () => {
-      const paymentIntentId = new URLSearchParams(location.search).get('payment_intent');
+      const params = new URLSearchParams(location.search);
+      const paymentIntentId = params.get('payment_intent') || location.state?.paymentIntentId || null;
+      const isFreeCheckout = params.get('free_checkout') === '1' || location.state?.freeCheckout === true;
       // Prefer data set at availability/visit checkout
       const currentTourRaw = localStorage.getItem('currentTourData');
       // Fallback to data saved at user details step
@@ -155,12 +161,14 @@ const PaymentSuccess = () => {
           pickupAddress: d.pickupAddress || d.address || '',
           address: d.address || d.pickupAddress || '',
           specialRequests: d.specialRequests || '',
+          paymentMethod: d.paymentMethod || '',
         };
       };
 
+      const stateParsed = normalize(location.state?.bookingData);
       const currentParsed = normalize(tryParse(currentTourRaw));
       const recentParsed = normalize(tryParse(recentTourRaw));
-      tourData = recentParsed || currentParsed;
+      tourData = stateParsed || recentParsed || currentParsed;
 
       if (tourData) {
         // Prevent duplicates if user refreshed
@@ -187,17 +195,21 @@ const PaymentSuccess = () => {
         tourId: 'unknown',
         currency: '$',
         selectedDate: new Date().toISOString().split('T')[0],
-        time: '09:00'
+        time: '09:00',
+        paymentMethod: isFreeCheckout ? 'Free checkout' : '',
       };
     
       setBookingData(data);
     
       // Generate unique booking ID
-      const id = `BK${Date.now()}${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+      const id = location.state?.bookingId || params.get('booking_id') || `BK${Date.now()}${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
       setBookingId(id);
     
       // Save booking to localStorage only after the backend confirms the Stripe payment.
-      const saved = await saveBookingToHistory(data, id, paymentIntentId);
+      const saved = await saveBookingToHistory(data, id, paymentIntentId, {
+        databaseBooking: location.state?.databaseBooking || null,
+        paymentMethod: isFreeCheckout ? "Free checkout" : "Credit Card",
+      });
     
       // Clean up temp data
       if (saved) {
@@ -209,7 +221,7 @@ const PaymentSuccess = () => {
     };
 
     initializeBooking();
-  }, [location.search, saveBookingToHistory, user?.email]);
+  }, [location.search, location.state, saveBookingToHistory, user?.email]);
 
   return (
     <div className="min-h-screen bg-neutral-100 py-8 px-2 flex flex-col items-center">
@@ -257,7 +269,7 @@ const PaymentSuccess = () => {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">{t("success.paymentMethod")}</span>
-              <span className="font-semibold">{t("success.creditCard")}</span>
+              <span className="font-semibold">{bookingData?.paymentMethod || t("success.creditCard")}</span>
             </div>
           </div>
         </div>

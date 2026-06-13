@@ -116,6 +116,7 @@ const normalizeBooking = (booking) => {
   return {
     id,
     _id: id,
+    bookingId: id,
     userId: populatedUser?._id?.toString?.() || booking.user?.toString?.() || '',
     customerName,
     name: customerName,

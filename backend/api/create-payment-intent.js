@@ -1,5 +1,4 @@
 const config = require('../lib/config');
-const stripe = require('stripe')(config.stripe.secretKey);
 const { connectDB } = require('../src/config/database');
 const { getValidatedTourPricing } = require('../src/services/bookingPricingService');
 
@@ -26,6 +25,35 @@ module.exports = async (req, res) => {
     const body = JSON.parse(bodyStr);
 
     const pricing = await getValidatedTourPricing(body);
+    const pricingPayload = {
+      unitPrice: pricing.pricedUnit,
+      baseUnitPrice: pricing.unitPrice,
+      originalUnitPrice: pricing.originalUnitPrice,
+      discountUnitPrice: pricing.discountUnitPrice,
+      saleUnitPrice: pricing.saleUnitPrice,
+      groupDiscount: pricing.groupDiscount,
+      groupDiscountTier: pricing.groupDiscountTier,
+      groupDiscountUnitAmount: pricing.groupDiscountUnitAmount,
+      groupDiscountTotal: pricing.groupDiscountTotal,
+      hasGroupDiscount: pricing.hasGroupDiscount,
+      tickets: pricing.tickets,
+      minTickets: pricing.minTickets,
+      total: pricing.total,
+      flexibility: pricing.flexibility,
+    };
+
+    if (pricing.amountInCents <= 0) {
+      return res.status(200).json({
+        success: true,
+        freeCheckout: true,
+        clientSecret: null,
+        amount: 0,
+        currency: pricing.currency.toUpperCase(),
+        pricing: pricingPayload,
+      });
+    }
+
+    const stripe = require('stripe')(config.stripe.secretKey);
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: pricing.amountInCents,
@@ -52,22 +80,7 @@ module.exports = async (req, res) => {
       clientSecret: paymentIntent.client_secret,
       amount: pricing.total,
       currency: pricing.currency.toUpperCase(),
-      pricing: {
-        unitPrice: pricing.pricedUnit,
-        baseUnitPrice: pricing.unitPrice,
-        originalUnitPrice: pricing.originalUnitPrice,
-        discountUnitPrice: pricing.discountUnitPrice,
-        saleUnitPrice: pricing.saleUnitPrice,
-        groupDiscount: pricing.groupDiscount,
-        groupDiscountTier: pricing.groupDiscountTier,
-        groupDiscountUnitAmount: pricing.groupDiscountUnitAmount,
-        groupDiscountTotal: pricing.groupDiscountTotal,
-        hasGroupDiscount: pricing.hasGroupDiscount,
-        tickets: pricing.tickets,
-        minTickets: pricing.minTickets,
-        total: pricing.total,
-        flexibility: pricing.flexibility,
-      },
+      pricing: pricingPayload,
     });
   } catch (err) {
     console.error('create-payment-intent error:', err);

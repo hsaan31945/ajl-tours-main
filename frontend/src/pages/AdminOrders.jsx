@@ -71,6 +71,10 @@ const AdminOrders = () => {
     setError("");
     setMessage("");
     const orderId = getRecordId(order);
+    if (!orderId) {
+      setError("Could not update status because this booking is missing its database ID. Refresh the page and try again.");
+      return;
+    }
     try {
       let payload;
       try {
@@ -91,7 +95,7 @@ const AdminOrders = () => {
       setOrders((current) => current.map((item) => (
         getRecordId(item) === orderId ? { ...item, status: updated.status || status } : item
       )));
-      setMessage("Order status updated.");
+      setMessage(payload.message || "Order status updated.");
     } catch (err) {
       setError(err.message || "Could not update status");
     }
@@ -100,6 +104,11 @@ const AdminOrders = () => {
   const confirmDelete = async () => {
     if (!deleteOrder) return;
     const orderId = getRecordId(deleteOrder);
+    if (!orderId) {
+      setError("Could not delete this order because it is missing its database ID. Refresh the page and try again.");
+      setDeleteOrder(null);
+      return;
+    }
     try {
       try {
         await adminRequest(`/api/admin/bookings/${orderId}`, {
@@ -182,7 +191,7 @@ const AdminOrders = () => {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {orders.map((order) => (
-                  <tr key={order.id}>
+                  <tr key={getRecordId(order) || `${order.customerName}-${order.bookingDate}`}>
                     <td className="py-3 pr-4">
                       <div className="font-bold text-gray-900">{order.customerName}</div>
                       <div className="text-xs text-gray-500">Booked {formatDate(order.bookingDate)}</div>

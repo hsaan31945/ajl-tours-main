@@ -8,7 +8,14 @@ export const asArray = (payload) => {
 
 export const asObject = (payload) => payload?.data || payload || {};
 
-export const getRecordId = (record) => record?._id || record?.id || "";
+export const getRecordId = (record) => String(
+  record?._id ||
+  record?.id ||
+  record?.bookingId ||
+  record?.booking_id ||
+  record?.databaseId ||
+  ""
+).trim();
 
 export const money = (value, currency = "CHF") => {
   const number = Number(value);
