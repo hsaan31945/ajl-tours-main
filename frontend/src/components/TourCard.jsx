@@ -220,7 +220,7 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
       {/* Image Section */}
       <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
         <Link to={checkoutPath} state={{ tour }} aria-label={`${t("common.bookThisTour")} ${tourName}`}>
-        {displayImage && !imageFailed ? (
+        {displayImage && !(imageFailed && fallbackFailed) ? (
         <img 
           src={displayImage} 
           alt={`${tourName} private tour`}

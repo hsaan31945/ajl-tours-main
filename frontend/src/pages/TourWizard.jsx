@@ -247,7 +247,7 @@ const TourWizard = () => {
             setTourData(normalizedTourData);
             // Set the division for editing
             if (data.division) {
-              setSelectedDivision(data.division);
+              setSelectedDivision(data.division?._id || data.division?.id || data.division);
             }
           } else {
             console.error('Failed to fetch tour data');
@@ -418,12 +418,17 @@ const TourWizard = () => {
       return;
     }
 
+    if (!selectedDivision) {
+      alert("Please select the destination where this tour should appear.");
+      return;
+    }
+
     if (tourData.images.length === 0) {
       alert("Please upload at least one image");
       return;
     }
 
-    // Move to country selection step
+    // Review the selected destination before final save.
     setCurrentStep(2);
   };
 
@@ -435,7 +440,7 @@ const TourWizard = () => {
   const [isSubmittingNewDivision, setIsSubmittingNewDivision] = useState(false);
 
   useEffect(() => {
-    // Fetch divisions
+    // Fetch destinations
     const fetchDivisions = async () => {
       try {
         const res = await axios.get(apiUrl('/api/divisions'));
@@ -454,10 +459,10 @@ const TourWizard = () => {
         setDivisions([]);
       }
     };
-    if (currentStep === 2) {
+    if (isAdmin) {
       fetchDivisions();
     }
-  }, [currentStep, selectedDivision]);
+  }, [isAdmin, selectedDivision]);
 
   const handleCreateNewDivision = async () => {
     if (!newDivisionName.trim()) {
@@ -468,7 +473,7 @@ const TourWizard = () => {
     setIsSubmittingNewDivision(true);
     try {
       const authHeaders = getAuthHeader ? getAuthHeader() : (passcodeHeader ? { 'X-Admin-Passcode': passcodeHeader } : {});
-      const res = await axios.post(apiUrl('/api/divisions'), 
+      const res = await axios.post(apiUrl('/api/admin/divisions'), 
         { name: newDivisionName.trim(), description: `Tours in ${newDivisionName}` },
         { headers: authHeaders }
       );
@@ -491,7 +496,7 @@ const TourWizard = () => {
 
   const handleFinalSubmit = async () => {
     if (!selectedDivision && !isEditing) {
-      alert("Please select a country/division");
+      alert("Please select a destination");
       return;
     }
 
@@ -513,7 +518,7 @@ const TourWizard = () => {
       const percentDiscountPrice = getPercentDiscountPrice(tourData.price, tourData.discountPercent);
 
       const tourPayload = {
-        division: isEditing ? tourData.division : selectedDivision,
+        division: selectedDivision || tourData.division,
         name: tourData.name,
         description: tourData.description,
         price: Number(tourData.price),
@@ -600,27 +605,19 @@ const TourWizard = () => {
   const groupBasePreview = standardDiscountPreview ?? basePricePreview;
   const getGroupPreviewPrice = (percent) => getPercentDiscountPrice(groupBasePreview, percent);
 
-  // Step 2: Country Selection
+  // Step 2: Destination confirmation
   if (currentStep === 2) {
     return (
       <div className="min-h-screen p-8 bg-gray-50">
         <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8">
-          <h1 className="text-3xl font-bold mb-6">{isEditing ? 'Update' : 'Select'} Country/Division</h1>
-          <p className="text-gray-600 mb-6">Choose which country this tour belongs to:</p>
+          <h1 className="text-3xl font-bold mb-6">{isEditing ? 'Update' : 'Confirm'} Destination</h1>
+          <p className="text-gray-600 mb-6">Confirm which public destination this tour belongs to:</p>
           
           <div className="mb-6">
             <div className="flex justify-between items-center mb-2">
               <label className="block text-sm font-medium text-gray-700">
-                Country/Division
+                Destination
               </label>
-              {!isAddingNewDivision && (
-                <button 
-                  onClick={() => setIsAddingNewDivision(true)}
-                  className="text-sm text-blue-600 hover:text-blue-800 font-semibold"
-                >
-                  + Add New Country
-                </button>
-              )}
             </div>
 
             {isAddingNewDivision ? (
@@ -658,7 +655,7 @@ const TourWizard = () => {
                 onChange={(e) => setSelectedDivision(e.target.value)}
                 className="w-full border rounded-lg px-4 py-2 text-lg"
               >
-                <option value="">Select a country...</option>
+                <option value="">Select a destination...</option>
                 {divisions.map((div) => (
                   <option key={div._id || div.id} value={div._id || div.id}>
                     {div.name}
@@ -749,6 +746,24 @@ const TourWizard = () => {
                 placeholder="Enter tour name"
                 className="w-full border rounded-lg px-4 py-2"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Destination *</label>
+              <select
+                value={selectedDivision}
+                onChange={(e) => setSelectedDivision(e.target.value)}
+                className="w-full border rounded-lg px-4 py-2 bg-white"
+              >
+                <option value="">Select Switzerland or Srilanka...</option>
+                {divisions.map((div) => (
+                  <option key={div._id || div.id} value={div._id || div.id}>
+                    {div.name}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-gray-500">
+                This controls which public destination page shows the new tour.
+              </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Price *</label>

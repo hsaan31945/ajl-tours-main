@@ -31,7 +31,7 @@ const AdminNavbar = () => {
           <div className="hidden items-center gap-1 overflow-x-auto lg:flex">
             <NavLink to="/admin/dashboard" className={navClass}>Dashboard</NavLink>
             <NavLink to="/admin/users" className={navClass}>Users</NavLink>
-            <NavLink to="/admin/divisions" className={navClass}>Divisions</NavLink>
+            <NavLink to="/admin/divisions" className={navClass}>Destinations</NavLink>
             <NavLink to="/admin/tour-wizard" className={navClass}>Create Tour</NavLink>
             <NavLink to="/admin/tours" className={navClass}>Tours</NavLink>
             <NavLink to="/admin/hero-banners" className={navClass}>Hero Banners</NavLink>
@@ -45,7 +45,7 @@ const AdminNavbar = () => {
       <div className="mt-3 flex gap-1 overflow-x-auto lg:hidden">
         <NavLink to="/admin/dashboard" className={navClass}>Dashboard</NavLink>
         <NavLink to="/admin/users" className={navClass}>Users</NavLink>
-        <NavLink to="/admin/divisions" className={navClass}>Divisions</NavLink>
+        <NavLink to="/admin/divisions" className={navClass}>Destinations</NavLink>
         <NavLink to="/admin/tour-wizard" className={navClass}>Create</NavLink>
         <NavLink to="/admin/tours" className={navClass}>Tours</NavLink>
         <NavLink to="/admin/hero-banners" className={navClass}>Banners</NavLink>

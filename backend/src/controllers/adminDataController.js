@@ -37,6 +37,18 @@ const ORDER_SELECT = [
 
 const escapeRegex = (value) => String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const bookingId = (booking) => booking?._id?.toString?.() || String(booking?._id || booking?.id || '');
+const DESTINATION_KEYS = new Set(['switzerland', 'srilanka', 'sri-lanka']);
+
+const slugifyCountry = (value) => String(value || '')
+  .trim()
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '');
+
+const normalizeCountrySlug = (value) => {
+  const slug = slugifyCountry(value);
+  return slug === 'sri-lanka' ? 'srilanka' : slug;
+};
 
 const getMonthRange = (month) => {
   const value = String(month || '').trim();
@@ -47,7 +59,17 @@ const getMonthRange = (month) => {
   return { $gte: start, $lt: end };
 };
 
-const normalizeDivision = (division) => ({
+const getTourCountsByDivision = async () => {
+  const counts = await Tour.aggregate([
+    { $group: { _id: '$division', count: { $sum: 1 } } },
+  ]);
+  return counts.reduce((acc, item) => {
+    if (item._id) acc[String(item._id)] = item.count || 0;
+    return acc;
+  }, {});
+};
+
+const normalizeDivision = (division, tourCounts = {}) => ({
   id: division._id?.toString?.() || division.id,
   _id: division._id?.toString?.() || division.id,
   name: division.name || '',
@@ -56,6 +78,7 @@ const normalizeDivision = (division) => ({
   bannerImage: division.bannerImage || '',
   banner_image: division.bannerImage || '',
   isActive: division.isActive !== false,
+  tourCount: tourCounts[String(division._id || division.id)] || 0,
   createdAt: division.createdAt,
   updatedAt: division.updatedAt,
 });
@@ -209,7 +232,15 @@ const getDashboardSummary = async (req, res, next) => {
     const [totalUsers, totalTours, totalDivisions, bookingStats, recentBookings] = await Promise.all([
       User.countDocuments({ isActive: { $ne: false } }),
       Tour.countDocuments({}),
-      Division.countDocuments({ isActive: { $ne: false } }),
+      Division.countDocuments({
+        isActive: { $ne: false },
+        $or: [
+          { slug: { $in: ['switzerland', 'srilanka', 'sri-lanka'] } },
+          { name: /^Switzerland$/i },
+          { name: /^Srilanka$/i },
+          { name: /^Sri Lanka$/i },
+        ],
+      }),
       getBookingStats(),
       Booking.find({})
         .select(ORDER_SELECT)
@@ -344,10 +375,17 @@ const deleteUser = async (req, res, next) => {
 const listDivisions = async (req, res, next) => {
   try {
     const includeInactive = req.query.includeInactive === 'true';
+    const countryOnly = req.query.countryPages !== 'false';
     const query = includeInactive ? {} : { isActive: { $ne: false } };
-    const divisions = await Division.find(query).sort({ name: 1 }).lean();
+    const [divisions, tourCounts] = await Promise.all([
+      Division.find(query).sort({ name: 1 }).lean(),
+      getTourCountsByDivision(),
+    ]);
+    const filtered = countryOnly
+      ? divisions.filter((division) => DESTINATION_KEYS.has(normalizeCountrySlug(division.slug || division.name)))
+      : divisions;
     res.setHeader('Cache-Control', 'no-store');
-    res.json({ success: true, data: divisions.map(normalizeDivision) });
+    res.json({ success: true, data: filtered.map((division) => normalizeDivision(division, tourCounts)) });
   } catch (error) {
     next(error);
   }
@@ -371,7 +409,10 @@ const saveDivision = async (req, res, next) => {
     const id = req.params.id;
     const name = String(req.body?.name || '').trim();
     const slug = String(req.body?.slug || '').trim();
-    if (!name) return next(new AppError('Division name is required', 400));
+    if (!name) return next(new AppError('Destination name is required', 400));
+    if (!DESTINATION_KEYS.has(normalizeCountrySlug(slug || name))) {
+      return next(new AppError('Only Switzerland and Srilanka destinations are supported right now', 400));
+    }
     await validateUniqueDivision({ name, slug, id });
 
     const payload = {
@@ -386,9 +427,10 @@ const saveDivision = async (req, res, next) => {
       ? await Division.findByIdAndUpdate(id, payload, { new: true, runValidators: true })
       : await Division.create(payload);
 
-    if (!division) return next(new AppError('Division not found', 404));
+    if (!division) return next(new AppError('Destination not found', 404));
     tourService.clearListCache();
-    res.status(id ? 200 : 201).json({ success: true, data: normalizeDivision(division.toObject()) });
+    const tourCounts = await getTourCountsByDivision();
+    res.status(id ? 200 : 201).json({ success: true, data: normalizeDivision(division.toObject(), tourCounts) });
   } catch (error) {
     next(error.statusCode ? new AppError(error.message, error.statusCode) : error);
   }
@@ -396,14 +438,101 @@ const saveDivision = async (req, res, next) => {
 
 const deleteDivision = async (req, res, next) => {
   try {
-    const linkedTours = await Tour.countDocuments({ division: req.params.id });
-    if (linkedTours > 0) {
-      return next(new AppError(`This division is assigned to ${linkedTours} tour${linkedTours === 1 ? '' : 's'}. Move or delete those tours before removing it.`, 409));
+    const division = await Division.findById(req.params.id);
+    if (!division) return next(new AppError('Destination not found', 404));
+
+    const countrySlug = normalizeCountrySlug(division.slug || division.name);
+    if (countrySlug === 'switzerland' || countrySlug === 'srilanka') {
+      return next(new AppError('Switzerland and Srilanka are required destinations and cannot be deleted', 400));
     }
-    const division = await Division.findByIdAndUpdate(req.params.id, { isActive: false }, { new: true });
-    if (!division) return next(new AppError('Division not found', 404));
+
+    const fallback = await ensureCountryPage('Switzerland');
+    await Tour.updateMany({ division: division._id }, { division: fallback._id });
+    await Division.deleteOne({ _id: division._id });
     tourService.clearListCache();
-    res.json({ success: true, data: normalizeDivision(division.toObject()) });
+    const tourCounts = await getTourCountsByDivision();
+    res.json({ success: true, data: normalizeDivision(division.toObject(), tourCounts) });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const ensureCountryPage = async (name) => {
+  const slug = normalizeCountrySlug(name);
+  const canonicalName = slug === 'srilanka' ? 'Srilanka' : 'Switzerland';
+  const existing = await Division.findOne({
+    $or: [
+      { slug },
+      { name: new RegExp(`^${escapeRegex(canonicalName)}$`, 'i') },
+    ],
+  });
+
+  if (existing) {
+    existing.name = canonicalName;
+    existing.slug = slug;
+    existing.description = existing.description || `Tours in ${canonicalName}`;
+    existing.isActive = true;
+    await existing.save();
+    return existing;
+  }
+
+  return Division.create({
+    name: canonicalName,
+    slug,
+    description: `Tours in ${canonicalName}`,
+    isActive: true,
+  });
+};
+
+const cleanupCountryPages = async (req, res, next) => {
+  try {
+    const [switzerland, srilanka] = await Promise.all([
+      ensureCountryPage('Switzerland'),
+      ensureCountryPage('Srilanka'),
+    ]);
+
+    const divisions = await Division.find({});
+    const removeIds = [];
+    const mergeToSwitzerland = [];
+
+    for (const division of divisions) {
+      const slug = normalizeCountrySlug(division.slug || division.name);
+      if (slug === 'srilanka') {
+        if (!division._id.equals(srilanka._id)) {
+          await Tour.updateMany({ division: division._id }, { division: srilanka._id });
+          removeIds.push(division._id);
+        }
+      } else if (slug === 'switzerland') {
+        if (!division._id.equals(switzerland._id)) {
+          await Tour.updateMany({ division: division._id }, { division: switzerland._id });
+          removeIds.push(division._id);
+        }
+      } else {
+        mergeToSwitzerland.push(division._id);
+        removeIds.push(division._id);
+      }
+    }
+
+    if (mergeToSwitzerland.length) {
+      await Tour.updateMany({ division: { $in: mergeToSwitzerland } }, { division: switzerland._id });
+    }
+    if (removeIds.length) {
+      await Division.deleteMany({ _id: { $in: removeIds } });
+    }
+
+    tourService.clearListCache();
+    const [countryPages, tourCounts] = await Promise.all([
+      Division.find({
+        _id: { $in: [switzerland._id, srilanka._id] },
+      }).sort({ name: 1 }).lean(),
+      getTourCountsByDivision(),
+    ]);
+
+    res.json({
+      success: true,
+      removed: removeIds.length,
+      data: countryPages.map((division) => normalizeDivision(division, tourCounts)),
+    });
   } catch (error) {
     next(error);
   }
@@ -463,6 +592,7 @@ module.exports = {
   listDivisions,
   saveDivision,
   deleteDivision,
+  cleanupCountryPages,
   getSettings,
   updateSettings,
   normalizeBooking,

@@ -3,7 +3,7 @@ import { Eye, Search, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAdmin } from "../context/AdminContext";
 import { AdminCard, AdminPage, Alert, ConfirmModal, EmptyState, LoadingState, StatusBadge } from "../components/admin/AdminUI";
-import { adminRequest, asArray, formatDate, money, statusLabel } from "../utils/adminApi";
+import { adminRequest, asArray, formatDate, getRecordId, money, statusLabel } from "../utils/adminApi";
 
 const statuses = ["all", "pending", "confirmed", "completed", "cancelled"];
 
@@ -64,15 +64,26 @@ const AdminOrders = () => {
   const updateStatus = async (order, status) => {
     setError("");
     setMessage("");
+    const orderId = getRecordId(order);
     try {
-      const payload = await adminRequest(`/api/admin/bookings/${order.id}/status`, {
-        method: "PUT",
-        getAuthHeader,
-        body: { status },
-      });
+      let payload;
+      try {
+        payload = await adminRequest(`/api/admin/bookings/${orderId}/status`, {
+          method: "PUT",
+          getAuthHeader,
+          body: { status },
+        });
+      } catch (primaryError) {
+        if (!/route not found/i.test(primaryError.message || "")) throw primaryError;
+        payload = await adminRequest(`/api/bookings/${orderId}/status`, {
+          method: "PUT",
+          getAuthHeader,
+          body: { status },
+        });
+      }
       const updated = payload.data || payload.booking || payload;
       setOrders((current) => current.map((item) => (
-        item.id === order.id ? { ...item, status: updated.status || status } : item
+        getRecordId(item) === orderId ? { ...item, status: updated.status || status } : item
       )));
       setMessage("Order status updated.");
     } catch (err) {
@@ -82,12 +93,21 @@ const AdminOrders = () => {
 
   const confirmDelete = async () => {
     if (!deleteOrder) return;
+    const orderId = getRecordId(deleteOrder);
     try {
-      await adminRequest(`/api/admin/bookings/${deleteOrder.id}`, {
-        method: "DELETE",
-        getAuthHeader,
-      });
-      setOrders((current) => current.filter((order) => order.id !== deleteOrder.id));
+      try {
+        await adminRequest(`/api/admin/bookings/${orderId}`, {
+          method: "DELETE",
+          getAuthHeader,
+        });
+      } catch (primaryError) {
+        if (!/route not found/i.test(primaryError.message || "")) throw primaryError;
+        await adminRequest(`/api/bookings/${orderId}`, {
+          method: "DELETE",
+          getAuthHeader,
+        });
+      }
+      setOrders((current) => current.filter((order) => getRecordId(order) !== orderId));
       setDeleteOrder(null);
       setMessage("Order deleted.");
     } catch (err) {

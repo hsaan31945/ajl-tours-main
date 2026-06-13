@@ -255,7 +255,15 @@ module.exports = async (req, res) => {
     } else if (normalizedPath.startsWith('/divisions')) {
       if (normalizedPath === '/divisions') {
         if (method === 'GET') {
-          const divisions = await Division.find({ isActive: true }).sort({ name: 1 }).lean();
+          const divisions = await Division.find({
+            isActive: true,
+            $or: [
+              { slug: { $in: ['switzerland', 'srilanka', 'sri-lanka'] } },
+              { name: /^Switzerland$/i },
+              { name: /^Srilanka$/i },
+              { name: /^Sri Lanka$/i },
+            ],
+          }).sort({ name: 1 }).lean();
           res.json(divisions.map(div => ({
             id: div._id.toString(),
             _id: div._id.toString(),
@@ -441,6 +449,8 @@ module.exports = async (req, res) => {
           await asyncHandler(adminDataController.deleteUser)(req, res);
         } else if (normalizedPath === '/admin/divisions' && method === 'GET') {
           await asyncHandler(adminDataController.listDivisions)(req, res);
+        } else if (normalizedPath === '/admin/divisions/cleanup' && method === 'POST') {
+          await asyncHandler(adminDataController.cleanupCountryPages)(req, res);
         } else if (normalizedPath === '/admin/divisions' && method === 'POST') {
           await asyncHandler(adminDataController.saveDivision)(req, res);
         } else if (adminDivisionMatch && (method === 'PUT' || method === 'PATCH')) {

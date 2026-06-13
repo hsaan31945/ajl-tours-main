@@ -10,7 +10,7 @@ const quickActions = [
   { label: "Manage Tours", path: "/admin/tours", icon: Compass },
   { label: "Manage Bookings", path: "/admin/orders", icon: ShoppingBag },
   { label: "Manage Hero Banners", path: "/admin/hero-banners", icon: Image },
-  { label: "Manage Divisions", path: "/admin/divisions", icon: Map },
+  { label: "Manage Destinations", path: "/admin/divisions", icon: Map },
 ];
 
 const AdminDashboard = () => {

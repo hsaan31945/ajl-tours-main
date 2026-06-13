@@ -5,6 +5,11 @@ const { connectDB } = require('../../src/config/database');
 const { setCORSHeaders } = require('../../src/middleware/cors');
 const bookingController = require('../../src/controllers/bookingController');
 const { errorHandler } = require('../../src/middleware/errorHandler');
+const { authenticateAdmin } = require('../../src/middleware/auth');
+
+const requireAdmin = (req, res) => new Promise((resolve, reject) => {
+  authenticateAdmin(req, res, (err) => (err ? reject(err) : resolve()));
+});
 
 module.exports = async (req, res) => {
   setCORSHeaders(req, res);
@@ -51,6 +56,7 @@ module.exports = async (req, res) => {
       }
     } else if (path.includes('/stats')) {
       if (req.method === 'GET') {
+        await requireAdmin(req, res);
         await bookingController.getBookingStats(req, res, (err) => {
           if (err) errorHandler(err, req, res);
         });
@@ -59,16 +65,23 @@ module.exports = async (req, res) => {
       }
     } else {
       // Extract ID from path
-      const idMatch = path.match(/\/([^\/]+)$/);
-      if (idMatch) {
-        req.params = { id: idMatch[1] };
+      const statusMatch = path.match(/\/bookings\/([^/]+)\/status$/);
+      const idMatch = path.match(/\/bookings\/([^/]+)$/);
+      if (statusMatch || idMatch) {
+        req.params = { id: decodeURIComponent((statusMatch || idMatch)[1]) };
         
         if (req.method === 'GET') {
           await bookingController.getBookingById(req, res, (err) => {
             if (err) errorHandler(err, req, res);
           });
-        } else if (req.method === 'PUT' && path.includes('/status')) {
+        } else if (req.method === 'PUT' && statusMatch) {
+          await requireAdmin(req, res);
           await bookingController.updateBookingStatus(req, res, (err) => {
+            if (err) errorHandler(err, req, res);
+          });
+        } else if (req.method === 'DELETE' && idMatch) {
+          await requireAdmin(req, res);
+          await bookingController.deleteBooking(req, res, (err) => {
             if (err) errorHandler(err, req, res);
           });
         } else {

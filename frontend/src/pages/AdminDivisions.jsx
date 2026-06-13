@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Edit, Plus, Trash2 } from "lucide-react";
+import { Edit, RefreshCw, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAdmin } from "../context/AdminContext";
 import { AdminCard, AdminPage, Alert, ConfirmModal, EmptyState, LoadingState, StatusBadge } from "../components/admin/AdminUI";
@@ -12,6 +12,11 @@ const slugify = (value) => String(value || "")
   .toLowerCase()
   .replace(/[^a-z0-9]+/g, "-")
   .replace(/^-+|-+$/g, "");
+
+const isRequiredDestination = (division) => {
+  const slug = slugify(division?.slug || division?.name);
+  return slug === "switzerland" || slug === "srilanka" || slug === "sri-lanka";
+};
 
 const AdminDivisions = () => {
   const navigate = useNavigate();
@@ -33,10 +38,14 @@ const AdminDivisions = () => {
     setLoading(true);
     setError("");
     try {
-      const payload = await adminRequest("/api/admin/divisions?includeInactive=true", { getAuthHeader });
+      await adminRequest("/api/admin/divisions/cleanup", {
+        method: "POST",
+        getAuthHeader,
+      });
+      const payload = await adminRequest("/api/admin/divisions", { getAuthHeader });
       setDivisions(asArray(payload));
     } catch (err) {
-      setError(err.message || "Could not load divisions");
+      setError(err.message || "Could not load destinations");
       setDivisions([]);
     } finally {
       setLoading(false);
@@ -70,13 +79,13 @@ const AdminDivisions = () => {
         getAuthHeader,
         body: { ...form, slug: form.slug || slugify(form.name) },
       });
-      setMessage(editing ? "Division updated." : "Division created.");
+      setMessage(editing ? "Destination updated." : "Destination created.");
       setShowForm(false);
       setEditing(null);
       setForm(emptyForm);
       loadDivisions();
     } catch (err) {
-      setError(err.message || "Could not save division");
+      setError(err.message || "Could not save destination");
     }
   };
 
@@ -87,24 +96,42 @@ const AdminDivisions = () => {
         method: "DELETE",
         getAuthHeader,
       });
-      setMessage("Division deactivated.");
+      setMessage("Destination deleted.");
       setDeleteDivision(null);
       loadDivisions();
     } catch (err) {
-      setError(err.message || "Could not delete division");
+      setError(err.message || "Could not delete destination");
       setDeleteDivision(null);
     }
   };
 
-  if (adminLoading || loading) return <LoadingState label="Loading divisions..." />;
+  const handleCleanup = async () => {
+    setLoading(true);
+    setError("");
+    setMessage("");
+    try {
+      const payload = await adminRequest("/api/admin/divisions/cleanup", {
+        method: "POST",
+        getAuthHeader,
+      });
+      setDivisions(asArray(payload));
+      setMessage(`Destinations cleaned. Removed ${payload.removed || 0} duplicate/extra record${payload.removed === 1 ? "" : "s"}.`);
+    } catch (err) {
+      setError(err.message || "Could not clean destinations");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (adminLoading || loading) return <LoadingState label="Loading destinations..." />;
 
   return (
     <AdminPage
-      title="Division Management"
-      description="Manage public destinations and the destination banner images used across the website."
+      title="Destinations"
+      description="Manage the public destination pages used for tours. AJL Tours currently uses Switzerland and Srilanka."
       actions={(
-        <button onClick={() => openForm()} className="inline-flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2 font-bold text-white hover:bg-orange-700">
-          <Plus className="h-4 w-4" /> Add Division
+        <button onClick={handleCleanup} className="inline-flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2 font-bold text-white hover:bg-orange-700">
+          <RefreshCw className="h-4 w-4" /> Clean Destinations
         </button>
       )}
     >
@@ -113,7 +140,7 @@ const AdminDivisions = () => {
 
       <AdminCard>
         {!divisions.length ? (
-          <EmptyState title="No divisions found" message="Create Switzerland, Sri Lanka, or other destinations here." />
+          <EmptyState title="No destinations found" message="Use Clean Destinations to recreate Switzerland and Srilanka." />
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {divisions.map((division) => (
@@ -134,13 +161,18 @@ const AdminDivisions = () => {
                     <StatusBadge status={division.isActive ? "active" : "inactive"} />
                   </div>
                   <p className="mt-3 line-clamp-3 text-sm text-gray-600">{division.description || "No description yet."}</p>
+                  <p className="mt-3 text-sm font-bold text-gray-900">
+                    {Number(division.tourCount || 0)} tour{Number(division.tourCount || 0) === 1 ? "" : "s"}
+                  </p>
                   <div className="mt-4 flex gap-3">
                     <button onClick={() => openForm(division)} className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50">
                       <Edit className="h-4 w-4" /> Edit
                     </button>
-                    <button onClick={() => setDeleteDivision(division)} className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-50">
-                      <Trash2 className="h-4 w-4" /> Delete
-                    </button>
+                    {!isRequiredDestination(division) && (
+                      <button onClick={() => setDeleteDivision(division)} className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-50">
+                        <Trash2 className="h-4 w-4" /> Delete
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -152,7 +184,7 @@ const AdminDivisions = () => {
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <form onSubmit={saveDivision} className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
-            <h2 className="text-xl font-bold text-gray-900">{editing ? "Edit Division" : "Add Division"}</h2>
+            <h2 className="text-xl font-bold text-gray-900">{editing ? "Edit Destination" : "Add Destination"}</h2>
             <div className="mt-5 grid gap-4">
               <label>
                 <span className="text-sm font-bold text-gray-700">Name</span>
@@ -170,6 +202,7 @@ const AdminDivisions = () => {
                   onChange={(event) => setForm((current) => ({ ...current, slug: slugify(event.target.value) }))}
                   className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100"
                   placeholder="switzerland"
+                  disabled
                 />
               </label>
               <label>
@@ -201,7 +234,7 @@ const AdminDivisions = () => {
             </div>
             <div className="mt-6 flex justify-end gap-3">
               <button type="button" onClick={() => setShowForm(false)} className="rounded-lg border border-gray-300 px-4 py-2 font-bold text-gray-700">Cancel</button>
-              <button className="rounded-lg bg-orange-600 px-4 py-2 font-bold text-white hover:bg-orange-700">Save Division</button>
+              <button className="rounded-lg bg-orange-600 px-4 py-2 font-bold text-white hover:bg-orange-700">Save Destination</button>
             </div>
           </form>
         </div>
@@ -209,8 +242,8 @@ const AdminDivisions = () => {
 
       {deleteDivision && (
         <ConfirmModal
-          title="Delete Division"
-          message={`Deactivate ${deleteDivision.name}? Divisions assigned to tours cannot be deleted until tours are moved or removed.`}
+          title="Delete Destination"
+          message={`Delete ${deleteDivision.name}? Switzerland and Srilanka cannot be deleted because they are required destinations.`}
           confirmLabel="Delete"
           onConfirm={confirmDelete}
           onCancel={() => setDeleteDivision(null)}

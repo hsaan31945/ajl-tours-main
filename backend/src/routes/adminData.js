@@ -18,6 +18,7 @@ router.get('/users/:id', adminDataController.getUserDetails);
 router.delete('/users/:id', adminDataController.deleteUser);
 
 router.get('/divisions', adminDataController.listDivisions);
+router.post('/divisions/cleanup', adminDataController.cleanupCountryPages);
 router.post('/divisions', adminDataController.saveDivision);
 router.put('/divisions/:id', adminDataController.saveDivision);
 router.delete('/divisions/:id', adminDataController.deleteDivision);
