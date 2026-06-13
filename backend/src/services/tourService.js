@@ -214,6 +214,14 @@ const getNormalizedDiscountPrice = (tour = {}) => {
   return Number.isFinite(discountPrice) && discountPrice >= 0 ? discountPrice : null;
 };
 
+const getDiscountFields = (tour = {}) => {
+  const discountPrice = getNormalizedDiscountPrice(tour);
+  return {
+    discountEnabled: tour.discountEnabled === true || discountPrice !== null,
+    discountPrice,
+  };
+};
+
 const normalizeGroupDiscountValue = (value) => {
   if (value === null || value === undefined || value === '') return null;
   const number = Number(value);
@@ -454,6 +462,8 @@ class TourService {
       slug: this.buildSlug(tour, id),
       name: tour.name,
       price: Number(tour.price) || 0,
+      ...getDiscountFields(tour),
+      ...getGroupDiscountFields(tour),
       currency: tour.currency || 'CHF',
       duration: tour.duration || '',
       startLocation: tour.startLocation,
@@ -485,6 +495,8 @@ class TourService {
       name: tour.name || '',
       location: tour.startLocation || divisionName || '',
       price: Number(tour.price) || 0,
+      ...getDiscountFields(tour),
+      ...getGroupDiscountFields(tour),
       currency: tour.currency || 'CHF',
       duration: tour.duration || '',
       startLocation: tour.startLocation || '',
@@ -549,6 +561,8 @@ class TourService {
       location: tour.startLocation,
       divisionName: tour.divisionName,
       price: Number(tour.price) || 0,
+      ...getDiscountFields(tour),
+      ...getGroupDiscountFields(tour),
       isActive: tour.isActive !== false,
     };
   }

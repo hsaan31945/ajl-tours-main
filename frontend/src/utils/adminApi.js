@@ -50,7 +50,10 @@ export const adminRequest = async (path, { getAuthHeader, method = "GET", body, 
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(payload.error || payload.message || `Request failed (${response.status})`);
+    const error = new Error(payload.error || payload.message || `Request failed (${response.status})`);
+    error.status = response.status;
+    error.payload = payload;
+    throw error;
   }
   return payload;
 };

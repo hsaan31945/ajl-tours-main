@@ -7,6 +7,12 @@ import { adminRequest, asArray, formatDate, getRecordId, money, statusLabel } fr
 
 const statuses = ["all", "pending", "confirmed", "completed", "cancelled"];
 
+const shouldTryBookingFallback = (error) => (
+  error?.status === 404
+  || error?.status === 405
+  || /route not found|method not allowed/i.test(error?.message || "")
+);
+
 const AdminOrders = () => {
   const navigate = useNavigate();
   const { isAdmin, loading: adminLoading, getAuthHeader } = useAdmin();
@@ -74,7 +80,7 @@ const AdminOrders = () => {
           body: { status },
         });
       } catch (primaryError) {
-        if (!/route not found/i.test(primaryError.message || "")) throw primaryError;
+        if (!shouldTryBookingFallback(primaryError)) throw primaryError;
         payload = await adminRequest(`/api/bookings/${orderId}/status`, {
           method: "PUT",
           getAuthHeader,
@@ -101,7 +107,7 @@ const AdminOrders = () => {
           getAuthHeader,
         });
       } catch (primaryError) {
-        if (!/route not found/i.test(primaryError.message || "")) throw primaryError;
+        if (!shouldTryBookingFallback(primaryError)) throw primaryError;
         await adminRequest(`/api/bookings/${orderId}`, {
           method: "DELETE",
           getAuthHeader,
