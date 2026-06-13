@@ -5,10 +5,13 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getTourId } from "../utils/tourId";
 import TourCard from "./TourCard";
 import TourCardSkeleton from "./TourCardSkeleton";
+import { getDiscountPrice } from "../utils/bookingPricing";
 
 const CARD_TRANSITION_MS = 700;
 const CARD_GAP_REM = 1.5;
 const CARD_AUTOPLAY_MS = 4500;
+
+const hasRealDiscount = (tour) => getDiscountPrice(tour, Number(tour?.price || 0)) !== null;
 
 const TopDealsSection = () => {
   const navigate = useNavigate();
@@ -46,7 +49,7 @@ const TopDealsSection = () => {
     try {
       const allTours = await fetchToursList({
         division: 'switzerland',
-        limit: 12,
+        limit: 100,
         sort: 'popular',
         view: 'summary',
       });
@@ -77,8 +80,10 @@ const TopDealsSection = () => {
           };
         });
 
-      // Sort by reviews count, then by rating
+      // Top deals should surface actual sale prices before general popularity.
       const sortedTours = toursWithSales.sort((a, b) => {
+        const discountDelta = Number(hasRealDiscount(b)) - Number(hasRealDiscount(a));
+        if (discountDelta !== 0) return discountDelta;
         // Sort by reviews count
         if ((b.reviews || 0) !== (a.reviews || 0)) {
           return (b.reviews || 0) - (a.reviews || 0);

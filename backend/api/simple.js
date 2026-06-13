@@ -160,7 +160,9 @@ const normalizeListTour = (tour) => {
 };
 
 const setCacheHeaders = (res) => {
-  res.setHeader('Cache-Control', 'public, max-age=120, s-maxage=300, stale-while-revalidate=600');
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
 };
 
 const invalidateTourCache = (id) => {

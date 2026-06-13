@@ -6,10 +6,13 @@ import TourCard from "./TourCard";
 import { getTourId } from "../utils/tourId";
 import { fetchToursList } from "../services/toursApi";
 import TourCardSkeleton from "./TourCardSkeleton";
+import { getDiscountPrice } from "../utils/bookingPricing";
 
 const CARD_AUTOPLAY_MS = 4500;
 const CARD_TRANSITION_MS = 700;
 const CARD_GAP_REM = 1.5;
+
+const hasRealDiscount = (tour) => getDiscountPrice(tour, Number(tour?.price || 0)) !== null;
 
 const ExploreTours = () => {
   const navigate = useNavigate();
@@ -28,7 +31,7 @@ const ExploreTours = () => {
 
   // Load tours from MongoDB only. No localStorage or hardcoded fallbacks.
   const loadTours = useCallback(async () => {
-    const data = await fetchToursList({ division: 'switzerland', limit: 12, sort: 'newest' });
+    const data = await fetchToursList({ division: 'switzerland', limit: 100, sort: 'newest' });
     if (!data.length) return [];
 
     return data
@@ -56,7 +59,8 @@ const ExploreTours = () => {
         address: t.startLocation || t.location || '',
         isActive: t.isActive !== false,
       }))
-      .filter(t => t && t.name && Number.isFinite(t.price));
+      .filter(t => t && t.name && Number.isFinite(t.price))
+      .sort((a, b) => Number(hasRealDiscount(b)) - Number(hasRealDiscount(a)));
   }, []);
 
   const fetchAndSetTours = useCallback(async () => {

@@ -34,11 +34,15 @@ export async function fetchToursList(params = {}, options = {}) {
     : null;
 
   const request = (async () => {
-    const res = await fetch(apiUrl(`/api/tours?${key}`), {
+    const requestQuery = new URLSearchParams(key);
+    requestQuery.set('_', String(Date.now()));
+
+    const res = await fetch(apiUrl(`/api/tours?${requestQuery.toString()}`), {
       signal,
       headers: {
-        'Cache-Control': options.skipCache ? 'no-cache' : 'public, max-age=300',
+        'Cache-Control': 'no-cache',
       },
+      cache: 'no-store',
     });
     if (!res.ok) throw new Error(`Failed to load tours (${res.status})`);
     const data = await res.json();
