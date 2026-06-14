@@ -311,7 +311,7 @@
   },
   "success": {
     "paymentSuccessful": "Payment Successful!",
-    "confirmedText": "Your booking has been confirmed and payment processed.",
+    "confirmedText": "Your payment has been processed and your booking is pending admin confirmation.",
     "bookingConfirmation": "Booking Confirmation",
     "tourName": "Tour Name:",
     "bookingId": "Booking ID:",
@@ -321,8 +321,8 @@
     "paymentMethod": "Payment Method:",
     "creditCard": "Credit Card",
     "next": "What's Next?",
-    "confirmationEmail": "Confirmation Email",
-    "confirmationEmailText": "You'll receive a confirmation email with all booking details within the next few minutes.",
+    "confirmationEmail": "Booking Review",
+    "confirmationEmailText": "Our team has received your booking request and will confirm it shortly.",
     "downloadReceipt": "Download Receipt"
   },
   "dashboard": {

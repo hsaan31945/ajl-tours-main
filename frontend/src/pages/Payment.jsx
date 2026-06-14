@@ -255,6 +255,7 @@ const FreeCheckoutForm = ({ paymentSummary }) => {
         groupDiscountPercent: Number(databaseBooking?.groupDiscountPercent ?? displayPricing.groupDiscountPercent ?? 0),
         hasGroupDiscount: Number(databaseBooking?.groupDiscountTotal ?? displayPricing.groupDiscountTotal ?? 0) > 0,
         paymentMethod: "Free checkout",
+        status: databaseBooking?.status || "Pending",
       };
 
       navigate(`/payment-success?free_checkout=1&booking_id=${encodeURIComponent(bookingId)}`, {

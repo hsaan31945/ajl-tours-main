@@ -4,6 +4,7 @@ const path = require('path');
 const config = require('./config');
 const { connectDB } = require('./config/database');
 const { perfLogger } = require('./src/middleware/perfLogger');
+const { sendNewBookingAdminAlert } = require('./src/services/emailService');
 const stripe = require('stripe')(config.stripe.secretKey);
 
 // Import Mongoose models
@@ -113,9 +114,16 @@ app.post('/api/confirm-payment', async (req, res) => {
         tripDate: new Date(tripDate),
         address,
         location: { lat, lng },
+        status: 'pending',
         paymentStatus: 'paid',
         stripePaymentId: paymentIntentId
       });
+
+      try {
+        await sendNewBookingAdminAlert({ booking: booking.toObject ? booking.toObject() : booking });
+      } catch (emailError) {
+        console.error('New booking admin alert failed:', emailError.response?.data || emailError.message);
+      }
       
       res.json({ 
         success: true, 

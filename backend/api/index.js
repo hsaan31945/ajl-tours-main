@@ -708,7 +708,7 @@ module.exports = async (req, res) => {
         selectedDate,
         tripDate: selectedDate,
         flexibility: pricing.flexibility,
-        status: 'confirmed',
+        status: 'pending',
         paymentStatus: 'paid',
         stripePaymentId: freePaymentId,
       });
@@ -743,7 +743,7 @@ module.exports = async (req, res) => {
           flexibility: metadata.flexibility || bookingData.flexibility,
           selectedDate: metadata.selectedDate || bookingData.selectedDate || bookingData.tripDate,
           tripDate: metadata.selectedDate || bookingData.tripDate || bookingData.selectedDate || new Date(),
-          status: 'confirmed',
+          status: 'pending',
           paymentStatus: 'paid',
           stripePaymentId: paymentIntentId
         });

@@ -210,8 +210,64 @@ const sendBookingStatusUpdateEmail = async ({ booking }) => {
   });
 };
 
+const getBookingAdminAlertEmail = () => (
+  (process.env.BOOKING_NOTIFICATION_EMAIL || process.env.SUPPORT_NOTIFICATION_EMAIL || DEFAULT_SUPPORT_NOTIFICATION_EMAIL).trim()
+);
+
+const sendNewBookingAdminAlert = async ({ booking }) => {
+  const toEmail = getBookingAdminAlertEmail();
+  const customerName = booking?.name || booking?.user?.name || 'Guest customer';
+  const customerEmail = booking?.email || booking?.user?.email || 'Not provided';
+  const customerPhone = booking?.phone || booking?.user?.phone || 'Not provided';
+  const tourName = booking?.tourTitle || booking?.tourId?.name || 'Tour';
+  const bookingId = booking?._id ? String(booking._id) : '';
+  const status = String(booking?.status || 'pending').toLowerCase();
+  const paymentStatus = String(booking?.paymentStatus || 'pending').toLowerCase();
+
+  return sendEmail({
+    to: toEmail,
+    replyTo: booking?.email || undefined,
+    subject: `[AJL Booking] New ${status} booking: ${tourName}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; color: #111827; line-height: 1.6;">
+        <h2 style="margin: 0 0 16px;">New AJL Tours booking</h2>
+        <p>A customer completed checkout and a new booking is awaiting admin review.</p>
+        <table style="border-collapse: collapse; width: 100%; max-width: 680px; margin: 20px 0;">
+          ${bookingId ? `<tr><td style="padding: 8px; border: 1px solid #e5e7eb;"><strong>Booking ID</strong></td><td style="padding: 8px; border: 1px solid #e5e7eb;">${escapeHtml(bookingId)}</td></tr>` : ''}
+          <tr><td style="padding: 8px; border: 1px solid #e5e7eb;"><strong>Status</strong></td><td style="padding: 8px; border: 1px solid #e5e7eb;">${escapeHtml(status)}</td></tr>
+          <tr><td style="padding: 8px; border: 1px solid #e5e7eb;"><strong>Payment</strong></td><td style="padding: 8px; border: 1px solid #e5e7eb;">${escapeHtml(paymentStatus)}</td></tr>
+          <tr><td style="padding: 8px; border: 1px solid #e5e7eb;"><strong>Tour</strong></td><td style="padding: 8px; border: 1px solid #e5e7eb;">${escapeHtml(tourName)}</td></tr>
+          <tr><td style="padding: 8px; border: 1px solid #e5e7eb;"><strong>Customer</strong></td><td style="padding: 8px; border: 1px solid #e5e7eb;">${escapeHtml(customerName)}</td></tr>
+          <tr><td style="padding: 8px; border: 1px solid #e5e7eb;"><strong>Email</strong></td><td style="padding: 8px; border: 1px solid #e5e7eb;">${escapeHtml(customerEmail)}</td></tr>
+          <tr><td style="padding: 8px; border: 1px solid #e5e7eb;"><strong>Phone</strong></td><td style="padding: 8px; border: 1px solid #e5e7eb;">${escapeHtml(customerPhone)}</td></tr>
+          <tr><td style="padding: 8px; border: 1px solid #e5e7eb;"><strong>Travel Date</strong></td><td style="padding: 8px; border: 1px solid #e5e7eb;">${escapeHtml(formatDate(booking?.tripDate))}</td></tr>
+          <tr><td style="padding: 8px; border: 1px solid #e5e7eb;"><strong>Travelers</strong></td><td style="padding: 8px; border: 1px solid #e5e7eb;">${escapeHtml(booking?.travelers || 1)}</td></tr>
+          <tr><td style="padding: 8px; border: 1px solid #e5e7eb;"><strong>Total</strong></td><td style="padding: 8px; border: 1px solid #e5e7eb;">${escapeHtml(formatMoney(booking?.totalPrice, booking?.paymentCurrency || 'CHF'))}</td></tr>
+          <tr><td style="padding: 8px; border: 1px solid #e5e7eb;"><strong>Pickup Address</strong></td><td style="padding: 8px; border: 1px solid #e5e7eb;">${escapeHtml(booking?.address || 'Not provided')}</td></tr>
+        </table>
+      </div>
+    `,
+    text: [
+      'New AJL Tours booking',
+      '',
+      bookingId ? `Booking ID: ${bookingId}` : '',
+      `Status: ${status}`,
+      `Payment: ${paymentStatus}`,
+      `Tour: ${tourName}`,
+      `Customer: ${customerName}`,
+      `Email: ${customerEmail}`,
+      `Phone: ${customerPhone}`,
+      `Travel Date: ${formatDate(booking?.tripDate)}`,
+      `Travelers: ${booking?.travelers || 1}`,
+      `Total: ${formatMoney(booking?.totalPrice, booking?.paymentCurrency || 'CHF')}`,
+      `Pickup Address: ${booking?.address || 'Not provided'}`,
+    ].filter(Boolean).join('\n'),
+  });
+};
+
 module.exports = {
   sendPasswordResetOtp,
   sendBookingStatusUpdateEmail,
+  sendNewBookingAdminAlert,
   sendSupportTicketNotification,
 };

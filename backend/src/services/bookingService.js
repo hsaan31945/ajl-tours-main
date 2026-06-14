@@ -6,6 +6,7 @@ const Booking = require('../../models/Booking');
 const User = require('../../models/User');
 const { normalizeTourId, isValidObjectId } = require('../utils/tourId');
 const { getValidatedTourPricing } = require('./bookingPricingService');
+const { sendNewBookingAdminAlert } = require('./emailService');
 
 const VALID_STATUSES = new Set(['pending', 'confirmed', 'cancelled', 'completed']);
 
@@ -120,7 +121,15 @@ class BookingService {
     await booking.save();
     await booking.populate('user', 'name email phone createdAt');
     await booking.populate('tourId', 'name price discountEnabled discountPrice groupDiscountEnabled groupDiscount4 groupDiscount5 groupDiscount6Plus');
-    return booking.toObject({ virtuals: true });
+    const savedBooking = booking.toObject({ virtuals: true });
+
+    try {
+      await sendNewBookingAdminAlert({ booking: savedBooking });
+    } catch (emailError) {
+      console.error('New booking admin alert failed:', emailError.response?.data || emailError.message);
+    }
+
+    return savedBooking;
   }
 
   /**

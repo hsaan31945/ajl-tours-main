@@ -33,7 +33,7 @@ const PaymentSuccess = () => {
         selectedDate: data.selectedDate || data.date || new Date().toISOString().split('T')[0],
         tripDate: data.selectedDate || data.date || new Date().toISOString().split('T')[0],
         specialRequests: data.specialRequests || "",
-        status: "confirmed",
+        status: "pending",
         paymentStatus: "paid",
         stripePaymentId: paymentIntentId || undefined,
         flexibility: data.flexibility || "standard"
@@ -83,7 +83,7 @@ const PaymentSuccess = () => {
         pickupAddress: databaseBooking?.address || data.pickupAddress || data.address || "",
         currency: databaseBooking?.paymentCurrency || data.tourCurrency || data.currency || "$",
         selectedDate: data.selectedDate || data.date || new Date().toISOString().split('T')[0],
-        status: "Confirmed",
+        status: databaseBooking?.status || data.status || "Pending",
         paymentMethod,
         flexibility: data.flexibility || "standard"
       };
@@ -162,6 +162,7 @@ const PaymentSuccess = () => {
           address: d.address || d.pickupAddress || '',
           specialRequests: d.specialRequests || '',
           paymentMethod: d.paymentMethod || '',
+          status: d.status || 'Pending',
         };
       };
 
@@ -197,6 +198,7 @@ const PaymentSuccess = () => {
         selectedDate: new Date().toISOString().split('T')[0],
         time: '09:00',
         paymentMethod: isFreeCheckout ? 'Free checkout' : '',
+        status: 'Pending',
       };
     
       setBookingData(data);
@@ -265,7 +267,7 @@ const PaymentSuccess = () => {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">{t("success.status")}</span>
-              <span className="text-green-600 font-semibold">{t("common.confirmed")}</span>
+              <span className="font-semibold capitalize text-yellow-600">{bookingData?.status || "Pending"}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">{t("success.paymentMethod")}</span>
@@ -289,7 +291,7 @@ const PaymentSuccess = () => {
               <Download className="w-5 h-5 text-orange-600 mt-1" />
               <div>
                 <h3 className="font-semibold">{t("success.downloadReceipt")}</h3>
-                <p className="text-sm text-gray-600">Your receipt has been sent to your email address for your records.</p>
+                <p className="text-sm text-gray-600">Your payment record is saved with this booking request.</p>
               </div>
             </div>
           </div>
