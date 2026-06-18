@@ -10,9 +10,9 @@ function FloatingWhatsApp() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat with AJL Tours on WhatsApp"
-      className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-xl shadow-black/20 transition hover:scale-105 hover:bg-[#1ebe5d] focus:outline-none focus:ring-4 focus:ring-[#25D366]/30 md:bottom-8 md:right-8 md:h-16 md:w-16"
+      className="fixed bottom-3 right-3 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg shadow-black/20 transition hover:scale-105 hover:bg-[#1ebe5d] focus:outline-none focus:ring-4 focus:ring-[#25D366]/30 sm:bottom-5 sm:right-5 sm:h-14 sm:w-14 md:bottom-8 md:right-8 md:h-16 md:w-16"
     >
-      <FaWhatsapp className="h-8 w-8 md:h-9 md:w-9" aria-hidden="true" />
+      <FaWhatsapp className="h-6 w-6 sm:h-8 sm:w-8 md:h-9 md:w-9" aria-hidden="true" />
     </a>
   );
 }

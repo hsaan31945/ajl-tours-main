@@ -187,7 +187,7 @@ const PaymentForm = ({ clientSecret, paymentSummary }) => {
               ) : (
                 <>
                   <Lock className="w-5 h-5" />
-                  {t("common.pay")} {formatPrice(totalPrice)}
+                  {t("common.confirmAndPay")} {formatPrice(totalPrice)}
                 </>
               )}
             </button>

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { getTourId } from "../utils/tourId";
+import { getTourCheckoutPath, getTourId } from "../utils/tourId";
 import { fetchToursList } from "../services/toursApi";
 
 const DestinationCards = () => {
@@ -26,7 +26,7 @@ const DestinationCards = () => {
                 name: tour.name,
                 image: (Array.isArray(tour.images) && tour.images.find((img) => img && String(img).trim())) || null,
                 listings: tour.maxTotalTickets || tour.travelers || 0,
-                route: `/switzerland/${tourId}/checkout-sw`,
+                route: getTourCheckoutPath(tour),
                 price: tour.price
               };
             });

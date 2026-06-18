@@ -3,6 +3,7 @@ import titlisBlogImage from "../assets/images/Titlis_Engelberg/Titlis1.avif";
 export const blogs = [
   {
     id: 1,
+    slug: "top-10-places-to-visit-in-switzerland",
     title: "Top 10 Places to Visit in Switzerland",
     subtitle: "Experience Switzerland's beautiful alpine scenery, crystal blue lakes, and luxury travel with AJL Tours.",
     image: "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=800&q=80",
@@ -30,6 +31,7 @@ export const blogs = [
   },
   {
     id: 2,
+    slug: "complete-guide-to-titlis-engelberg-and-lucerne",
     title: "Discover the Magic of Titlis: A Complete Guide to Engelberg and Luzern",
     subtitle: "Experience Switzerland's most breathtaking alpine adventure",
     image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=80",
@@ -52,6 +54,7 @@ export const blogs = [
   },
   {
     id: 3,
+    slug: "rhine-falls-to-black-forest-day-trip",
     title: "Rhine Falls to Black Forest: A Journey Through Nature's Masterpieces",
     subtitle: "Exploring Europe's largest waterfall and the enchanting Black Forest",
     image: "https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?auto=format&fit=crop&w=800&q=80",
@@ -77,6 +80,7 @@ export const blogs = [
   },
   {
     id: 4,
+    slug: "titlis-and-central-switzerland-guide",
     title: "Alpine Majesty: A Deep Dive into Titlis and Central Switzerland",
     subtitle: "Comprehensive exploration of Switzerland's most iconic mountain destination",
     image: titlisBlogImage,

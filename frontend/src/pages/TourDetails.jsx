@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Heart, MapPin, Clock, Users, Star } from 'lucide-react';
 import { normalizeTourData } from '../utils/tourDataMapper';
-import { getTourId, getTourSeoPath, getTourSlug } from '../utils/tourId';
+import { getTourCheckoutPath, getTourId, getTourSeoPath, getTourSlug } from '../utils/tourId';
 import { apiUrl } from '../utils/api';
 import TourReviews, { getTourReviewSummary } from '../components/TourReviews';
 import { getDiscountPrice } from '../utils/bookingPricing';
@@ -111,10 +111,7 @@ const TourDetails = () => {
 
   const handleBooking = () => {
     if (tour) {
-      const tourId = getTourId(tour);
-      if (tourId) {
-        navigate(`/switzerland/${tourId}/checkout-sw`);
-      }
+      navigate(getTourCheckoutPath(tour), { state: { tour } });
     }
   };
 

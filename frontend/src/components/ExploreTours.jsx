@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { AppContext } from "../context/AppContext";
 import TourCard from "./TourCard";
-import { getTourId } from "../utils/tourId";
+import { getTourCheckoutPath, getTourId } from "../utils/tourId";
 import { fetchToursList } from "../services/toursApi";
 import TourCardSkeleton from "./TourCardSkeleton";
 import { getDiscountPrice } from "../utils/bookingPricing";
@@ -119,7 +119,7 @@ const ExploreTours = () => {
     
     try {
       // Use the unified Top Deals / Country Tours interface for all tours globally
-      navigate(`/switzerland/${tour.id}/checkout-sw`, { state: { tour } });
+      navigate(getTourCheckoutPath(tour), { state: { tour } });
     } catch (error) {
       console.error('Navigation error:', error);
     }

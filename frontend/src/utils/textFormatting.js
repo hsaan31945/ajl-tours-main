@@ -21,6 +21,20 @@ export const cleanDisplayName = (value = '') => {
 
   return String(value)
     .replace(/^[\s,،;:]+/, '')
+    .replace(/^explore\s+/i, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
+};
+
+export const formatDurationLabel = (value = '') => {
+  const duration = String(value || '').trim();
+  return duration.replace(/\b(\d+(?:\.\d+)?)\s+Hour\b/gi, (_, count) => (
+    Number(count) === 1 ? `${count} Hour` : `${count} Hours`
+  ));
+};
+
+export const formatIncludedLabel = (value = '') => {
+  const label = String(value || '').trim();
+  if (/^wi-?fi\s+free$/i.test(label)) return 'Complimentary Wi-Fi Onboard';
+  return label;
 };

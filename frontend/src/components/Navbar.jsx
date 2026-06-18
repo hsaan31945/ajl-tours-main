@@ -23,8 +23,7 @@ const Navbar = () => {
   const isDestinationsActive =
     destinationsOpen ||
     location.pathname.startsWith("/destinations") ||
-    location.pathname.startsWith("/switzerland") ||
-    location.pathname.startsWith("/srilanka");
+    location.pathname.startsWith("/switzerland");
   const destinationsRef = useRef(null);
   // Initialize search visibility: show on all pages except homepage (where it shows after scroll)
   const [showCompactSearch, setShowCompactSearch] = useState(location.pathname !== "/");
@@ -346,14 +345,6 @@ const Navbar = () => {
                     <MapPin className="h-4 w-4 text-orange-600" />
                     {t("nav.switzerland")}
                   </Link>
-                  <Link
-                    to="/srilanka"
-                    onClick={() => setDestinationsOpen(false)}
-                    className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-bold text-gray-900 transition hover:bg-orange-50 hover:text-orange-700"
-                  >
-                    <MapPin className="h-4 w-4 text-orange-600" />
-                    {t("nav.srilanka")}
-                  </Link>
                 </div>
               </div>
           </li>
@@ -519,13 +510,6 @@ const Navbar = () => {
                           to="/switzerland"
                           icon={<MapPin className="w-4 h-4" />}
                           label={t("nav.switzerland")}
-                          onClick={() => setMenuOpen(false)}
-                          nested
-                        />
-                        <DrawerLink
-                          to="/srilanka"
-                          icon={<MapPin className="w-4 h-4" />}
-                          label={t("nav.srilanka")}
                           onClick={() => setMenuOpen(false)}
                           nested
                         />

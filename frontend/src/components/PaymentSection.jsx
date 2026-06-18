@@ -380,10 +380,10 @@ function PaymentSection({
         onClick={() => {
           if (!ticketsMeetMinimum) return;
           setBooking({ tour, tickets: currentTickets, date, time });
-          navigate("/flexibility");
+          navigate("/booking-options");
         }}
       >
-        {t("common.pay")}
+        {t("common.reserveYourSpot")}
       </button>
     </div>
   );

@@ -2,7 +2,7 @@
  * Shared data mapper for tour data to ensure consistency across all pages
  */
 import { getTourId } from './tourId';
-import { cleanDisplayName } from './textFormatting';
+import { cleanDisplayName, formatDurationLabel, formatIncludedLabel } from './textFormatting';
 
 export const mapTourResponse = (tour) => {
   if (!tour) return null;
@@ -205,13 +205,15 @@ export const normalizeTourData = (tour) => {
     groupDiscount6Plus: mappedTour.groupDiscount6Plus === null || mappedTour.groupDiscount6Plus === undefined
       ? null
       : Number(mappedTour.groupDiscount6Plus),
-    duration: mappedTour.duration?.toString().trim() || '',
+    duration: formatDurationLabel(mappedTour.duration),
     type: mappedTour.type?.toString().trim() || '',
     tourType: mappedTour.tourType?.toString().trim() || '',
     reviewText: mappedTour.reviewText?.toString().trim() || '',
     // Ensure arrays are properly formatted
     highlights: Array.isArray(mappedTour.highlights) ? mappedTour.highlights : [],
-    included: Array.isArray(mappedTour.included) ? mappedTour.included : [],
+    included: Array.isArray(mappedTour.included)
+      ? mappedTour.included.map(formatIncludedLabel).filter(Boolean)
+      : [],
     excluded: Array.isArray(mappedTour.excluded) ? mappedTour.excluded : [],
     itinerary: Array.isArray(mappedTour.itinerary) ? mappedTour.itinerary : [],
     images: Array.isArray(mappedTour.images) ? mappedTour.images : [],

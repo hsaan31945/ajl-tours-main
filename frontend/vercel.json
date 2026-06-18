@@ -1,12 +1,15 @@
 {
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/(.*)",
-      "destination": "https://ajl-tours-backend-phi.vercel.app/api/$1"
+      "src": "/api/(.*)",
+      "dest": "https://ajl-tours-backend-phi.vercel.app/api/$1"
     },
     {
-      "source": "/((?!.*\\..*).*)",
-      "destination": "/"
+      "handle": "filesystem"
+    },
+    {
+      "src": "/.*",
+      "dest": "/index.html"
     }
   ],
   "headers": [

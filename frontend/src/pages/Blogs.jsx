@@ -140,7 +140,7 @@ const Blogs = () => {
                  {/* Read More Button */}
                  <div className="flex items-center justify-between">
                    <button
-                     onClick={() => navigate(`/blogs/${blog.id}`)}
+                     onClick={() => navigate(`/blogs/${blog.slug}`)}
                      className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
                    >
                      Read Full Article

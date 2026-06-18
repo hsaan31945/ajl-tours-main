@@ -1,4 +1,11 @@
 User-agent: *
 Allow: /
+Disallow: /*/checkout
+Disallow: /*/checkout-sw
+Disallow: /booking-options
+Disallow: /payment
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /account
 
 Sitemap: https://ajltour.com/sitemap.xml

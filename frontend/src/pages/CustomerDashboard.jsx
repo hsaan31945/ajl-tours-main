@@ -31,7 +31,7 @@ import {
 } from "@react-pdf/renderer";
 import { AppContext } from "../context/AppContext";
 import { apiUrl } from "../utils/api";
-import { getTourId } from "../utils/tourId";
+import { getTourCheckoutPath, getTourId } from "../utils/tourId";
 import { useCurrency } from "../context/CurrencyContext";
 import { useI18n } from "../i18n";
 
@@ -414,10 +414,7 @@ const CustomerDashboard = () => {
     const tour = bookingTour(booking);
     const id = tourIdFromBooking(booking);
     if (!id || typeof id === "object") return;
-    const destination = String(tour?.metadata?.destination || tour?.divisionName || "").toLowerCase().includes("sri")
-      ? "srilanka"
-      : "switzerland";
-    navigate(`/${destination}/${id}/checkout-sw`, { state: { tour } });
+    navigate(getTourCheckoutPath(tour), { state: { tour } });
   };
 
   const handleCancelBooking = async (booking) => {
@@ -966,7 +963,7 @@ const CustomerDashboard = () => {
                         <h3 className="line-clamp-2 font-bold text-gray-900">{tour.name || t("dashboard.savedTour")}</h3>
                         <p className="mt-2 text-sm text-gray-600">{formatPrice(tour.price)}</p>
                         <div className="mt-4 flex flex-wrap gap-2">
-                          <button onClick={() => id && navigate(`/switzerland/${id}/checkout-sw`, { state: { tour } })} className="rounded-lg bg-orange-600 px-3 py-2 text-sm font-bold text-white hover:bg-orange-700">
+                          <button onClick={() => id && navigate(getTourCheckoutPath(tour), { state: { tour } })} className="rounded-lg bg-orange-600 px-3 py-2 text-sm font-bold text-white hover:bg-orange-700">
                             {t("dashboard.viewTour")}
                           </button>
                           <button onClick={() => removeWishlistItem(item)} disabled={actionLoading === `wishlist-${id}`} className="rounded-lg border border-red-200 px-3 py-2 text-sm font-bold text-red-700 hover:bg-red-50 disabled:opacity-60">

@@ -45,6 +45,9 @@ const SEO = ({
   title = DEFAULT_TITLE,
   description = DEFAULT_DESCRIPTION,
   image = "/logoTravel.png",
+  canonicalPath,
+  noIndex = false,
+  type = "website",
   structuredData,
 }) => {
   const { language, t } = useI18n();
@@ -54,7 +57,7 @@ const SEO = ({
   useEffect(() => {
     const canonical =
       typeof window !== "undefined"
-        ? `${window.location.origin}${window.location.pathname}`
+        ? `${window.location.origin}${canonicalPath || window.location.pathname}`
         : "";
     const resolvedImage =
       typeof window !== "undefined" && image && !/^https?:\/\//i.test(image)
@@ -64,16 +67,22 @@ const SEO = ({
     document.documentElement.lang = language;
     document.title = resolvedTitle;
     upsertMeta('meta[name="description"]', { name: "description", content: resolvedDescription });
+    upsertMeta('meta[name="robots"]', {
+      name: "robots",
+      content: noIndex ? "noindex, nofollow" : "index, follow",
+    });
     upsertMeta('meta[property="og:title"]', { property: "og:title", content: resolvedTitle });
     upsertMeta('meta[property="og:description"]', { property: "og:description", content: resolvedDescription });
-    upsertMeta('meta[property="og:type"]', { property: "og:type", content: "website" });
+    upsertMeta('meta[property="og:type"]', { property: "og:type", content: type });
     upsertMeta('meta[property="og:locale"]', { property: "og:locale", content: language });
+    upsertMeta('meta[property="og:url"]', { property: "og:url", content: canonical });
     upsertMeta('meta[property="og:image"]', { property: "og:image", content: resolvedImage });
     upsertMeta('meta[name="twitter:card"]', { name: "twitter:card", content: "summary_large_image" });
     upsertMeta('meta[name="twitter:title"]', { name: "twitter:title", content: resolvedTitle });
     upsertMeta('meta[name="twitter:description"]', { name: "twitter:description", content: resolvedDescription });
+    upsertMeta('meta[name="twitter:image"]', { name: "twitter:image", content: resolvedImage });
     upsertCanonical(canonical);
-  }, [resolvedTitle, resolvedDescription, image, language]);
+  }, [resolvedTitle, resolvedDescription, image, language, canonicalPath, noIndex, type]);
 
   useEffect(() => {
     const items = Array.isArray(structuredData)

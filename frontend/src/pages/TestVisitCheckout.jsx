@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchToursList } from "../services/toursApi";
-import { getTourId } from "../utils/tourId";
+import { getTourCheckoutPath, getTourId } from "../utils/tourId";
 import { useCurrency } from "../context/CurrencyContext";
 
 const TestVisitCheckout = () => {
@@ -42,7 +42,7 @@ const TestVisitCheckout = () => {
                 <h3 className="text-lg font-semibold mb-2">{tour.name}</h3>
                 <p className="text-orange-600 font-bold text-xl mb-4">{formatPrice(tour.price)}</p>
                 <button
-                  onClick={() => navigate(`/switzerland/${getTourId(tour)}/checkout-sw`, {
+                  onClick={() => navigate(getTourCheckoutPath(tour), {
                     state: { tour }
                   })}
                   className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-xl transition"

@@ -10,6 +10,7 @@ import { EditModeProvider } from "./context/EditModeContext";
 import { useAdmin } from "./context/AdminContext";
 import { useI18n } from "./i18n";
 import Home2 from "./pages/Home2";
+import SEO from "./components/SEO";
 
 const Tour = lazy(() => import("./pages/Tour"));
 const TourDetails = lazy(() => import("./pages/TourDetails"));
@@ -45,6 +46,7 @@ const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const VerifyOTP = lazy(() => import("./pages/VerifyOTP"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const TourWizard = lazy(() => import("./pages/TourWizard"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 const AdminNavbar = lazy(() => import("./components/AdminNavbar"));
 const FloatingWhatsApp = lazy(() => import("./components/FloatingWhatsApp"));
 const ToastContainer = lazy(() =>
@@ -58,7 +60,16 @@ const ToastContainer = lazy(() =>
 // Wrapper component to force remount when id changes
 const CheckoutWrapper = () => {
   const { id } = useParams();
-  return <Checkout key={id} />;
+  return (
+    <>
+      <SEO
+        title="Tour Booking | AJL Tours"
+        description="Review tour details and booking options for your selected AJL Tours experience."
+        noIndex
+      />
+      <Checkout key={id} />
+    </>
+  );
 };
 
 const useAfterFirstPaint = (delay = 1200) => {
@@ -166,7 +177,8 @@ const App = () => {
               <Route path="/destinations" element={<SwitzerlandLocations isDestinationsPage />} />
               <Route path="/switzerland" element={<SwitzerlandLocations />} />
               <Route path="/srilanka" element={<SrilankaLocations />} />
-              
+              <Route path="/switzerland/:id/checkout" element={<CheckoutWrapper />} />
+              <Route path="/srilanka/:id/checkout" element={<CheckoutWrapper />} />
               <Route 
                 path="/switzerland/:id/checkout-sw" 
                 element={<CheckoutWrapper />} 
@@ -175,10 +187,11 @@ const App = () => {
                 path="/srilanka/:id/checkout-sw" 
                 element={<CheckoutWrapper />} 
               />
-              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/checkout" element={<CheckoutWrapper />} />
           <Route path="/history" element={<BookingHistory />} />
               <Route path="/home1" element={<Navigate to="/" replace />} />
-              <Route path="/flexibility" element={<Flexibility />} />
+              <Route path="/booking-options" element={<Flexibility />} />
+              <Route path="/flexibility" element={<Navigate to="/booking-options" replace />} />
               <Route path="/userDetails" element={<UserDetails />} />
               <Route path="/payment" element={<Payment />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />
@@ -203,6 +216,7 @@ const App = () => {
               <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
               <Route path="/admin/tour-wizard" element={<AdminRoute><TourWizard /></AdminRoute>} />
               <Route path="/tour-wizard" element={<Navigate to="/admin/tour-wizard" replace />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
             </Suspense>
           </main>

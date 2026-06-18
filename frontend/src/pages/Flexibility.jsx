@@ -9,6 +9,7 @@ import ParticipantStepper from "../components/ParticipantStepper";
 import OrderSummaryBreakdown from "../components/OrderSummaryBreakdown";
 import { useCurrency } from "../context/CurrencyContext";
 import { useI18n } from "../i18n";
+import SEO from "../components/SEO";
 
 const Flexibility = () => {
   const navigate = useNavigate();
@@ -144,11 +145,17 @@ const Flexibility = () => {
 
   return (
     <div className="min-h-screen bg-neutral-100 py-8 px-2 flex flex-col items-center">
+      <SEO
+        title="Booking Options | AJL Tours"
+        description="Choose participants and booking options for your selected AJL Tours experience."
+        canonicalPath="/booking-options"
+        noIndex
+      />
       {/* Step Progress Bar */}
       <div className="flex justify-center items-center gap-6 mb-8 w-full max-w-3xl mx-auto">
         {steps.map((step, idx) => (
           <div key={step} className="flex items-center gap-2 cursor-pointer" onClick={() => {
-            if (idx === 0) navigate("/flexibility");
+            if (idx === 0) navigate("/booking-options");
             if (idx === 1 && ticketsMeetMinimum) navigate("/userDetails");
             if (idx === 2 && ticketsMeetMinimum) navigate("/payment");
           }}>

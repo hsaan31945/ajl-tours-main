@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "NODE_ENV=production vite build",
+    "build": "NODE_ENV=production vite build && node scripts/prerender-static.mjs",
     "preview": "vite preview",
     "lint": "eslint . --report-unused-disable-directives"
   },

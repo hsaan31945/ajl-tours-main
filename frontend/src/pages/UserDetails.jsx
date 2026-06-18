@@ -122,7 +122,7 @@ const UserDetails = () => {
     
     if (!ticketsMeetMinimum) {
       alert(t("booking.minimumTicketsAlert", { count: minTickets }));
-      navigate("/flexibility");
+      navigate("/booking-options");
       return false;
     }
 
@@ -201,7 +201,7 @@ const UserDetails = () => {
       <div className="flex justify-center items-center gap-6 mb-8 w-full max-w-3xl mx-auto">
         {steps.map((step, idx) => (
           <div key={step} className="flex items-center gap-2 cursor-pointer" onClick={() => {
-            if (idx === 0) navigate("/flexibility");
+            if (idx === 0) navigate("/booking-options");
             if (idx === 1 && flexibility) navigate("/userDetails");
             if (idx === 2 && flexibility && ticketsMeetMinimum) navigate("/payment");
           }}>

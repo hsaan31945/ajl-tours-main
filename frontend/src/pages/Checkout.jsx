@@ -9,9 +9,9 @@ import TourEditWizard from "../components/TourEditWizard";
 import AdminModeIndicator from "../components/AdminModeIndicator";
 import ApproxPriceNote from "../components/ApproxPriceNote";
 import { normalizeTourData } from '../utils/tourDataMapper';
-import { normalizeTourId, isValidObjectId, getTourId } from '../utils/tourId';
+import { normalizeTourId, isValidObjectId, getTourId, getTourSeoPath, getTourSlug } from '../utils/tourId';
 import { apiUrl, getBackendUrl } from '../utils/api';
-import { clearToursCache } from '../services/toursApi';
+import { clearToursCache, fetchToursList } from '../services/toursApi';
 import { cleanDisplayName, stripHtmlToText } from '../utils/textFormatting';
 import ImageCarousel from "../components/ImageCarousel";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,8 +23,9 @@ import { useCurrency } from "../context/CurrencyContext";
 import { useI18n } from "../i18n";
 import { getTourGalleryImages } from "../utils/tourImages";
 import { getMinimumBookingDateString } from "../components/PaymentSection";
+import SEO from "../components/SEO";
 
-function ItineraryAccordion({ itinerary = [], adminOn = false, onSave, onAddDraft }) {
+function ItineraryAccordion({ itinerary = [], adminOn = false, onSave, onAddDraft, fallbackLocation = "" }) {
   const itineraryList = Array.isArray(itinerary) ? itinerary : [];
   const itineraryLength = itineraryList.length;
   const [open, setOpen] = useState(itineraryList.map(() => false));
@@ -36,13 +37,15 @@ function ItineraryAccordion({ itinerary = [], adminOn = false, onSave, onAddDraf
     setOpen((current) => Array.from({ length: itineraryLength }, (_, index) => current[index] || false));
   }, [itineraryLength]);
 
-  const getItemLabel = (item, index) => (
-    item?.title ||
-    item?.location ||
-    item?.type ||
-    item?.description ||
-    `Itinerary item ${index + 1}`
-  );
+  const getItemLabel = (item, index) => {
+    const type = String(item?.type || "").trim();
+    const title = String(item?.title || "").trim();
+    const location = String(item?.location || "").trim();
+    if (/^arrive back at$/i.test(title || type)) {
+      return `Arrive back at ${location || fallbackLocation || "your pickup location"}`;
+    }
+    return title || location || type || item?.description || `Itinerary item ${index + 1}`;
+  };
 
   const saveItineraryItem = async (index, field, value) => {
     const updated = itineraryList.map((item, itemIndex) => (
@@ -331,8 +334,18 @@ const Checkout = () => {
           throw new Error('Tour ID is missing from URL');
         }
         
-        // Use standardized ID utility
+        // Use standardized ID utility. Human-readable slugs are resolved to the
+        // backing database ID before requesting the full tour record.
         tourIdString = normalizeTourId(id);
+        if (!isValidObjectId(tourIdString)) {
+          const tours = await fetchToursList({ limit: 100, full: true }, { skipCache: true });
+          const matchedTour = tours.find((item) => (
+            getTourSlug(item) === tourIdString || getTourId(item) === tourIdString
+          ));
+          const matchedTourId = getTourId(matchedTour);
+          if (!matchedTourId) throw new Error("Tour not found");
+          tourIdString = normalizeTourId(matchedTourId);
+        }
         
         console.log('\n========================================');
         console.log('=== CHECKOUT PAGE - FETCHING TOUR ===');
@@ -625,6 +638,13 @@ const Checkout = () => {
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-white text-black w-full">
+      <SEO
+        title={`${tourName} | AJL Tours`}
+        description={stripHtmlToText(tour?.description || tour?.overview || `Book ${tourName} with AJL Tours.`).slice(0, 155)}
+        image={checkoutImages[0] || "/logoTravel.png"}
+        canonicalPath={getTourSeoPath(tour)}
+        noIndex
+      />
       <AdminModeIndicator />
       <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 md:mb-6 text-left w-full max-w-6xl mt-6 md:mt-10 px-4">
         <EditableText
@@ -657,9 +677,16 @@ const Checkout = () => {
             }
           }}
         >
-          {t("booking.exploreTour", { name: tourName })}
+          {tourName}
         </EditableText>
       </h1>
+      {pricing.minTickets > 1 && (
+        <div className="mb-6 w-full max-w-6xl px-4">
+          <div className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-bold text-orange-800">
+            Minimum {pricing.minTickets} adults required to book
+          </div>
+        </div>
+      )}
       {/* Image Carousel */}
       <div className="w-full max-w-6xl px-4 mb-8">
         {loading ? (
@@ -1101,6 +1128,7 @@ const Checkout = () => {
           <ItineraryAccordion 
             itinerary={itinerary} 
             adminOn={adminOn}
+            fallbackLocation={tour?.endLocation || tour?.startLocation || tour?.location || ""}
             onSave={async (updatedItinerary) => {
               return await saveArrayField('itinerary', updatedItinerary);
             }}

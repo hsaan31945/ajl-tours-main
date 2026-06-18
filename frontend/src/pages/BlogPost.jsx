@@ -1,21 +1,21 @@
 import React from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { Navigate, useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Calendar, Clock, MapPin, ArrowLeft, Share2, BookOpen } from "lucide-react";
 import { blogs } from "../data/blogs";
 import SEO from "../components/SEO";
-import { createBreadcrumbJsonLd } from "../utils/seo";
+import { absoluteUrl, createBreadcrumbJsonLd } from "../utils/seo";
 
 const BlogPost = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   
-  const blog = blogs.find(b => b.id === parseInt(id));
+  const blog = blogs.find((item) => item.slug === id || item.id === Number(id));
 
   if (!blog) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <SEO title="Blog Not Found | AJL Tours" description="The requested AJL Tours blog post could not be found." />
+        <SEO title="Blog Not Found | AJL Tours" description="The requested AJL Tours blog post could not be found." noIndex />
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Blog Post Not Found</h1>
           <button
@@ -29,17 +29,42 @@ const BlogPost = () => {
     );
   }
 
+  if (id !== blog.slug) {
+    return <Navigate to={`/blogs/${blog.slug}`} replace />;
+  }
+
+  const blogPath = `/blogs/${blog.slug}`;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <SEO
         title={`${blog.title} | AJL Tours`}
         description={blog.subtitle}
         image={blog.image}
-        structuredData={createBreadcrumbJsonLd([
-          { name: "Home", path: "/" },
-          { name: "Blogs", path: "/blogs" },
-          { name: blog.title, path: `/blogs/${blog.id}` },
-        ])}
+        canonicalPath={blogPath}
+        type="article"
+        structuredData={[
+          createBreadcrumbJsonLd([
+            { name: "Home", path: "/" },
+            { name: "Blogs", path: "/blogs" },
+            { name: blog.title, path: blogPath },
+          ]),
+          {
+            "@context": "https://schema.org",
+            "@type": "BlogPosting",
+            headline: blog.title,
+            description: blog.subtitle,
+            image: absoluteUrl(blog.image),
+            datePublished: new Date(blog.date).toISOString(),
+            mainEntityOfPage: absoluteUrl(blogPath),
+            author: { "@type": "Organization", name: "AJL Tours" },
+            publisher: {
+              "@type": "Organization",
+              name: "AJL Tours",
+              logo: { "@type": "ImageObject", url: absoluteUrl("/logoTravel-300.png") },
+            },
+          },
+        ]}
       />
       <div className="max-w-4xl mx-auto px-6 pt-8">
         <button

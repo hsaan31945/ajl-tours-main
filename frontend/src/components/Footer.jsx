@@ -34,9 +34,7 @@ const Footer = () => {
             <li><Link to="/destinations" className="hover:text-red-600">{t("nav.destinations")}</Link></li>
             <li><Link to="/blogs" className="hover:text-red-600">{t("nav.blogs")}</Link></li>
             <li><Link to="/switzerland" className="hover:text-red-600">{t("footer.switzerlandTours")}</Link></li>
-            <li><Link to="/srilanka" className="hover:text-red-600">{t("footer.srilankaTours")}</Link></li>
             <li><Link to="/contact" className="hover:text-red-600">{t("footer.contactUs")}</Link></li>
-            <li><Link to="/flexibility" className="hover:text-red-600">{t("footer.flexibilityPolicy")}</Link></li>
           </ul>
         </div>
         <div>

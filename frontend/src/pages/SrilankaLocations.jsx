@@ -11,7 +11,7 @@ import { useHeroBanner } from "../hooks/useHeroBanner";
 const highlights = [
   "Private day trips and custom itineraries",
   "Beach, culture, wildlife, and family-friendly plans",
-  "Personal support for upcoming Srilanka tour requests",
+  "Personal support for custom Sri Lanka tour requests",
 ];
 
 const SrilankaLocations = () => {
@@ -27,9 +27,9 @@ const SrilankaLocations = () => {
       const tours = await fetchToursList({ division: "srilanka", limit: 100 }, { skipCache: true });
       setDbTours(tours.filter((tour) => getTourId(tour) && tour?.isActive !== false));
     } catch (err) {
-      console.error("Error fetching Srilanka tours:", err);
+      console.error("Error fetching Sri Lanka tours:", err);
       setDbTours([]);
-      setError("We couldn't load Srilanka tours right now.");
+      setError("We couldn't load Sri Lanka tours right now.");
     } finally {
       setLoading(false);
     }
@@ -42,14 +42,15 @@ const SrilankaLocations = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <SEO
-        title="Srilanka Tours | AJL Tours"
-        description="Explore upcoming Srilanka tours with AJL Tours, including private travel plans, beaches, culture, wildlife, and custom trip support."
+        title="Sri Lanka Private Tours | AJL Tours"
+        description="Plan a custom Sri Lanka private tour with AJL Tours, including beaches, culture, wildlife, family travel, and personal itinerary support."
+        noIndex
       />
 
       <section className="relative overflow-hidden bg-gray-900 text-white">
         <img
           src={heroBanner.imageUrl}
-          alt={heroBanner.alt || "Srilanka hero banner"}
+          alt={heroBanner.alt || "Sri Lanka private tour landscape"}
           className="absolute inset-0 h-full w-full object-cover opacity-45"
         />
         <div className="absolute inset-0 bg-black/45" />
@@ -60,10 +61,10 @@ const SrilankaLocations = () => {
               New destination
             </p>
             <h1 className="text-4xl font-extrabold leading-tight sm:text-5xl">
-              Srilanka Tours
+              Sri Lanka Tours
             </h1>
             <p className="mt-5 max-w-2xl text-lg text-white/90">
-              Discover private Srilanka tour experiences with AJL Tours, from custom day trips to family-friendly travel plans.
+              Discover private Sri Lanka experiences with AJL Tours, from custom day trips to family-friendly travel plans.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
@@ -90,8 +91,8 @@ const SrilankaLocations = () => {
 
         <div className="mt-12">
           <div className="mb-6">
-            <h2 className="text-3xl font-bold text-gray-900">Srilanka Tours</h2>
-            <p className="mt-2 text-gray-600">Tours added to the Srilanka location will appear here.</p>
+            <h2 className="text-3xl font-bold text-gray-900">Sri Lanka Tours</h2>
+            <p className="mt-2 text-gray-600">Private itineraries designed around your dates, interests, and travel style.</p>
           </div>
 
           {loading ? (
@@ -117,11 +118,17 @@ const SrilankaLocations = () => {
                     <CalendarDays className="h-4 w-4" />
                     Coming soon
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900">Srilanka tour packages are not listed yet</h3>
+                  <h3 className="text-2xl font-bold text-gray-900">Planning a Sri Lanka journey?</h3>
                   <p className="mt-2 max-w-2xl text-gray-600">
-                    Add a tour to the Srilanka location from the admin dashboard and it will show here.
+                    Tell us your dates and interests. Our team will create a private itinerary for your group.
                   </p>
                 </div>
+                <Link
+                  to="/contact"
+                  className="inline-flex shrink-0 items-center justify-center rounded-full bg-orange-600 px-6 py-3 font-bold text-white hover:bg-orange-700"
+                >
+                  Request an itinerary
+                </Link>
               </div>
             </div>
           ) : (

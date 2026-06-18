@@ -25,12 +25,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://ajltour.com/srilanka</loc>
-    <lastmod>2026-06-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
     <loc>https://ajltour.com/about</loc>
     <lastmod>2026-06-13</lastmod>
     <changefreq>monthly</changefreq>
@@ -49,27 +43,27 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://ajltour.com/blogs/1</loc>
+    <loc>https://ajltour.com/blogs/top-10-places-to-visit-in-switzerland</loc>
     <lastmod>2026-06-13</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://ajltour.com/blogs/2</loc>
+    <loc>https://ajltour.com/blogs/complete-guide-to-titlis-engelberg-and-lucerne</loc>
     <lastmod>2026-06-13</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://ajltour.com/blogs/3</loc>
+    <loc>https://ajltour.com/blogs/rhine-falls-to-black-forest-day-trip</loc>
     <lastmod>2026-06-13</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://ajltour.com/blogs/4</loc>
+    <loc>https://ajltour.com/blogs/titlis-and-central-switzerland-guide</loc>
     <lastmod>2026-06-13</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
