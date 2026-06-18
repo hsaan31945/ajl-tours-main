@@ -72,6 +72,11 @@ const CheckoutWrapper = () => {
   );
 };
 
+const LegacySriLankaCheckoutRedirect = () => {
+  const { id } = useParams();
+  return <Navigate to={`/sri-lanka/${id}/checkout`} replace />;
+};
+
 const useAfterFirstPaint = (delay = 1200) => {
   const [ready, setReady] = useState(false);
 
@@ -176,16 +181,18 @@ const App = () => {
               <Route path="/locations" element={<Navigate to="/switzerland" replace />} />
               <Route path="/destinations" element={<SwitzerlandLocations isDestinationsPage />} />
               <Route path="/switzerland" element={<SwitzerlandLocations />} />
-              <Route path="/srilanka" element={<SrilankaLocations />} />
+              <Route path="/sri-lanka" element={<SrilankaLocations />} />
+              <Route path="/srilanka" element={<Navigate to="/sri-lanka" replace />} />
               <Route path="/switzerland/:id/checkout" element={<CheckoutWrapper />} />
-              <Route path="/srilanka/:id/checkout" element={<CheckoutWrapper />} />
+              <Route path="/sri-lanka/:id/checkout" element={<CheckoutWrapper />} />
+              <Route path="/srilanka/:id/checkout" element={<LegacySriLankaCheckoutRedirect />} />
               <Route 
                 path="/switzerland/:id/checkout-sw" 
                 element={<CheckoutWrapper />} 
               />
               <Route 
-                path="/srilanka/:id/checkout-sw" 
-                element={<CheckoutWrapper />} 
+                path="/srilanka/:id/checkout-sw"
+                element={<LegacySriLankaCheckoutRedirect />}
               />
               <Route path="/checkout" element={<CheckoutWrapper />} />
           <Route path="/history" element={<BookingHistory />} />

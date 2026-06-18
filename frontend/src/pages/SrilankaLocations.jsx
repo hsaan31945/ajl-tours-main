@@ -7,6 +7,7 @@ import TourCardSkeleton from "../components/TourCardSkeleton";
 import { fetchToursList } from "../services/toursApi";
 import { getTourId } from "../utils/tourId";
 import { useHeroBanner } from "../hooks/useHeroBanner";
+import { createBreadcrumbJsonLd } from "../utils/seo";
 
 const highlights = [
   "Private day trips and custom itineraries",
@@ -44,7 +45,12 @@ const SrilankaLocations = () => {
       <SEO
         title="Sri Lanka Private Tours | AJL Tours"
         description="Plan a custom Sri Lanka private tour with AJL Tours, including beaches, culture, wildlife, family travel, and personal itinerary support."
-        noIndex
+        canonicalPath="/sri-lanka"
+        image={heroBanner.imageUrl}
+        structuredData={createBreadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Sri Lanka", path: "/sri-lanka" },
+        ])}
       />
 
       <section className="relative overflow-hidden bg-gray-900 text-white">
@@ -116,7 +122,7 @@ const SrilankaLocations = () => {
                 <div>
                   <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-orange-50 px-3 py-1 text-sm font-bold text-orange-700">
                     <CalendarDays className="h-4 w-4" />
-                    Coming soon
+                    Custom private itineraries
                   </div>
                   <h3 className="text-2xl font-bold text-gray-900">Planning a Sri Lanka journey?</h3>
                   <p className="mt-2 max-w-2xl text-gray-600">

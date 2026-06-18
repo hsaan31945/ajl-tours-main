@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Heart, MapPin, Clock, Users, Star } from 'lucide-react';
 import { normalizeTourData } from '../utils/tourDataMapper';
-import { getTourCheckoutPath, getTourId, getTourSeoPath, getTourSlug } from '../utils/tourId';
+import { getTourCheckoutPath, getTourId, getTourSeoPath, matchesTourIdentifier } from '../utils/tourId';
 import { apiUrl } from '../utils/api';
 import TourReviews, { getTourReviewSummary } from '../components/TourReviews';
 import { getDiscountPrice } from '../utils/bookingPricing';
@@ -27,8 +27,8 @@ const TourDetails = () => {
       try {
         let response = await fetch(apiUrl(`/api/tours/${id}`));
         if (!response.ok) {
-          const tours = await fetchToursList({ limit: 100, full: true }, { skipCache: true });
-          const matchedTour = tours.find((item) => getTourSlug(item) === id || getTourId(item) === id);
+          const tours = await fetchToursList({ limit: 100 }, { skipCache: true });
+          const matchedTour = tours.find((item) => matchesTourIdentifier(item, id));
           if (!matchedTour) {
             throw new Error('Tour not found');
           }

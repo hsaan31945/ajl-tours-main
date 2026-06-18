@@ -30,6 +30,13 @@ const routes = [
     heading: "Private Switzerland day tours",
   },
   {
+    path: "/sri-lanka",
+    title: "Sri Lanka Private Tours | AJL Tours",
+    description: "Plan a custom Sri Lanka private tour with beaches, culture, wildlife, family travel, and personal itinerary support.",
+    heading: "Private Sri Lanka tours",
+    image: `${SITE_URL}/assets/images/optimized/hero6-1600.webp`,
+  },
+  {
     path: "/about",
     title: "About AJL Tours | Our Story & Local Team",
     description: "Meet AJL Tours, a Switzerland-based travel team creating private tours with local knowledge, premium vehicles, and personal service.",
@@ -109,6 +116,7 @@ const renderRoute = (template, route) => {
   const description = escapeHtml(route.description);
   const heading = escapeHtml(route.heading);
   const type = route.type || "website";
+  const image = route.image || DEFAULT_IMAGE;
 
   let html = template.replace(/<title>[\s\S]*?<\/title>/i, `<title>${title}</title>`);
   html = replaceTag(html, /<meta\s+name="description"[^>]*>/i, `<meta name="description" content="${description}" />`);
@@ -117,11 +125,11 @@ const renderRoute = (template, route) => {
   html = replaceTag(html, /<meta\s+property="og:title"[^>]*>/i, `<meta property="og:title" content="${title}" />`);
   html = replaceTag(html, /<meta\s+property="og:description"[^>]*>/i, `<meta property="og:description" content="${description}" />`);
   html = replaceTag(html, /<meta\s+property="og:url"[^>]*>/i, `<meta property="og:url" content="${canonical}" />`);
-  html = replaceTag(html, /<meta\s+property="og:image"[^>]*>/i, `<meta property="og:image" content="${DEFAULT_IMAGE}" />`);
+  html = replaceTag(html, /<meta\s+property="og:image"[^>]*>/i, `<meta property="og:image" content="${image}" />`);
   html = replaceTag(html, /<meta\s+name="twitter:card"[^>]*>/i, '<meta name="twitter:card" content="summary_large_image" />');
   html = replaceTag(html, /<meta\s+name="twitter:title"[^>]*>/i, `<meta name="twitter:title" content="${title}" />`);
   html = replaceTag(html, /<meta\s+name="twitter:description"[^>]*>/i, `<meta name="twitter:description" content="${description}" />`);
-  html = replaceTag(html, /<meta\s+name="twitter:image"[^>]*>/i, `<meta name="twitter:image" content="${DEFAULT_IMAGE}" />`);
+  html = replaceTag(html, /<meta\s+name="twitter:image"[^>]*>/i, `<meta name="twitter:image" content="${image}" />`);
   html = replaceTag(html, /<link\s+rel="canonical"[^>]*>/i, `<link rel="canonical" href="${canonical}" />`);
 
   return html.replace(

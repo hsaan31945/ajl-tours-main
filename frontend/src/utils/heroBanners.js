@@ -24,8 +24,8 @@ export const HERO_BANNER_PAGES = [
   },
   {
     key: "srilanka",
-    label: "Srilanka",
-    path: "/srilanka",
+    label: "Sri Lanka",
+    path: "/sri-lanka",
     fallbackImage: "/assets/images/optimized/hero6-1600.webp",
   },
   {

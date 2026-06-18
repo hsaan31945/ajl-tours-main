@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useAdmin } from "../context/AdminContext";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { useContext } from "react";
@@ -9,7 +9,7 @@ import TourEditWizard from "../components/TourEditWizard";
 import AdminModeIndicator from "../components/AdminModeIndicator";
 import ApproxPriceNote from "../components/ApproxPriceNote";
 import { normalizeTourData } from '../utils/tourDataMapper';
-import { normalizeTourId, isValidObjectId, getTourId, getTourSeoPath, getTourSlug } from '../utils/tourId';
+import { normalizeTourId, isValidObjectId, getTourId, getTourSeoPath, matchesTourIdentifier } from '../utils/tourId';
 import { apiUrl, getBackendUrl } from '../utils/api';
 import { clearToursCache, fetchToursList } from '../services/toursApi';
 import { cleanDisplayName, stripHtmlToText } from '../utils/textFormatting';
@@ -290,9 +290,6 @@ const Checkout = () => {
   
   const navigate = useNavigate();
 
-  // Track previous id to detect changes
-  const prevIdRef = useRef(id);
-
   const syncTourState = (tourData) => {
     const normalizedData = normalizeTourData(tourData);
     setTour(normalizedData);
@@ -311,13 +308,6 @@ const Checkout = () => {
       setLoading(false);
       return;
     }
-
-    // Check if id actually changed
-    if (prevIdRef.current === id && tour && (tour.id === id || tour._id === id)) {
-      return; // Same tour, no need to refetch
-    }
-
-    prevIdRef.current = id;
 
     const fetchTour = async () => {
       // Declare variables outside try block to avoid scope issues
@@ -338,10 +328,12 @@ const Checkout = () => {
         // backing database ID before requesting the full tour record.
         tourIdString = normalizeTourId(id);
         if (!isValidObjectId(tourIdString)) {
-          const tours = await fetchToursList({ limit: 100, full: true }, { skipCache: true });
-          const matchedTour = tours.find((item) => (
-            getTourSlug(item) === tourIdString || getTourId(item) === tourIdString
-          ));
+          const stateTour = location.state?.tour || location.state?.tourData;
+          const matchedStateTour = matchesTourIdentifier(stateTour, tourIdString) ? stateTour : null;
+          const tours = matchedStateTour
+            ? []
+            : await fetchToursList({ limit: 100 }, { skipCache: true });
+          const matchedTour = matchedStateTour || tours.find((item) => matchesTourIdentifier(item, tourIdString));
           const matchedTourId = getTourId(matchedTour);
           if (!matchedTourId) throw new Error("Tour not found");
           tourIdString = normalizeTourId(matchedTourId);
@@ -453,7 +445,7 @@ const Checkout = () => {
     };
     
     fetchTour();
-  }, [id, location.pathname, tour]); // Depend on id and pathname to catch route changes
+  }, [id, location.pathname, location.state]);
 
   // Load booking history
   useEffect(() => {

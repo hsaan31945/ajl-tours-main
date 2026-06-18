@@ -50,15 +50,18 @@ export const isValidObjectId = (id) => {
   return /^[0-9a-fA-F]{24}$/.test(idString);
 };
 
-export const slugifyTourName = (value) => {
+const slugifyValue = (value) => {
   return String(value || "")
     .toLowerCase()
     .trim()
-    .replace(/^explore\s+/, "")
     .replace(/&/g, " and ")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 };
+
+export const slugifyTourName = (value) => (
+  slugifyValue(String(value || "").replace(/^explore\s+/i, ""))
+);
 
 const getPreferredTourSlug = (tour) => {
   const name = String(tour?.name || tour?.title || "").toLowerCase();
@@ -76,14 +79,36 @@ const getPreferredTourSlug = (tour) => {
 
 export const getTourSlug = (tour) => {
   if (!tour) return "";
-  const explicitSlug = tour.slug || tour.metadata?.slug;
-  if (explicitSlug) return slugifyTourName(explicitSlug);
 
   const preferredSlug = getPreferredTourSlug(tour);
   if (preferredSlug) return preferredSlug;
 
   const generatedSlug = slugifyTourName(tour.name || tour.title);
-  return generatedSlug || slugifyTourName(getTourId(tour));
+  if (generatedSlug) return generatedSlug;
+
+  const explicitSlug = tour.slug || tour.metadata?.slug;
+  return slugifyValue(explicitSlug) || slugifyValue(getTourId(tour));
+};
+
+export const getTourSlugCandidates = (tour) => {
+  if (!tour) return [];
+
+  const candidates = [
+    getTourSlug(tour),
+    getPreferredTourSlug(tour),
+    slugifyTourName(tour.name || tour.title),
+    slugifyValue(tour.slug || tour.metadata?.slug),
+    slugifyValue(tour.name || tour.title),
+    String(tour.metadata?.staticId || "").trim(),
+    String(getTourId(tour) || "").trim(),
+  ];
+
+  return [...new Set(candidates.filter(Boolean))];
+};
+
+export const matchesTourIdentifier = (tour, identifier) => {
+  const value = String(identifier || "").trim();
+  return Boolean(value) && getTourSlugCandidates(tour).includes(value);
 };
 
 export const getTourSeoPath = (tour) => {
@@ -97,13 +122,13 @@ export const getTourCheckoutPath = (tour) => {
 
   const destination = String(
     tour?.division ||
+    tour?.divisionName ||
     tour?.destination ||
     tour?.country ||
     tour?.metadata?.division ||
     "switzerland"
   ).toLowerCase();
-  const destinationKey = destination.includes("sri") ? "srilanka" : "switzerland";
+  const destinationKey = destination.includes("sri") ? "sri-lanka" : "switzerland";
 
   return `/${destinationKey}/${slug}/checkout`;
 };
-
