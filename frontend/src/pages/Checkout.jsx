@@ -672,13 +672,6 @@ const Checkout = () => {
           {tourName}
         </EditableText>
       </h1>
-      {pricing.minTickets > 1 && (
-        <div className="mb-6 w-full max-w-6xl px-4">
-          <div className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-bold text-orange-800">
-            Minimum {pricing.minTickets} adults required to book
-          </div>
-        </div>
-      )}
       {/* Image Carousel */}
       <div className="w-full max-w-6xl px-4 mb-8">
         {loading ? (

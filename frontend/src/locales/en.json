@@ -254,7 +254,7 @@
     "pickupAddressRequired": "Pickup address is required",
     "pickupPlaceholder": "Enter your pickup address",
     "contactNote": "We'll only contact you with essential updates or changes to your booking",
-    "freeCancellationUntil": "Until 10:00 AM on August 11",
+    "freeCancellationUntil": "Until {{cutoff}}",
     "contactAlert": "Please fill in your name, email, phone number, and pickup address before continuing.",
     "emailAlert": "Please enter a valid email address before continuing.",
     "minimumTicketsAlert": "Minimum {{count}} tickets are required for this tour.",

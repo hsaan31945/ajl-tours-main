@@ -10,12 +10,13 @@ import { cleanDisplayName } from "../utils/textFormatting";
 import OrderSummaryBreakdown from "../components/OrderSummaryBreakdown";
 import { useCurrency } from "../context/CurrencyContext";
 import { useI18n } from "../i18n";
+import { formatFreeCancellationCutoff } from "../utils/bookingDates";
 
 const UserDetails = () => {
   const navigate = useNavigate();
   const { booking, updateContact, updateTour } = useBooking();
   const { formatPrice } = useCurrency();
-  const { t } = useI18n();
+  const { language, t } = useI18n();
   const { tour: bookingTour, tickets = 1, date, time, contact, flexibility } = booking || {};
   const [freshTour, setFreshTour] = useState(null);
   const tour = freshTour || bookingTour;
@@ -30,6 +31,7 @@ const UserDetails = () => {
   const [phone, setPhone] = useState(contact?.phone || "");
   const [pickupAddress, setPickupAddress] = useState(contact?.pickupAddress || contact?.address || "");
   const bookingTourId = getTourId(bookingTour);
+  const cancellationCutoff = formatFreeCancellationCutoff(date, time, language);
   
   // Validation state
   const [errors, setErrors] = useState({});
@@ -306,7 +308,15 @@ const UserDetails = () => {
               {isSubmitting ? t("booking.validating") : t("booking.goToPayment")}
             </button>
           </form>
-          <div className="mt-6 text-green-700 flex items-center gap-2"><CheckCircle className="w-5 h-5" aria-hidden="true" /> {t("common.freeCancellation")} <span className="text-gray-700">{t("booking.freeCancellationUntil")}</span></div>
+          {cancellationCutoff && (
+            <div className="mt-6 text-green-700 flex items-center gap-2">
+              <CheckCircle className="w-5 h-5" aria-hidden="true" />
+              {t("common.freeCancellation")}
+              <span className="text-gray-700">
+                {t("booking.freeCancellationUntil", { cutoff: cancellationCutoff })}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Right: Order Summary */}
