@@ -128,8 +128,8 @@ export const cacheHeroBanners = (content = {}) => {
 
 export const fetchPublicHeroBanners = async () => {
   const response = await fetch(
-    apiUrl(`/api/content/homepage/${HERO_BANNERS_SECTION}?v=${Date.now()}`),
-    { cache: "no-store" },
+    apiUrl(`/api/content/homepage/${HERO_BANNERS_SECTION}`),
+    { cache: "default" },
   );
   if (response.status === 404) return {};
   if (!response.ok) throw new Error("Could not load hero banners");

@@ -604,7 +604,9 @@ module.exports = async (req, res) => {
       });
     } else if (normalizedPath.startsWith('/content/homepage')) {
       const contentController = require('../controllers/contentController');
-      if (normalizedPath === '/content/homepage' && method === 'GET') {
+      if (normalizedPath === '/content/homepage/hero_banners/image' && method === 'GET') {
+        await contentController.getPublicHomepageImage(req, res);
+      } else if (normalizedPath === '/content/homepage' && method === 'GET') {
         await contentController.getAllPublicHomepageContent(req, res);
       } else {
         const sectionMatch = normalizedPath.match(/^\/content\/homepage\/([^/]+)/);

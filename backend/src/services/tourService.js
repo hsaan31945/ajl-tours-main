@@ -6,7 +6,13 @@ const Tour = require('../../models/Tour');
 const Division = require('../../models/Division');
 const User = require('../../models/User');
 const { getTourId, normalizeTourId, isValidObjectId } = require('../utils/tourId');
-const { getTourImageEndpoint, getTourThumbnail, getTourImageDebugPayload, stripDataImages } = require('../utils/tourImages');
+const {
+  getTourImageEndpoint,
+  getTourThumbnail,
+  getTourImageDebugPayload,
+  getMigratedTourImages,
+  stripDataImages,
+} = require('../utils/tourImages');
 const mongoose = require('mongoose');
 
 const LIST_CACHE_TTL_MS = 2 * 60 * 1000;
@@ -450,17 +456,20 @@ class TourService {
         : null);
 
     const reviewSummary = getReviewSummary(tour);
-    const legacyReviewCount = Number(tour.metadata?.reviews);
-    const legacyRating = Number(tour.metadata?.rating);
-    const thumbnail = Number(tour.imageCount || 0) > 0
-      ? getTourImageEndpoint(tour)
-      : getTourThumbnail(tour);
+    const legacyReviewCount = Number(tour.metadata?.reviews ?? tour.reviews);
+    const legacyRating = Number(tour.metadata?.rating ?? tour.rating);
+    const thumbnail = getTourThumbnail(tour);
+    const shortSummary = String(tour.shortSummary || '').trim().slice(0, 240);
 
     return {
       id,
       _id: id,
       slug: this.buildSlug(tour, id),
       name: tour.name,
+      title: tour.name,
+      location: tour.startLocation || divisionName || '',
+      shortSummary,
+      description: shortSummary,
       price: Number(tour.price) || 0,
       ...getDiscountFields(tour),
       ...getGroupDiscountFields(tour),
@@ -482,10 +491,9 @@ class TourService {
       (typeof tour.division === 'object' && tour.division?.name
         ? tour.division.name
         : null);
-    const legacyRating = Number(tour.metadata?.rating);
-    const thumbnail = Number(tour.imageCount || 0) > 0
-      ? getTourImageEndpoint(tour)
-      : getTourThumbnail(tour);
+    const legacyRating = Number(tour.metadata?.rating ?? tour.rating);
+    const thumbnail = getTourThumbnail(tour);
+    const shortSummary = String(tour.shortSummary || '').trim().slice(0, 240);
 
     return {
       _id: id,
@@ -494,6 +502,8 @@ class TourService {
       title: tour.name || '',
       name: tour.name || '',
       location: tour.startLocation || divisionName || '',
+      shortSummary,
+      description: shortSummary,
       price: Number(tour.price) || 0,
       ...getDiscountFields(tour),
       ...getGroupDiscountFields(tour),
@@ -502,7 +512,7 @@ class TourService {
       startLocation: tour.startLocation || '',
       thumbnail,
       rating: Number.isFinite(legacyRating) ? legacyRating : 0,
-      reviewCount: Number(tour.metadata?.reviews) || 0,
+      reviewCount: Number(tour.metadata?.reviews ?? tour.reviews) || 0,
       divisionName,
       isActive: tour.isActive !== false,
     };
@@ -513,6 +523,11 @@ class TourService {
 
     if (!tourId) {
       throw new Error('Tour ID is required');
+    }
+
+    const migratedImage = getMigratedTourImages(tourId)[Math.max(0, Number(imageIndex) || 0)];
+    if (migratedImage) {
+      return { redirectUrl: migratedImage };
     }
 
     const query = isValidObjectId(tourId)
@@ -621,12 +636,19 @@ class TourService {
           imageCount: { $size: { $ifNull: ['$images', []] } },
           rating: { $ifNull: ['$metadata.rating', 0] },
           reviews: { $ifNull: ['$metadata.reviews', 0] },
+          shortSummary: {
+            $substrCP: [
+              { $ifNull: ['$bookingSummary', { $ifNull: ['$description', ''] }] },
+              0,
+              240,
+            ],
+          },
         },
       },
       {
         $project: {
           name: 1,
-          description: 1,
+          shortSummary: 1,
           price: 1,
           currency: 1,
           discountEnabled: 1,
@@ -645,12 +667,8 @@ class TourService {
           reviews: 1,
           maxTotalTickets: 1,
           isActive: 1,
-          metadata: 1,
-          thumbnail: 1,
-          cardImage: 1,
-          coverImage: 1,
-          gallery: 1,
-          media: 1,
+          'metadata.staticId': 1,
+          'metadata.slug': 1,
           imageCount: 1,
           createdAt: 1,
           updatedAt: 1,
@@ -714,6 +732,7 @@ class TourService {
   async getAllTours() {
     try {
       const tours = await Tour.find({})
+        .select('-images')
         .populate({
           path: 'division',
           select: 'name description',
@@ -723,6 +742,7 @@ class TourService {
         .lean();
       
       const normalizedTours = tours.map(tour => {
+        const migratedImages = getMigratedTourImages(tour);
         if (process.env.DEBUG_TOUR_IMAGES === 'true') {
           console.log('Tour image debug', getTourImageDebugPayload(tour));
         }
@@ -734,8 +754,8 @@ class TourService {
         tour.included = Array.isArray(tour.included) ? tour.included : [];
         tour.excluded = Array.isArray(tour.excluded) ? tour.excluded : [];
         tour.itinerary = Array.isArray(tour.itinerary) ? tour.itinerary : [];
+        tour.images = migratedImages;
         tour.thumbnail = getTourThumbnail(tour);
-        tour.images = stripDataImages(tour.images, tour.id || tour._id);
         tour.pickupLocations = Array.isArray(tour.pickupLocations) ? tour.pickupLocations : [];
         // Ensure divisionName is set correctly
         if (tour.division) {
@@ -750,6 +770,28 @@ class TourService {
         }
         return tour;
       });
+
+      const missingImageIds = normalizedTours
+        .filter((tour) => !tour.images.length)
+        .map((tour) => tour._id)
+        .filter(Boolean);
+
+      if (missingImageIds.length) {
+        const fallbackImages = await Tour.find({ _id: { $in: missingImageIds } })
+          .select('images')
+          .lean();
+        const imageMap = new Map(fallbackImages.map((tour) => [
+          String(tour._id),
+          stripDataImages(tour.images, tour._id),
+        ]));
+
+        normalizedTours.forEach((tour) => {
+          if (!tour.images.length) {
+            tour.images = imageMap.get(String(tour._id)) || [];
+            tour.thumbnail = getTourThumbnail(tour);
+          }
+        });
+      }
 
       return this.dedupeTours(normalizedTours);
     } catch (error) {
@@ -770,6 +812,7 @@ class TourService {
     
     if (!isValidObjectId(tourId)) {
       const tour = await Tour.findOne({ 'metadata.staticId': tourId })
+        .select('-images')
         .populate('division', 'name description')
         .lean();
 
@@ -788,14 +831,19 @@ class TourService {
       if (process.env.DEBUG_TOUR_IMAGES === 'true') {
         console.log('Tour image debug', getTourImageDebugPayload(tour));
       }
+      tour.images = getMigratedTourImages(tour);
+      if (!tour.images.length) {
+        const imageDoc = await Tour.findById(tour._id).select('images').lean();
+        tour.images = stripDataImages(imageDoc?.images, tour.id || tour._id);
+      }
       tour.thumbnail = getTourThumbnail(tour);
-      tour.images = stripDataImages(tour.images, tour.id || tour._id);
       tour.pickupLocations = Array.isArray(tour.pickupLocations) ? tour.pickupLocations : [];
 
       return applyReviewSummary(tour);
     }
     
     const tour = await Tour.findById(tourId)
+      .select('-images')
       .populate('division', 'name description')
       .lean();
     
@@ -816,8 +864,12 @@ class TourService {
     if (process.env.DEBUG_TOUR_IMAGES === 'true') {
       console.log('Tour image debug', getTourImageDebugPayload(tour));
     }
+    tour.images = getMigratedTourImages(tour);
+    if (!tour.images.length) {
+      const imageDoc = await Tour.findById(tourId).select('images').lean();
+      tour.images = stripDataImages(imageDoc?.images, tour.id || tour._id);
+    }
     tour.thumbnail = getTourThumbnail(tour);
-    tour.images = stripDataImages(tour.images, tour.id || tour._id);
     tour.pickupLocations = Array.isArray(tour.pickupLocations) ? tour.pickupLocations : [];
     
     return applyReviewSummary(tour);

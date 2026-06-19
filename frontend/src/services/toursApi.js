@@ -8,23 +8,33 @@ const STALE_CACHE_MS = 30 * 60 * 1000;
 
 function buildQuery(params = {}) {
   const qs = new URLSearchParams();
-  qs.set('view', params.view || 'list');
+  qs.set('view', 'list');
   if (params.division) qs.set('division', params.division);
-  if (params.limit != null) qs.set('limit', String(params.limit));
-  if (params.sort) qs.set('sort', params.sort);
-  if (params.full) qs.set('full', 'true');
+  qs.set('limit', String(Math.max(100, Number(params.limit) || 100)));
   return qs.toString();
+}
+
+function applyClientView(list, params = {}) {
+  const data = [...list];
+  if (params.sort === 'popular') {
+    data.sort((a, b) => {
+      const reviewDelta = Number(b.reviewCount || b.reviews || 0) - Number(a.reviewCount || a.reviews || 0);
+      if (reviewDelta) return reviewDelta;
+      return Number(b.rating || 0) - Number(a.rating || 0);
+    });
+  }
+  return data.slice(0, Math.max(1, Number(params.limit) || data.length));
 }
 
 export async function fetchToursList(params = {}, options = {}) {
   const key = buildQuery(params);
   const hit = cache.get(key);
   if (!options.skipCache && hit && hit.expires > Date.now()) {
-    return hit.data;
+    return applyClientView(hit.data, params);
   }
 
   if (!options.skipCache && inFlightRequests.has(key)) {
-    return inFlightRequests.get(key);
+    return applyClientView(await inFlightRequests.get(key), params);
   }
 
   const controller = options.signal ? null : new AbortController();
@@ -34,15 +44,9 @@ export async function fetchToursList(params = {}, options = {}) {
     : null;
 
   const request = (async () => {
-    const requestQuery = new URLSearchParams(key);
-    requestQuery.set('_', String(Date.now()));
-
-    const res = await fetch(apiUrl(`/api/tours?${requestQuery.toString()}`), {
+    const res = await fetch(apiUrl(`/api/tours?${key}`), {
       signal,
-      headers: {
-        'Cache-Control': 'no-cache',
-      },
-      cache: 'no-store',
+      cache: 'default',
     });
     if (!res.ok) throw new Error(`Failed to load tours (${res.status})`);
     const data = await res.json();
@@ -66,10 +70,10 @@ export async function fetchToursList(params = {}, options = {}) {
   }
 
   try {
-    return await request;
+    return applyClientView(await request, params);
   } catch (error) {
     if (!options.skipCache && hit && hit.staleUntil > Date.now()) {
-      return hit.data;
+      return applyClientView(hit.data, params);
     }
     throw error;
   } finally {

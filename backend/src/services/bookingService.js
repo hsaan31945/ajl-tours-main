@@ -37,9 +37,11 @@ class BookingService {
     }
     
     return await Booking.find(query)
+      .select('-__v')
       .populate('user', 'name email phone createdAt')
       .populate('tourId', 'name price discountEnabled discountPrice groupDiscountEnabled groupDiscount4 groupDiscount5 groupDiscount6Plus')
       .sort({ createdAt: -1 })
+      .limit(100)
       .lean();
   }
 

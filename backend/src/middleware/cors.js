@@ -14,6 +14,7 @@ const corsMiddleware = (req, res, next) => {
   
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+  res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Admin-Passcode');
   res.setHeader('Access-Control-Allow-Credentials', config.cors.credentials ? 'true' : 'false');
@@ -35,6 +36,7 @@ const setCORSHeaders = (req, res) => {
     : config.cors.origins[0];
   
   res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+  res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Admin-Passcode');
   res.setHeader('Access-Control-Allow-Credentials', config.cors.credentials ? 'true' : 'false');
@@ -45,7 +47,6 @@ module.exports = {
   corsMiddleware,
   setCORSHeaders
 };
-
 
 
 

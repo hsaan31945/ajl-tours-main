@@ -1,4 +1,5 @@
 const IMAGE_FIELDS = ['thumbnail', 'cardImage', 'coverImage', 'images', 'gallery', 'media'];
+const tourMediaManifest = require('../../data/tour-media-manifest.json');
 
 const STATIC_TOUR_IMAGE_RULES = [
   {
@@ -84,6 +85,31 @@ const hasDataImageValue = (value) => {
 
 const getTourId = (tour = {}) => tour._id?.toString?.() || tour.id || '';
 
+const getMediaBaseUrl = () => {
+  const configured = String(
+    process.env.PUBLIC_MEDIA_BASE_URL ||
+    process.env.FRONTEND_URL ||
+    ''
+  ).trim().replace(/\/$/, '');
+
+  if (configured) return configured;
+  return process.env.NODE_ENV === 'production' ? 'https://ajltour.com' : '';
+};
+
+const makePublicMediaUrl = (value) => {
+  const url = String(value || '').trim();
+  if (!url || /^https?:\/\//i.test(url)) return url;
+  const normalized = url.startsWith('/') ? url : `/${url}`;
+  const base = getMediaBaseUrl();
+  return base ? `${base}${normalized}` : normalized;
+};
+
+const getMigratedTourImages = (tourOrId = {}) => {
+  const id = typeof tourOrId === 'object' ? getTourId(tourOrId) : String(tourOrId || '');
+  const images = tourMediaManifest[id];
+  return Array.isArray(images) ? images.map(makePublicMediaUrl) : [];
+};
+
 const getTourImageEndpoint = (tour = {}, index = 0) => {
   const id = getTourId(tour);
   if (!id) return '';
@@ -111,6 +137,9 @@ const getStaticTourThumbnail = (tour = {}) => {
 };
 
 const getTourThumbnail = (tour = {}) => {
+  const migratedImage = getMigratedTourImages(tour)[0];
+  if (migratedImage) return migratedImage;
+
   const direct = (
     firstImageValue(tour.thumbnail) ||
     firstImageValue(tour.cardImage) ||
@@ -166,12 +195,14 @@ const getTourImageDebugPayload = (tour = {}) => ({
 
 const stripDataImages = (images, tourId = '') => {
   if (!Array.isArray(images)) return [];
+  const migratedImages = getMigratedTourImages(tourId);
   return images
     .map((image, index) => {
       const direct = readImageValue(image);
       if (direct) return direct;
 
       if (hasDataImageValue(image) && tourId) {
+        if (migratedImages[index]) return migratedImages[index];
         const suffix = index > 0 ? `?index=${encodeURIComponent(String(index))}` : '';
         return `/api/tours/${encodeURIComponent(String(tourId))}/image${suffix}`;
       }
@@ -187,5 +218,6 @@ module.exports = {
   getStaticTourThumbnail,
   getTourImageDebugPayload,
   getTourImageEndpoint,
+  getMigratedTourImages,
   stripDataImages,
 };

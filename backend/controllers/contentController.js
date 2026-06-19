@@ -25,13 +25,12 @@ function clearHomepageContentCache() {
 
 function setPublicCacheHeaders(res) {
   res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=600, stale-while-revalidate=86400');
+  res.setHeader('Vercel-CDN-Cache-Control', 'public, s-maxage=600, stale-while-revalidate=86400');
 }
 
 function setDynamicHeroCacheHeaders(res) {
-  res.setHeader('Cache-Control', 'private, no-store, max-age=0, must-revalidate');
-  res.setHeader('CDN-Cache-Control', 'no-store');
-  res.setHeader('Vercel-CDN-Cache-Control', 'no-store');
-  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=600, stale-while-revalidate=86400');
+  res.setHeader('Vercel-CDN-Cache-Control', 'public, s-maxage=600, stale-while-revalidate=86400');
 }
 
 function sanitizeImageUrl(value, { allowDataImage = false } = {}) {
@@ -79,13 +78,90 @@ function sanitizeHeroBannerContent(content = {}) {
   }, {});
 }
 
+function getHeroImageEndpoint(pageKey, imageIndex = 0) {
+  const query = new URLSearchParams({
+    page: String(pageKey || ''),
+    index: String(Math.max(0, Number(imageIndex) || 0)),
+  });
+  return `/api/content/homepage/hero_banners/image?${query.toString()}`;
+}
+
+function replaceHeroDataImagesWithUrls(content = {}) {
+  return Object.entries(content || {}).reduce((acc, [pageKey, banner]) => {
+    if (!banner || typeof banner !== 'object') return acc;
+
+    const sourceImages = Array.isArray(banner.images)
+      ? banner.images
+      : [banner.imageUrl].filter(Boolean);
+    const images = sourceImages
+      .map((image, index) => {
+        const value = typeof image === 'string'
+          ? image
+          : image?.url || image?.imageUrl || image?.src || '';
+        return /^data:image\//i.test(String(value || '').trim())
+          ? getHeroImageEndpoint(pageKey, index)
+          : sanitizeImageUrl(value);
+      })
+      .filter(Boolean)
+      .slice(0, 4);
+
+    acc[pageKey] = {
+      ...banner,
+      imageUrl: images[0] || '',
+      images,
+    };
+    return acc;
+  }, {});
+}
+
 function sanitizePublicHomepageDoc(doc) {
   if (!doc) return doc;
   if (doc.section !== 'hero_banners') return doc;
   return {
     ...doc,
-    content: sanitizeHeroBannerContent(doc.content),
+    content: replaceHeroDataImagesWithUrls(sanitizeHeroBannerContent(doc.content)),
   };
+}
+
+async function getPublicHomepageImage(req, res) {
+  try {
+    const pageKey = String(req.query?.page || '').trim();
+    const imageIndex = Math.max(0, Number(req.query?.index) || 0);
+    if (!pageKey) return res.status(400).json({ message: 'Hero page is required' });
+
+    const doc = await HomepageContent
+      .findOne({ section: 'hero_banners', isActive: true })
+      .select('content updatedAt')
+      .lean();
+    if (!doc) return res.status(404).json({ message: 'Hero banners not found' });
+
+    const banner = doc.content?.[pageKey] || {};
+    const images = Array.isArray(banner.images)
+      ? banner.images
+      : [banner.imageUrl].filter(Boolean);
+    const rawImage = images[imageIndex];
+    const image = typeof rawImage === 'string'
+      ? rawImage
+      : rawImage?.url || rawImage?.imageUrl || rawImage?.src || '';
+
+    if (/^https?:\/\//i.test(image) || /^\//.test(image)) {
+      res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=604800');
+      return res.redirect(302, image);
+    }
+
+    const match = String(image || '').match(/^data:(image\/(?:webp|avif));base64,(.+)$/i);
+    if (!match) return res.status(404).json({ message: 'Hero image not found' });
+
+    const buffer = Buffer.from(match[2], 'base64');
+    res.setHeader('Content-Type', match[1].toLowerCase());
+    res.setHeader('Content-Length', buffer.length);
+    res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=604800');
+    res.setHeader('Vercel-CDN-Cache-Control', 'public, s-maxage=604800, stale-while-revalidate=604800');
+    if (doc.updatedAt) res.setHeader('Last-Modified', new Date(doc.updatedAt).toUTCString());
+    return res.end(buffer);
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
 }
 
 async function getPublicHomepageContent(req, res) {
@@ -93,7 +169,7 @@ async function getPublicHomepageContent(req, res) {
     const { section } = req.params;
     const isHeroBanners = section === 'hero_banners';
     const cacheKey = `section:${section}`;
-    const cached = isHeroBanners ? null : getCache(cacheKey);
+    const cached = getCache(cacheKey);
     if (cached) {
       setPublicCacheHeaders(res);
       return res.json(cached);
@@ -105,10 +181,10 @@ async function getPublicHomepageContent(req, res) {
       .lean();
     if (!doc) return res.status(404).json({ message: 'Section not found' });
     const publicDoc = sanitizePublicHomepageDoc(doc);
+    setCache(cacheKey, publicDoc);
     if (isHeroBanners) {
       setDynamicHeroCacheHeaders(res);
     } else {
-      setCache(cacheKey, publicDoc);
       setPublicCacheHeaders(res);
     }
     return res.json(publicDoc);
@@ -142,6 +218,7 @@ async function getAllPublicHomepageContent(req, res) {
 
 module.exports = {
   getPublicHomepageContent,
+  getPublicHomepageImage,
   getAllPublicHomepageContent,
   clearHomepageContentCache,
   sanitizeHeroBannerContent,

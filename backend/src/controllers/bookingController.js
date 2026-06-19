@@ -15,6 +15,10 @@ class BookingController {
         email: req.query.email,
         tourId: req.query.tourId
       };
+
+      if (!filters.email && !filters.tourId) {
+        return next(new AppError('An email or tourId filter is required', 400));
+      }
       
       const bookings = await bookingService.getAllBookings(filters);
       res.json({
@@ -147,4 +151,3 @@ class BookingController {
 }
 
 module.exports = new BookingController();
-

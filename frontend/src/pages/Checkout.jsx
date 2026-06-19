@@ -332,7 +332,7 @@ const Checkout = () => {
           const matchedStateTour = matchesTourIdentifier(stateTour, tourIdString) ? stateTour : null;
           const tours = matchedStateTour
             ? []
-            : await fetchToursList({ limit: 100 }, { skipCache: true });
+            : await fetchToursList({ limit: 100 });
           const matchedTour = matchedStateTour || tours.find((item) => matchesTourIdentifier(item, tourIdString));
           const matchedTourId = getTourId(matchedTour);
           if (!matchedTourId) throw new Error("Tour not found");
@@ -359,9 +359,8 @@ const Checkout = () => {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache',
           },
-          cache: 'no-store',
+          cache: 'default',
           credentials: 'include',
           mode: 'cors' // Explicitly set CORS mode
         });
@@ -458,7 +457,7 @@ const Checkout = () => {
         const res = await fetch(`${getBackendUrl()}/api/bookings?email=${encodeURIComponent(user.email)}`);
         if (res.ok) {
           const data = await res.json();
-          setBookingHistory(Array.isArray(data) ? data : []);
+          setBookingHistory(Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []));
         }
       } catch (err) {
         console.error('Error loading booking history:', err);

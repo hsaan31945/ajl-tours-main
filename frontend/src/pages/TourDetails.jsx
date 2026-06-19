@@ -27,7 +27,7 @@ const TourDetails = () => {
       try {
         let response = await fetch(apiUrl(`/api/tours/${id}`));
         if (!response.ok) {
-          const tours = await fetchToursList({ limit: 100 }, { skipCache: true });
+          const tours = await fetchToursList({ limit: 100 });
           const matchedTour = tours.find((item) => matchesTourIdentifier(item, id));
           if (!matchedTour) {
             throw new Error('Tour not found');
