@@ -7,6 +7,7 @@ import { cleanDisplayName } from "../utils/textFormatting";
 import { organizationJsonLd } from "../utils/seo";
 import { Search, MapPin, ChevronDown, Star, Quote } from "lucide-react";
 import { useI18n } from "../i18n";
+import { useHeroBanner } from "../hooks/useHeroBanner";
 
 const ExploreTours = lazy(() => import("../components/ExploreTours"));
 const TopDealsSection = lazy(() => import("../components/TopDealsSection"));
@@ -80,6 +81,7 @@ const Home2 = () => {
   const [isDesktopHero, setIsDesktopHero] = useState(() => (
     typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches
   ));
+  const homeHeroBanner = useHeroBanner("home", hero4, defaultHeroImages, { deferMs: 500 });
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -88,11 +90,14 @@ const Home2 = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const searchToursLoadedRef = useRef(false);
 
-  // Keep homepage LCP independent from CMS/API hero banners.
-  const heroImages = defaultHeroImages;
+  const heroImages = homeHeroBanner.images.length ? homeHeroBanner.images : defaultHeroImages;
   const desktopHeroImages = canAnimateHero && heroImages.length > 1
     ? [...heroImages, heroImages[0]]
     : [heroImages[0]];
+  const activeHeroImage = heroImages[currentImageIndex % heroImages.length] || heroImages[0];
+  const heroImagesKey = heroImages
+    .map((image) => `${image.length}:${image.slice(0, 32)}:${image.slice(-32)}`)
+    .join("|");
 
   const loadSearchTours = async () => {
     if (searchToursLoadedRef.current || searchLoading) return;
@@ -204,7 +209,7 @@ const Home2 = () => {
 
   // Auto-advance slowly and loop visually from last slide to first slide.
   React.useEffect(() => {
-    if (!isDesktopHero || !canAnimateHero || heroImages.length <= 1) return undefined;
+    if (!canAnimateHero || heroImages.length <= 1) return undefined;
 
     const interval = setInterval(() => {
       setIsHeroTransitioning(true);
@@ -212,7 +217,7 @@ const Home2 = () => {
     }, HERO_AUTOPLAY_MS);
 
     return () => clearInterval(interval);
-  }, [canAnimateHero, heroImages.length, isDesktopHero]);
+  }, [canAnimateHero, heroImages.length]);
 
   React.useEffect(() => {
     if (!canAnimateHero || heroImages.length <= 1 || currentImageIndex !== heroImages.length) return undefined;
@@ -234,7 +239,7 @@ const Home2 = () => {
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => setIsHeroTransitioning(true));
     });
-  }, [heroImages.join("|")]);
+  }, [heroImagesKey]);
 
   React.useEffect(() => {
     const media = window.matchMedia("(min-width: 768px)");
@@ -246,11 +251,11 @@ const Home2 = () => {
   }, []);
 
   React.useEffect(() => {
-    if (!isDesktopHero || canAnimateHero) return undefined;
+    if (canAnimateHero) return undefined;
 
     let timeoutId;
     const enableAfterLoad = () => {
-      timeoutId = window.setTimeout(() => setCanAnimateHero(true), 6000);
+      timeoutId = window.setTimeout(() => setCanAnimateHero(true), 1200);
     };
 
     if (document.readyState === "complete") {
@@ -272,7 +277,7 @@ const Home2 = () => {
       window.removeEventListener("keydown", enableOnInteraction);
       window.clearTimeout(timeoutId);
     };
-  }, [canAnimateHero, isDesktopHero]);
+  }, [canAnimateHero]);
 
   return (
     <div className="min-h-screen">
@@ -288,22 +293,19 @@ const Home2 = () => {
         {!isDesktopHero && (
         <div className="home-hero-bg home-hero-mobile absolute inset-0 z-0">
           {heroImages.length > 0 && (
-            <picture>
-              <source type="image/avif" srcSet={mobileHeroAvifSrcSet} sizes="100vw" />
-              <source type="image/webp" srcSet={mobileHeroWebpSrcSet} sizes="100vw" />
-              <img
-                src={hero6Mobile640Avif}
-                srcSet={mobileHeroAvifSrcSet}
-                sizes="100vw"
-                alt="Private Switzerland tour through an alpine mountain landscape"
-                width="900"
-                height="600"
-                fetchPriority="high"
-                loading="eager"
-                decoding="async"
-                className="home-hero-img absolute inset-0 h-full w-full object-cover object-top"
-              />
-            </picture>
+            <img
+              key={activeHeroImage}
+              src={activeHeroImage}
+              srcSet={heroImageSrcSets[activeHeroImage]}
+              sizes="100vw"
+              alt={homeHeroBanner.alt || "Private Switzerland tour landscape"}
+              width="900"
+              height="600"
+              fetchpriority="high"
+              loading="eager"
+              decoding="async"
+              className="home-hero-img absolute inset-0 h-full w-full object-cover object-top transition-opacity duration-700"
+            />
           )}
         </div>
         )}
@@ -335,7 +337,7 @@ const Home2 = () => {
                   alt=""
                   width="1600"
                   height="1067"
-                  fetchPriority={index === 0 ? "high" : "auto"}
+                  fetchpriority={index === 0 ? "high" : "auto"}
                   loading={index === 0 ? "eager" : "lazy"}
                   decoding="async"
                   className="home-hero-desktop-img h-full w-full object-cover"

@@ -27,9 +27,23 @@ function setPublicCacheHeaders(res) {
   res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=600, stale-while-revalidate=86400');
 }
 
-function sanitizeImageUrl(value) {
+function setDynamicHeroCacheHeaders(res) {
+  res.setHeader('Cache-Control', 'private, no-store, max-age=0, must-revalidate');
+  res.setHeader('CDN-Cache-Control', 'no-store');
+  res.setHeader('Vercel-CDN-Cache-Control', 'no-store');
+  res.setHeader('Pragma', 'no-cache');
+}
+
+function sanitizeImageUrl(value, { allowDataImage = false } = {}) {
   const url = String(value || '').trim();
-  if (!url || url.length > 2000 || /^data:/i.test(url)) return '';
+  if (!url) return '';
+
+  if (/^data:/i.test(url)) {
+    const isSupportedImage = /^data:image\/(?:webp|avif);base64,/i.test(url);
+    return allowDataImage && isSupportedImage && url.length <= 500000 ? url : '';
+  }
+
+  if (url.length > 2000) return '';
   return url;
 }
 
@@ -37,8 +51,8 @@ function sanitizeHeroImages(value) {
   const images = Array.isArray(value) ? value : [];
   return images
     .map((image) => {
-      if (typeof image === 'string') return sanitizeImageUrl(image);
-      return sanitizeImageUrl(image?.url || image?.imageUrl || image?.src);
+      if (typeof image === 'string') return sanitizeImageUrl(image, { allowDataImage: true });
+      return sanitizeImageUrl(image?.url || image?.imageUrl || image?.src, { allowDataImage: true });
     })
     .filter(Boolean)
     .slice(0, 4);
@@ -49,7 +63,7 @@ function sanitizeHeroBannerContent(content = {}) {
     if (!banner || typeof banner !== 'object') return acc;
 
     const images = sanitizeHeroImages(banner.images);
-    const imageUrl = sanitizeImageUrl(banner.imageUrl || images[0]);
+    const imageUrl = sanitizeImageUrl(banner.imageUrl || images[0], { allowDataImage: true });
 
     acc[pageKey] = {
       imageUrl: imageUrl || images[0] || '',
@@ -77,8 +91,9 @@ function sanitizePublicHomepageDoc(doc) {
 async function getPublicHomepageContent(req, res) {
   try {
     const { section } = req.params;
+    const isHeroBanners = section === 'hero_banners';
     const cacheKey = `section:${section}`;
-    const cached = getCache(cacheKey);
+    const cached = isHeroBanners ? null : getCache(cacheKey);
     if (cached) {
       setPublicCacheHeaders(res);
       return res.json(cached);
@@ -90,8 +105,12 @@ async function getPublicHomepageContent(req, res) {
       .lean();
     if (!doc) return res.status(404).json({ message: 'Section not found' });
     const publicDoc = sanitizePublicHomepageDoc(doc);
-    setCache(cacheKey, publicDoc);
-    setPublicCacheHeaders(res);
+    if (isHeroBanners) {
+      setDynamicHeroCacheHeaders(res);
+    } else {
+      setCache(cacheKey, publicDoc);
+      setPublicCacheHeaders(res);
+    }
     return res.json(publicDoc);
   } catch (err) {
     return res.status(500).json({ message: err.message });
@@ -125,4 +144,5 @@ module.exports = {
   getPublicHomepageContent,
   getAllPublicHomepageContent,
   clearHomepageContentCache,
+  sanitizeHeroBannerContent,
 };

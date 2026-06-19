@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { fetchPublicHeroBanners, getDefaultHeroBanners, readCachedHeroBanners } from "../utils/heroBanners";
+import {
+  fetchPublicHeroBanners,
+  getDefaultHeroBanners,
+  HERO_BANNERS_CACHE_KEY,
+  HERO_BANNERS_UPDATED_EVENT,
+  readCachedHeroBanners,
+} from "../utils/heroBanners";
 
 const defaultBanners = getDefaultHeroBanners();
 
@@ -10,7 +16,9 @@ const buildBannerState = (pageKey, savedBanner = {}, fallbackImage = "", fallbac
   const hasSavedImage = Boolean(savedBanner.imageUrl || savedImages.length);
   const images = savedImages.length
     ? savedImages
-    : [savedBanner.imageUrl || fallbackImage || fallbackImages[0]].filter(Boolean);
+    : savedBanner.imageUrl
+      ? [savedBanner.imageUrl]
+      : (fallbackImages.length ? fallbackImages : [fallbackImage]).filter(Boolean);
 
   return {
     imageUrl: images[0] || "",
@@ -103,6 +111,30 @@ export const useHeroBanner = (pageKey, fallbackImage = "", fallbackImages = null
       cancelScheduledLoad?.();
     };
   }, [deferMs, fallbackImage, initialImages, pageKey]);
+
+  useEffect(() => {
+    const applyBanners = (banners) => {
+      const savedBanner = banners?.[pageKey] || {};
+      setBanner(buildBannerState(pageKey, savedBanner, fallbackImage, initialImages, false));
+    };
+
+    const handleUpdated = (event) => applyBanners(event.detail || {});
+    const handleStorage = (event) => {
+      if (event.key !== HERO_BANNERS_CACHE_KEY || !event.newValue) return;
+      try {
+        applyBanners(JSON.parse(event.newValue));
+      } catch (error) {
+        // Ignore malformed external cache updates.
+      }
+    };
+
+    window.addEventListener(HERO_BANNERS_UPDATED_EVENT, handleUpdated);
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener(HERO_BANNERS_UPDATED_EVENT, handleUpdated);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, [fallbackImage, initialImages, pageKey]);
 
   return banner;
 };

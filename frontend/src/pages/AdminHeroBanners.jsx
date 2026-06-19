@@ -8,6 +8,7 @@ import {
   cacheHeroBanners,
   HERO_BANNERS_SECTION,
   HERO_BANNER_PAGES,
+  MAX_HERO_IMAGES,
   normalizeHeroBanners,
 } from "../utils/heroBanners";
 
@@ -154,13 +155,21 @@ const AdminHeroBanners = () => {
     const trimmedUrl = String(imageUrl || "").trim();
     if (!trimmedUrl) return;
 
+    const currentImages = Array.isArray(banners[pageKey]?.images)
+      ? banners[pageKey].images
+      : [banners[pageKey]?.imageUrl].filter(Boolean);
+    if (currentImages.length >= MAX_HERO_IMAGES) {
+      setError(`A hero banner can contain up to ${MAX_HERO_IMAGES} images.`);
+      return;
+    }
+
     setMessage("");
     setError("");
     setBanners((current) => {
-      const currentImages = Array.isArray(current[pageKey]?.images)
+      const latestImages = Array.isArray(current[pageKey]?.images)
         ? current[pageKey].images
         : [current[pageKey]?.imageUrl].filter(Boolean);
-      const images = [...currentImages, trimmedUrl];
+      const images = [...latestImages, trimmedUrl].slice(0, MAX_HERO_IMAGES);
       return {
         ...current,
         [pageKey]: {
@@ -213,7 +222,34 @@ const AdminHeroBanners = () => {
         setError("At least one image is still too large after compression. Use smaller WebP or AVIF images.");
         return;
       }
-      dataUrls.forEach((dataUrl) => addImageToBanner(page.key, dataUrl));
+      const currentImages = Array.isArray(banners[page.key]?.images)
+        ? banners[page.key].images
+        : [banners[page.key]?.imageUrl].filter(Boolean);
+      const availableSlots = Math.max(0, MAX_HERO_IMAGES - currentImages.length);
+      if (!availableSlots) {
+        setError(`A hero banner can contain up to ${MAX_HERO_IMAGES} images.`);
+        return;
+      }
+
+      const acceptedImages = dataUrls.slice(0, availableSlots);
+      setBanners((current) => {
+        const latestImages = Array.isArray(current[page.key]?.images)
+          ? current[page.key].images
+          : [current[page.key]?.imageUrl].filter(Boolean);
+        const images = [...latestImages, ...acceptedImages].slice(0, MAX_HERO_IMAGES);
+        return {
+          ...current,
+          [page.key]: {
+            ...current[page.key],
+            images,
+            imageUrl: images[0] || "",
+          },
+        };
+      });
+      setMessage("");
+      setError(dataUrls.length > acceptedImages.length
+        ? `Only ${acceptedImages.length} image${acceptedImages.length === 1 ? "" : "s"} added. A banner can contain up to ${MAX_HERO_IMAGES}.`
+        : "");
     } catch (err) {
       setError(err.message || "Could not process these images");
     }
@@ -266,7 +302,7 @@ const AdminHeroBanners = () => {
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Hero Banners</h1>
-            <p className="mt-2 text-gray-600">Add and delete hero images for public page banners.</p>
+            <p className="mt-2 text-gray-600">Add and delete up to {MAX_HERO_IMAGES} hero images for each public page banner.</p>
           </div>
           <button
             type="button"

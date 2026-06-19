@@ -1,6 +1,9 @@
 const Admin = require('../models/Admin');
 const HomepageContent = require('../models/HomepageContent');
-const { clearHomepageContentCache } = require('./contentController');
+const {
+  clearHomepageContentCache,
+  sanitizeHeroBannerContent,
+} = require('./contentController');
 
 // Basic admin login (username/email + password). For now, stub success.
 async function adminLogin(req, res) {
@@ -43,9 +46,12 @@ async function updateHomepageContent(req, res) {
   try {
     const { section } = req.params;
     const { content, isActive } = req.body || {};
+    const savedContent = section === 'hero_banners'
+      ? sanitizeHeroBannerContent(content ?? {})
+      : (content ?? {});
     const doc = await HomepageContent.findOneAndUpdate(
       { section },
-      { content: content ?? {}, isActive: isActive ?? true },
+      { content: savedContent, isActive: isActive ?? true },
       { new: true, upsert: true }
     );
     clearHomepageContentCache();

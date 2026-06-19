@@ -2,6 +2,8 @@ import { apiUrl } from "./api";
 
 export const HERO_BANNERS_SECTION = "hero_banners";
 export const HERO_BANNERS_CACHE_KEY = "ajlHeroBanners";
+export const HERO_BANNERS_UPDATED_EVENT = "ajl:hero-banners-updated";
+export const MAX_HERO_IMAGES = 4;
 
 export const HERO_BANNER_PAGES = [
   {
@@ -118,10 +120,17 @@ export const cacheHeroBanners = (content = {}) => {
   } catch (error) {
     // Ignore cache write failures; the API remains the source of truth.
   }
+
+  window.dispatchEvent(new CustomEvent(HERO_BANNERS_UPDATED_EVENT, {
+    detail: content || {},
+  }));
 };
 
 export const fetchPublicHeroBanners = async () => {
-  const response = await fetch(apiUrl(`/api/content/homepage/${HERO_BANNERS_SECTION}`));
+  const response = await fetch(
+    apiUrl(`/api/content/homepage/${HERO_BANNERS_SECTION}?v=${Date.now()}`),
+    { cache: "no-store" },
+  );
   if (response.status === 404) return {};
   if (!response.ok) throw new Error("Could not load hero banners");
   const data = await response.json();
