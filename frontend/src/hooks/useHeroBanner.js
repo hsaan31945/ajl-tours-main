@@ -65,7 +65,11 @@ const scheduleAfterFirstPaint = (callback, delayMs = 1500) => {
 };
 
 export const useHeroBanner = (pageKey, fallbackImage = "", fallbackImages = null, options = {}) => {
-  const { deferMs = 1500, useCachedInitial = true } = options;
+  const {
+    deferMs = 1500,
+    useCachedInitial = true,
+    waitForRemote = false,
+  } = options;
   const fallbackImagesKey = Array.isArray(fallbackImages) ? fallbackImages.join("|") : "";
   const initialImages = useMemo(() => {
     if (fallbackImagesKey) return fallbackImagesKey.split("|").filter(Boolean);
@@ -79,8 +83,8 @@ export const useHeroBanner = (pageKey, fallbackImage = "", fallbackImages = null
     }
 
     return {
-      imageUrl: initialImages[0] || "",
-      images: initialImages,
+      imageUrl: waitForRemote ? "" : (initialImages[0] || ""),
+      images: waitForRemote ? [] : initialImages,
       alt: defaultBanners[pageKey]?.alt || "",
       isCustom: false,
       isLoading: true,
@@ -99,12 +103,17 @@ export const useHeroBanner = (pageKey, fallbackImage = "", fallbackImages = null
         }
       } catch (error) {
         if (!cancelled) {
-          setBanner((current) => ({ ...current, isLoading: false }));
+          setBanner(buildBannerState(pageKey, {}, fallbackImage, initialImages, false));
         }
       }
     };
 
-    const cancelScheduledLoad = scheduleAfterFirstPaint(loadBanner, deferMs);
+    let cancelScheduledLoad;
+    if (deferMs <= 0) {
+      loadBanner();
+    } else {
+      cancelScheduledLoad = scheduleAfterFirstPaint(loadBanner, deferMs);
+    }
 
     return () => {
       cancelled = true;

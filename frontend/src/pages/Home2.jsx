@@ -81,7 +81,10 @@ const Home2 = () => {
   const [isDesktopHero, setIsDesktopHero] = useState(() => (
     typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches
   ));
-  const homeHeroBanner = useHeroBanner("home", hero4, defaultHeroImages, { deferMs: 500 });
+  const homeHeroBanner = useHeroBanner("home", hero4, defaultHeroImages, {
+    deferMs: 0,
+    waitForRemote: true,
+  });
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -90,10 +93,12 @@ const Home2 = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const searchToursLoadedRef = useRef(false);
 
-  const heroImages = homeHeroBanner.images.length ? homeHeroBanner.images : defaultHeroImages;
-  const desktopHeroImages = canAnimateHero && heroImages.length > 1
-    ? [...heroImages, heroImages[0]]
-    : [heroImages[0]];
+  const heroImages = homeHeroBanner.images;
+  const desktopHeroImages = heroImages.length === 0
+    ? []
+    : canAnimateHero && heroImages.length > 1
+      ? [...heroImages, heroImages[0]]
+      : [heroImages[0]];
   const activeHeroImage = heroImages[currentImageIndex % heroImages.length] || heroImages[0];
   const heroImagesKey = heroImages
     .map((image) => `${image.length}:${image.slice(0, 32)}:${image.slice(-32)}`)
@@ -301,7 +306,6 @@ const Home2 = () => {
               alt={homeHeroBanner.alt || "Private Switzerland tour landscape"}
               width="900"
               height="600"
-              fetchpriority="high"
               loading="eager"
               decoding="async"
               className="home-hero-img absolute inset-0 h-full w-full object-cover object-top transition-opacity duration-700"
@@ -313,38 +317,37 @@ const Home2 = () => {
         {/* Desktop Background: Carousel */}
         {isDesktopHero && (
         <div className="home-hero-bg home-hero-desktop absolute inset-0 z-0">
-          <div 
-            className={`home-hero-desktop-track flex h-full ease-in-out ${isHeroTransitioning ? "transition-transform duration-1000" : ""}`}
-            style={{ 
-              width: `${Math.max(desktopHeroImages.length, 1) * 100}%`,
-              transform: desktopHeroImages.length
-                ? `translateX(-${(currentImageIndex / desktopHeroImages.length) * 100}%)`
-                : "translateX(0)"
-            }}
-          >
-            {desktopHeroImages.map((image, index) => (
-              <div
-                key={index}
-                className="home-hero-desktop-slide relative h-full overflow-hidden"
-                style={{ 
-                  width: `${100 / desktopHeroImages.length}%`
-                }}
-              >
-                <img
-                  src={image}
-                  srcSet={heroImageSrcSets[image]}
-                  sizes="100vw"
-                  alt=""
-                  width="1600"
-                  height="1067"
-                  fetchpriority={index === 0 ? "high" : "auto"}
-                  loading={index === 0 ? "eager" : "lazy"}
-                  decoding="async"
-                  className="home-hero-desktop-img h-full w-full object-cover"
-                />
-              </div>
-            ))}
-          </div>
+          {desktopHeroImages.length > 0 && (
+            <div
+              className={`home-hero-desktop-track flex h-full ease-in-out ${isHeroTransitioning ? "transition-transform duration-1000" : ""}`}
+              style={{
+                width: `${desktopHeroImages.length * 100}%`,
+                transform: `translateX(-${(currentImageIndex / desktopHeroImages.length) * 100}%)`,
+              }}
+            >
+              {desktopHeroImages.map((image, index) => (
+                <div
+                  key={`${image}-${index}`}
+                  className="home-hero-desktop-slide relative h-full overflow-hidden"
+                  style={{
+                    width: `${100 / desktopHeroImages.length}%`,
+                  }}
+                >
+                  <img
+                    src={image}
+                    srcSet={heroImageSrcSets[image]}
+                    sizes="100vw"
+                    alt=""
+                    width="1600"
+                    height="1067"
+                    loading={index === 0 ? "eager" : "lazy"}
+                    decoding="async"
+                    className="home-hero-desktop-img h-full w-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         )}
         {/* Hero Content */}
