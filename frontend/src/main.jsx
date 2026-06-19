@@ -12,6 +12,10 @@ const SpeedInsights = lazy(() =>
   import("@vercel/speed-insights/react").then((module) => ({ default: module.SpeedInsights }))
 );
 
+const Analytics = lazy(() =>
+  import("@vercel/analytics/react").then((module) => ({ default: module.Analytics }))
+);
+
 const DeferredSpeedInsights = () => {
   const [ready, setReady] = useState(false);
 
@@ -31,6 +35,25 @@ const DeferredSpeedInsights = () => {
   );
 };
 
+const DeferredAnalytics = () => {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const isProductionHost = window.location.hostname === "ajltour.com" || window.location.hostname === "www.ajltour.com";
+    if (!isProductionHost) return undefined;
+
+    const id = window.setTimeout(() => setReady(true), 2000);
+    return () => window.clearTimeout(id);
+  }, []);
+
+  if (!ready) return null;
+  return (
+    <Suspense fallback={null}>
+      <Analytics />
+    </Suspense>
+  );
+};
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
@@ -40,6 +63,7 @@ createRoot(document.getElementById("root")).render(
             <I18nProvider>
               <App />
               <DeferredSpeedInsights />
+              <DeferredAnalytics />
             </I18nProvider>
           </BookingProvider>
         </AdminProvider>
