@@ -10,6 +10,7 @@ import OrderSummaryBreakdown from "../components/OrderSummaryBreakdown";
 import { useCurrency } from "../context/CurrencyContext";
 import { useI18n } from "../i18n";
 import SEO from "../components/SEO";
+import CheckoutProgress from "../components/CheckoutProgress";
 
 const Flexibility = () => {
   const navigate = useNavigate();
@@ -132,9 +133,6 @@ const Flexibility = () => {
     );
   }
 
-  const steps = [t("booking.flexibility"), t("booking.userDetails"), t("booking.payment")];
-  const currentStep = 1;
-
   const handleTicketsChange = (val) => {
     const nextTickets = parseTicketCount(val);
     if (!nextTickets) return;
@@ -152,19 +150,7 @@ const Flexibility = () => {
         noIndex
       />
       {/* Step Progress Bar */}
-      <div className="flex justify-center items-center gap-6 mb-8 w-full max-w-3xl mx-auto">
-        {steps.map((step, idx) => (
-          <div key={step} className="flex items-center gap-2 cursor-pointer" onClick={() => {
-            if (idx === 0) navigate("/booking-options");
-            if (idx === 1 && ticketsMeetMinimum) navigate("/userDetails");
-            if (idx === 2 && ticketsMeetMinimum) navigate("/payment");
-          }}>
-            <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-sm sm:text-base border-2 ${idx + 1 === currentStep ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-blue-700 border-blue-700'}`}>{idx + 1}</div>
-            <span className={`font-semibold text-sm sm:text-base ${idx + 1 === currentStep ? 'text-blue-700' : 'text-gray-500'}`}>{step}</span>
-            {idx < steps.length - 1 && <div className="w-6 sm:w-8 h-0.5 bg-blue-200 rounded-full" />}
-          </div>
-        ))}
-      </div>
+      <CheckoutProgress currentStep={1} />
 
       {/* Main Content */}
       <div className="flex flex-col md:flex-row gap-8 w-full max-w-5xl mx-auto">

@@ -11,6 +11,7 @@ import { calculateBookingPricing, getGroupDiscountLabel } from "../utils/booking
 import { cleanDisplayName } from "../utils/textFormatting";
 import { useCurrency } from "../context/CurrencyContext";
 import { useI18n } from "../i18n";
+import CheckoutProgress from "../components/CheckoutProgress";
 
 const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
 if (!publishableKey) {
@@ -55,7 +56,7 @@ const buildBookingPayload = ({ booking, tour, pricing }) => {
 const PaymentForm = ({ clientSecret, paymentSummary }) => {
   const navigate = useNavigate();
   const { booking } = useBooking();
-  const { tour, tickets = 1, date, time, contact, flexibility } = booking || {};
+  const { tour, tickets = 1, date, time, flexibility } = booking || {};
   const stripe = useStripe();
   const elements = useElements();
   const { formatPrice } = useCurrency();
@@ -137,6 +138,7 @@ const PaymentForm = ({ clientSecret, paymentSummary }) => {
   return (
     <div className="min-h-screen bg-neutral-100 py-8 px-2">
       <div className="max-w-4xl mx-auto">
+        <CheckoutProgress currentStep={3} />
         <h1 className="text-3xl font-bold text-center mb-8">{t("payment.title")}</h1>
         
         <div className="bg-white rounded-xl shadow p-6">
@@ -297,6 +299,7 @@ const FreeCheckoutForm = ({ paymentSummary }) => {
   return (
     <div className="min-h-screen bg-neutral-100 py-8 px-2">
       <div className="max-w-4xl mx-auto">
+        <CheckoutProgress currentStep={3} />
         <h1 className="text-3xl font-bold text-center mb-8">{t("payment.title")}</h1>
         <div className="bg-white rounded-xl shadow p-6">
           <div className="mb-6">
