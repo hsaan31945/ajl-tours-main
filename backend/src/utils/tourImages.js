@@ -1,5 +1,11 @@
 const IMAGE_FIELDS = ['thumbnail', 'cardImage', 'coverImage', 'images', 'gallery', 'media'];
-const tourMediaManifest = require('../../data/tour-media-manifest.json');
+
+let tourMediaManifest = {};
+try {
+  tourMediaManifest = require('../../data/tour-media-manifest.json');
+} catch (error) {
+  if (error?.code !== 'MODULE_NOT_FOUND') throw error;
+}
 
 const STATIC_TOUR_IMAGE_RULES = [
   {
