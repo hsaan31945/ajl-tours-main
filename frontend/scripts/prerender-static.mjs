@@ -134,7 +134,7 @@ const renderRoute = (template, route) => {
 
   return html.replace(
     '<div id="root"></div>',
-    `<div id="root"><main data-static-seo="true"><h1>${heading}</h1><p>${description}</p><p><a href="${SITE_URL}/tours">Browse private tours</a></p></main></div>`,
+    `<div id="root"><noscript><main data-static-seo="true"><h1>${heading}</h1><p>${description}</p><p><a href="${SITE_URL}/tours">Browse private tours</a></p></main></noscript></div>`,
   );
 };
 
