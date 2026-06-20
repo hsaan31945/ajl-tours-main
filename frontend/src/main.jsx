@@ -7,7 +7,6 @@ import AppContextProvider from "./context/AppContext.jsx";
 import { AdminProvider } from "./context/AdminContext";
 import { BookingProvider } from "./context/BookingContext";
 import { I18nProvider } from "./i18n";
-import { Analytics } from "@vercel/analytics/react";
 
 const SpeedInsights = lazy(() =>
   import("@vercel/speed-insights/react").then((module) => ({ default: module.SpeedInsights }))
@@ -40,7 +39,6 @@ createRoot(document.getElementById("root")).render(
           <BookingProvider>
             <I18nProvider>
               <App />
-              <Analytics />
               <DeferredSpeedInsights />
             </I18nProvider>
           </BookingProvider>
