@@ -7,6 +7,10 @@ const { perfLogger } = require('./src/middleware/perfLogger');
 const { sendNewBookingAdminAlert } = require('./src/services/emailService');
 const stripe = require('stripe')(config.stripe.secretKey);
 
+// Initialize Vercel Web Analytics for development tracking
+const { inject } = require('@vercel/analytics');
+inject();
+
 // Import Mongoose models
 const User = require('./models/User');
 const Admin = require('./models/Admin');
