@@ -65,7 +65,7 @@ vercel --prod --yes
 
 ### Frontend:
 ```bash
-cd "C:\Users\Salman\Desktop\Backend - Copy\backend\frontend"
+cd "C:\Users\Salman\Desktop\Backend - Copy\frontend"
 vercel --prod --yes
 ```
 
@@ -145,7 +145,6 @@ vercel --prod --yes
 *Deployment completed: 2024*  
 *Status: Both projects deployed successfully*  
 *Action Required: Update CORS_ORIGIN and FRONTEND_URL in Vercel Dashboard*
-
 
 
 

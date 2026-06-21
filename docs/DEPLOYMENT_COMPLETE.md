@@ -83,8 +83,8 @@ vercel inspect ajl-tours-backend-n4w2uaci2-salman1122334411s-projects.vercel.app
 
 1. `backend/routes/tours.js` - Express route with validation
 2. `backend/api/tours/[id].js` - Vercel serverless function with validation
-3. `backend/frontend/src/pages/SwitzerlandLocations.jsx` - Frontend ID handling
-4. `backend/frontend/src/pages/Checkout.jsx` - Frontend validation and error handling
+3. `frontend/src/pages/SwitzerlandLocations.jsx` - Frontend ID handling
+4. `frontend/src/pages/Checkout.jsx` - Frontend validation and error handling
 
 ## ✨ Next Steps
 
@@ -96,7 +96,6 @@ vercel inspect ajl-tours-backend-n4w2uaci2-salman1122334411s-projects.vercel.app
 ---
 
 **Deployment completed successfully!** 🎉
-
 
 
 

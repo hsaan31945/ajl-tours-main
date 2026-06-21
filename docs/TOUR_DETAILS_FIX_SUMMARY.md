@@ -35,7 +35,7 @@ if (!mongoose.Types.ObjectId.isValid(id)) {
 }
 ```
 
-### 2. Frontend - Switzerland Locations Page (`backend/frontend/src/pages/SwitzerlandLocations.jsx`)
+### 2. Frontend - Switzerland Locations Page (`frontend/src/pages/SwitzerlandLocations.jsx`)
 
 **Improved ID Extraction:**
 - Properly handles both ObjectId objects and strings
@@ -54,7 +54,7 @@ if (tour._id) {
 }
 ```
 
-### 3. Frontend - Checkout Page (`backend/frontend/src/pages/Checkout.jsx`)
+### 3. Frontend - Checkout Page (`frontend/src/pages/Checkout.jsx`)
 
 **Enhanced Error Handling:**
 - Validates MongoDB ObjectId format before making API call
@@ -99,7 +99,6 @@ if (!objectIdPattern.test(tourIdString)) {
 - All tours must have a valid MongoDB ObjectId (`_id` field)
 - The fix ensures proper ID format validation at both frontend and backend
 - Error messages now provide actionable information for debugging
-
 
 
 
