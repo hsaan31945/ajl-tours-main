@@ -15,7 +15,6 @@ const {
 } = require('../utils/tourImages');
 const mongoose = require('mongoose');
 
-const LIST_CACHE_TTL_MS = 2 * 60 * 1000;
 const listCache = new Map();
 
 const clearTourListCache = () => {
@@ -593,12 +592,6 @@ class TourService {
       view = 'list',
     } = options;
 
-    const cacheKey = JSON.stringify({ division, limit, sort, view });
-    const cached = listCache.get(cacheKey);
-    if (cached && cached.expiresAt > Date.now()) {
-      return cached.data;
-    }
-
     const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 100);
     const match = { isActive: { $ne: false } };
 
@@ -608,18 +601,35 @@ class TourService {
       if (divisionIds.length) {
         match.division = { $in: divisionIds };
       } else {
-        listCache.set(cacheKey, { data: [], expiresAt: Date.now() + LIST_CACHE_TTL_MS });
         return [];
       }
     }
 
     const sortStage =
       sort === 'popular'
-        ? { 'metadata.reviews': -1, 'metadata.rating': -1, createdAt: -1 }
+        ? { reviewCountValue: -1, reviewRatingValue: -1, createdAt: -1 }
         : { createdAt: -1 };
 
     const pipeline = [
       { $match: match },
+      {
+        $addFields: {
+          reviewCountValue: {
+            $cond: [
+              { $gt: [{ $size: { $ifNull: ['$reviews', []] } }, 0] },
+              { $size: { $ifNull: ['$reviews', []] } },
+              { $ifNull: ['$metadata.reviews', 0] },
+            ],
+          },
+          reviewRatingValue: {
+            $cond: [
+              { $gt: [{ $size: { $ifNull: ['$reviews', []] } }, 0] },
+              { $avg: '$reviews.rating' },
+              { $ifNull: ['$metadata.rating', 0] },
+            ],
+          },
+        },
+      },
       { $sort: sortStage },
       { $limit: safeLimit },
       {
@@ -634,8 +644,8 @@ class TourService {
         $addFields: {
           divisionName: { $ifNull: [{ $arrayElemAt: ['$divisionDoc.name', 0] }, ''] },
           imageCount: { $size: { $ifNull: ['$images', []] } },
-          rating: { $ifNull: ['$metadata.rating', 0] },
-          reviews: { $ifNull: ['$metadata.reviews', 0] },
+          rating: '$reviewRatingValue',
+          reviews: '$reviewCountValue',
           shortSummary: {
             $substrCP: [
               { $ifNull: ['$bookingSummary', { $ifNull: ['$description', ''] }] },
@@ -686,7 +696,6 @@ class TourService {
           : tours.map((t) => this.formatListTour(t));
 
     const deduped = this.dedupeTours(formatted);
-    listCache.set(cacheKey, { data: deduped, expiresAt: Date.now() + LIST_CACHE_TTL_MS });
     return deduped;
   }
 
@@ -927,6 +936,17 @@ class TourService {
       tour.reviews.push(reviewPayload);
     }
 
+    const reviewRatings = tour.reviews
+      .map((review) => Number(review.rating))
+      .filter(Number.isFinite);
+    tour.metadata = {
+      ...(tour.metadata || {}),
+      reviews: reviewRatings.length,
+      rating: reviewRatings.length
+        ? Math.round((reviewRatings.reduce((sum, value) => sum + value, 0) / reviewRatings.length) * 10) / 10
+        : 0,
+    };
+    tour.markModified('metadata');
     await tour.save();
     clearTourListCache();
     return this.getTourById(tour._id);

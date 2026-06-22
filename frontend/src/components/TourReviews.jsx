@@ -4,6 +4,7 @@ import { AppContext } from "../context/AppContext";
 import { apiUrl } from "../utils/api";
 import { getTourId } from "../utils/tourId";
 import { useI18n } from "../i18n";
+import { clearToursCache } from "../services/toursApi";
 
 const getUserId = (user) => user?.id || user?._id || null;
 const getUserName = (user) => user?.name || user?.fullName || user?.email || "";
@@ -93,6 +94,7 @@ function TourReviews({ tour, onTourUpdated }) {
       if (data.tour && onTourUpdated) {
         onTourUpdated(data.tour);
       }
+      clearToursCache();
       setMessage(currentUserReview ? t("booking.reviewUpdated") : t("booking.reviewSaved"));
     } catch (submitError) {
       setError(submitError.message || t("booking.reviewSaveFailed"));

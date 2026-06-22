@@ -23,12 +23,10 @@ class TourController {
           })
         : await tourService.getAllTours();
 
-      if (useList) {
-        res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=86400');
-        res.setHeader('Vercel-CDN-Cache-Control', 'public, s-maxage=300, stale-while-revalidate=86400');
-      } else {
-        res.setHeader('Cache-Control', 'private, no-store');
-      }
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Vercel-CDN-Cache-Control', 'no-store');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       res.json(tours);
     } catch (error) {
       console.error('Error in getAllTours controller:', error);
@@ -43,8 +41,10 @@ class TourController {
     try {
       const { id } = req.params;
       const tour = await tourService.getTourById(id);
-      res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=86400');
-      res.setHeader('Vercel-CDN-Cache-Control', 'public, s-maxage=300, stale-while-revalidate=86400');
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Vercel-CDN-Cache-Control', 'no-store');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       res.json(tour);
     } catch (error) {
       if (error.message === 'Tour not found') {

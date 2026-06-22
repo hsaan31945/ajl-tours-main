@@ -567,6 +567,17 @@ module.exports = async (req, res) => {
             } else {
               tour.reviews.push(reviewPayload);
             }
+            const reviewRatings = tour.reviews
+              .map((review) => Number(review.rating))
+              .filter(Number.isFinite);
+            tour.metadata = {
+              ...(tour.metadata || {}),
+              reviews: reviewRatings.length,
+              rating: reviewRatings.length
+                ? Math.round((reviewRatings.reduce((sum, value) => sum + value, 0) / reviewRatings.length) * 10) / 10
+                : 0,
+            };
+            tour.markModified('metadata');
             await tour.save();
             const updatedTour = await Tour.findById(reviewTourId)
               .select('name description bookingSummary price discountEnabled discountPrice groupDiscountEnabled groupDiscount4 groupDiscount5 groupDiscount6Plus currency images startLocation endLocation routeDetails division itinerary datePrices metadata startDate endDate minTicketsPerBooking maxTotalTickets isActive createdAt updatedAt reviews')

@@ -25,15 +25,21 @@ const TourDetails = () => {
   useEffect(() => {
     const fetchTour = async () => {
       try {
-        let response = await fetch(apiUrl(`/api/tours/${id}`));
+        let response = await fetch(apiUrl(`/api/tours/${id}`), {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' },
+        });
         if (!response.ok) {
-          const tours = await fetchToursList({ limit: 100 });
+          const tours = await fetchToursList({ limit: 100 }, { skipCache: true });
           const matchedTour = tours.find((item) => matchesTourIdentifier(item, id));
           if (!matchedTour) {
             throw new Error('Tour not found');
           }
           const matchedTourId = getTourId(matchedTour);
-          response = await fetch(apiUrl(`/api/tours/${matchedTourId}`));
+          response = await fetch(apiUrl(`/api/tours/${matchedTourId}`), {
+            cache: 'no-store',
+            headers: { 'Cache-Control': 'no-cache' },
+          });
           if (!response.ok) {
             const normalizedMatchedTour = normalizeTourData(matchedTour);
             setTour(normalizedMatchedTour);
