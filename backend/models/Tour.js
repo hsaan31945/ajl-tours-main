@@ -171,12 +171,13 @@ const tourSchema = new mongoose.Schema({
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true
+      default: null
     },
     userName: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
+      maxlength: 100
     },
     rating: {
       type: Number,

@@ -173,7 +173,7 @@ class TourController {
       }
       if (
         error.message.includes('rating') ||
-        error.message.includes('Login is required')
+        error.message.includes('name is required')
       ) {
         return next(new AppError(error.message, 400));
       }

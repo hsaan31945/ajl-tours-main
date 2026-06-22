@@ -1,12 +1,12 @@
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import { Star } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import { apiUrl } from "../utils/api";
 import { getTourId } from "../utils/tourId";
 import { useI18n } from "../i18n";
 
 const getUserId = (user) => user?.id || user?._id || null;
+const getUserName = (user) => user?.name || user?.fullName || user?.email || "";
 
 export const getTourReviewSummary = (tour) => {
   const reviews = Array.isArray(tour?.reviews) ? tour.reviews : [];
@@ -21,11 +21,11 @@ export const getTourReviewSummary = (tour) => {
 };
 
 function TourReviews({ tour, onTourUpdated }) {
-  const navigate = useNavigate();
   const { user } = useContext(AppContext);
   const { t } = useI18n();
   const userId = getUserId(user);
   const { reviews, reviewCount, reviewAverage } = getTourReviewSummary(tour);
+  const [reviewerName, setReviewerName] = useState(() => getUserName(user));
   const [rating, setRating] = useState(0);
   const [description, setDescription] = useState("");
   const [hoverRating, setHoverRating] = useState(0);
@@ -39,18 +39,21 @@ function TourReviews({ tour, onTourUpdated }) {
 
   useEffect(() => {
     if (currentUserReview) {
+      setReviewerName(currentUserReview.userName || getUserName(user));
       setRating(Number(currentUserReview.rating) || 0);
       setDescription(currentUserReview.description || "");
+    } else if (user) {
+      setReviewerName(getUserName(user));
     }
-  }, [currentUserReview]);
+  }, [currentUserReview, user]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
     setMessage("");
 
-    if (!userId) {
-      navigate("/login");
+    if (!reviewerName.trim()) {
+      setError("Please enter your name.");
       return;
     }
 
@@ -76,6 +79,7 @@ function TourReviews({ tour, onTourUpdated }) {
         cache: "no-store",
         body: JSON.stringify({
           userId,
+          userName: reviewerName.trim(),
           rating,
           description,
         }),
@@ -113,65 +117,69 @@ function TourReviews({ tour, onTourUpdated }) {
               </span>
             </div>
           </div>
-          {!userId && (
-            <button
-              type="button"
-              onClick={() => navigate("/login")}
-              className="self-start sm:self-auto border border-orange-600 text-orange-600 font-semibold px-5 py-2 rounded-lg hover:bg-orange-50 transition"
-            >
-              {t("booking.loginToReview")}
-            </button>
-          )}
         </div>
 
-        {userId && (
-          <form onSubmit={handleSubmit} className="mb-8 bg-gray-50 border border-gray-200 rounded-lg p-5">
-            <div className="mb-4">
-              <label className="block text-sm font-semibold mb-2">{t("booking.starRating")}</label>
-              <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map((starValue) => {
-                  const active = starValue <= (hoverRating || rating);
-                  return (
-                    <button
-                      key={starValue}
-                      type="button"
-                      onClick={() => setRating(starValue)}
-                      onMouseEnter={() => setHoverRating(starValue)}
-                      onMouseLeave={() => setHoverRating(0)}
-                      className="p-1 rounded hover:bg-white transition"
-                      aria-label={`${starValue} star rating`}
-                    >
-                      <Star
-                        className={`w-7 h-7 ${active ? "text-yellow-400 fill-current" : "text-gray-300"}`}
-                        aria-hidden="true"
-                      />
-                    </button>
-                  );
-                })}
-              </div>
+        <form onSubmit={handleSubmit} className="mb-8 bg-gray-50 border border-gray-200 rounded-lg p-5">
+          <div className="mb-4">
+            <label htmlFor="reviewer-name" className="block text-sm font-semibold mb-2">
+              {t("auth.fullName")}*
+            </label>
+            <input
+              id="reviewer-name"
+              type="text"
+              value={reviewerName}
+              onChange={(event) => setReviewerName(event.target.value)}
+              maxLength={100}
+              required
+              placeholder={t("auth.enterName")}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-semibold mb-2">{t("booking.starRating")}</label>
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5].map((starValue) => {
+                const active = starValue <= (hoverRating || rating);
+                return (
+                  <button
+                    key={starValue}
+                    type="button"
+                    onClick={() => setRating(starValue)}
+                    onMouseEnter={() => setHoverRating(starValue)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    className="p-1 rounded hover:bg-white transition"
+                    aria-label={`${starValue} star rating`}
+                  >
+                    <Star
+                      className={`w-7 h-7 ${active ? "text-yellow-400 fill-current" : "text-gray-300"}`}
+                      aria-hidden="true"
+                    />
+                  </button>
+                );
+              })}
             </div>
-            <div className="mb-4">
-              <label className="block text-sm font-semibold mb-2">{t("booking.description")}</label>
-              <textarea
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
-                rows={4}
-                maxLength={1000}
-                placeholder={t("booking.reviewPlaceholder")}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
-            </div>
-            {error && <p className="text-sm text-red-600 font-semibold mb-3">{error}</p>}
-            {message && <p className="text-sm text-green-700 font-semibold mb-3">{message}</p>}
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="bg-orange-600 hover:bg-orange-700 disabled:bg-gray-300 disabled:text-gray-500 text-white font-bold px-6 py-3 rounded-lg transition"
-            >
-              {isSubmitting ? t("booking.savingReview") : currentUserReview ? t("booking.updateReview") : t("booking.submitReview")}
-            </button>
-          </form>
-        )}
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-semibold mb-2">{t("booking.description")}</label>
+            <textarea
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              rows={4}
+              maxLength={1000}
+              placeholder={t("booking.reviewPlaceholder")}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+          </div>
+          {error && <p className="text-sm text-red-600 font-semibold mb-3">{error}</p>}
+          {message && <p className="text-sm text-green-700 font-semibold mb-3">{message}</p>}
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="bg-orange-600 hover:bg-orange-700 disabled:bg-gray-300 disabled:text-gray-500 text-white font-bold px-6 py-3 rounded-lg transition"
+          >
+            {isSubmitting ? t("booking.savingReview") : currentUserReview ? t("booking.updateReview") : t("booking.submitReview")}
+          </button>
+        </form>
 
         <div className="space-y-4">
           {reviews.length > 0 ? (

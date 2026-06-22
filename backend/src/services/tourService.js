@@ -887,13 +887,15 @@ class TourService {
     }
 
     const userId = String(reviewData.userId || '').trim();
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      throw new Error('Login is required to write a review');
+    let user = null;
+    if (mongoose.Types.ObjectId.isValid(userId)) {
+      user = await User.findOne({ _id: userId, isActive: true }).select('name email').lean();
     }
 
-    const user = await User.findOne({ _id: userId, isActive: true }).select('name email').lean();
-    if (!user) {
-      throw new Error('Login is required to write a review');
+    const submittedName = String(reviewData.userName || '').trim().slice(0, 100);
+    const userName = submittedName || (user ? (user.name || user.email) : '');
+    if (!userName) {
+      throw new Error('Your name is required to write a review');
     }
 
     const tour = isValidObjectId(tourId)
@@ -906,15 +908,15 @@ class TourService {
 
     const description = String(reviewData.description || '').trim().slice(0, 1000);
     const reviewPayload = {
-      user: user._id,
-      userName: user.name || user.email,
+      user: user?._id || null,
+      userName,
       rating,
       description,
     };
 
-    const existingReview = tour.reviews.find((review) => (
-      review.user?.toString?.() === user._id.toString()
-    ));
+    const existingReview = user
+      ? tour.reviews.find((review) => review.user?.toString?.() === user._id.toString())
+      : null;
 
     if (existingReview) {
       existingReview.userName = reviewPayload.userName;

@@ -539,22 +539,23 @@ module.exports = async (req, res) => {
             if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
               return res.status(400).json({ success: false, error: 'A star rating between 1 and 5 is required' });
             }
-            if (!userId) {
-              return res.status(400).json({ success: false, error: 'Login is required to write a review' });
+            let user = null;
+            if (/^[0-9a-f]{24}$/i.test(userId)) {
+              user = await User.findOne({ _id: userId, isActive: true }).select('name email').lean();
             }
-            if (!/^[0-9a-f]{24}$/i.test(userId)) {
-              return res.status(400).json({ success: false, error: 'Login is required to write a review' });
-            }
-            const user = await User.findOne({ _id: userId, isActive: true }).select('name email').lean();
-            if (!user) {
-              return res.status(400).json({ success: false, error: 'Login is required to write a review' });
+            const submittedName = String(body.userName || '').trim().slice(0, 100);
+            const userName = submittedName || (user ? (user.name || user.email) : '');
+            if (!userName) {
+              return res.status(400).json({ success: false, error: 'Your name is required to write a review' });
             }
             const tour = await Tour.findById(reviewTourId);
             if (!tour) return res.status(404).json({ success: false, error: 'Tour not found' });
-            const existingReview = tour.reviews.find((review) => review.user?.toString?.() === user._id.toString());
+            const existingReview = user
+              ? tour.reviews.find((review) => review.user?.toString?.() === user._id.toString())
+              : null;
             const reviewPayload = {
-              user: user._id,
-              userName: user.name || user.email,
+              user: user?._id || null,
+              userName,
               rating,
               description: String(body.description || '').trim().slice(0, 1000),
             };
