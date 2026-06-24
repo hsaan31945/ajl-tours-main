@@ -706,7 +706,7 @@ const Checkout = () => {
           )}
           {effectiveEditMode ? (
             <EditableField
-              value={`${t("common.from")} ${tour?.currency || "CHF"}${pricing.originalBaseUnitPrice.toFixed(2)}`}
+              value={`${tour?.currency || "CHF"}${pricing.originalBaseUnitPrice.toFixed(2)}`}
               tag="span"
               className="text-lg font-bold text-red-600"
               forceEditMode={effectiveEditMode}
@@ -717,7 +717,7 @@ const Checkout = () => {
             />
           ) : (
             <span className="text-lg font-bold text-red-600">
-              {t("common.from")} {formatPrice(pricePerTicket)}
+              {formatPrice(pricePerTicket)}
             </span>
           )}
           <ApproxPriceNote />

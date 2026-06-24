@@ -10,7 +10,6 @@ import { useI18n } from "../i18n";
 import { useHeroBanner } from "../hooks/useHeroBanner";
 
 const ExploreTours = lazy(() => import("../components/ExploreTours"));
-const TopDealsSection = lazy(() => import("../components/TopDealsSection"));
 const HomeDeferredContent = lazy(() => import("./HomeDeferredContent"));
 const HERO_AUTOPLAY_MS = 5000;
 const HERO_TRANSITION_MS = 1000;
@@ -481,13 +480,6 @@ const Home2 = () => {
       <DeferredSection minHeight={720}>
         <Suspense fallback={null}>
           <ExploreTours />
-        </Suspense>
-      </DeferredSection>
-
-      {/* Top Deals Section */}
-      <DeferredSection minHeight={640}>
-        <Suspense fallback={null}>
-          <TopDealsSection />
         </Suspense>
       </DeferredSection>
 
