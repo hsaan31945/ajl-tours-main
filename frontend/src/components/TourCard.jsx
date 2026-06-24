@@ -314,7 +314,6 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
         {/* Bottom Row: Price and Button */}
         <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
           <div className="flex flex-col" onClick={stopAdminFieldClick}>
-            <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">{t("common.from")}</span>
             {hasDiscount && (
               <span className="text-sm font-semibold text-gray-400 line-through">
                 {formatPrice(originalPrice)}
