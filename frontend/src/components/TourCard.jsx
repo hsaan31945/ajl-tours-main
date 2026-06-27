@@ -62,6 +62,8 @@ const TourCard = ({ tour, onUpdate, onFavoriteToggle, isFavorite }) => {
     endLocation: tour.endLocation,
     features: tour.features,
     destination: tour.destination,
+    division: tour.division,
+    divisionName: tour.divisionName,
     currency: tour.currency || 'CHF',
     metadata: tour.metadata || {},
   });

@@ -31,6 +31,12 @@ export const HERO_BANNER_PAGES = [
     fallbackImage: "/assets/images/optimized/hero6-1600.webp",
   },
   {
+    key: "france",
+    label: "France",
+    path: "/france",
+    fallbackImage: "/assets/images/optimized/hero7-1600.webp",
+  },
+  {
     key: "tours",
     label: "Tours",
     path: "/tours",

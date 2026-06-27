@@ -37,7 +37,7 @@ const ORDER_SELECT = [
 
 const escapeRegex = (value) => String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const bookingId = (booking) => booking?._id?.toString?.() || String(booking?._id || booking?.id || '');
-const DESTINATION_KEYS = new Set(['switzerland', 'srilanka', 'sri-lanka']);
+const DESTINATION_KEYS = new Set(['switzerland', 'srilanka', 'sri-lanka', 'france']);
 
 const slugifyCountry = (value) => String(value || '')
   .trim()
@@ -236,10 +236,11 @@ const getDashboardSummary = async (req, res, next) => {
       Division.countDocuments({
         isActive: { $ne: false },
         $or: [
-          { slug: { $in: ['switzerland', 'srilanka', 'sri-lanka'] } },
+          { slug: { $in: ['switzerland', 'srilanka', 'sri-lanka', 'france'] } },
           { name: /^Switzerland$/i },
           { name: /^Srilanka$/i },
           { name: /^Sri Lanka$/i },
+          { name: /^France$/i },
         ],
       }),
       getBookingStats(),
@@ -412,7 +413,7 @@ const saveDivision = async (req, res, next) => {
     const slug = String(req.body?.slug || '').trim();
     if (!name) return next(new AppError('Destination name is required', 400));
     if (!DESTINATION_KEYS.has(normalizeCountrySlug(slug || name))) {
-      return next(new AppError('Only Switzerland and Srilanka destinations are supported right now', 400));
+      return next(new AppError('Only Switzerland, Sri Lanka, and France destinations are supported right now', 400));
     }
     await validateUniqueDivision({ name, slug, id });
 
@@ -443,8 +444,8 @@ const deleteDivision = async (req, res, next) => {
     if (!division) return next(new AppError('Destination not found', 404));
 
     const countrySlug = normalizeCountrySlug(division.slug || division.name);
-    if (countrySlug === 'switzerland' || countrySlug === 'srilanka') {
-      return next(new AppError('Switzerland and Srilanka are required destinations and cannot be deleted', 400));
+    if (countrySlug === 'switzerland' || countrySlug === 'srilanka' || countrySlug === 'france') {
+      return next(new AppError('Switzerland, Sri Lanka, and France are required destinations and cannot be deleted', 400));
     }
 
     const fallback = await ensureCountryPage('Switzerland');
@@ -460,7 +461,11 @@ const deleteDivision = async (req, res, next) => {
 
 const ensureCountryPage = async (name) => {
   const slug = normalizeCountrySlug(name);
-  const canonicalName = slug === 'srilanka' ? 'Srilanka' : 'Switzerland';
+  const canonicalName = slug === 'srilanka'
+    ? 'Srilanka'
+    : slug === 'france'
+      ? 'France'
+      : 'Switzerland';
   const existing = await Division.findOne({
     $or: [
       { slug },
@@ -487,9 +492,10 @@ const ensureCountryPage = async (name) => {
 
 const cleanupCountryPages = async (req, res, next) => {
   try {
-    const [switzerland, srilanka] = await Promise.all([
+    const [switzerland, srilanka, france] = await Promise.all([
       ensureCountryPage('Switzerland'),
       ensureCountryPage('Srilanka'),
+      ensureCountryPage('France'),
     ]);
 
     const divisions = await Division.find({});
@@ -508,6 +514,11 @@ const cleanupCountryPages = async (req, res, next) => {
           await Tour.updateMany({ division: division._id }, { division: switzerland._id });
           removeIds.push(division._id);
         }
+      } else if (slug === 'france') {
+        if (!division._id.equals(france._id)) {
+          await Tour.updateMany({ division: division._id }, { division: france._id });
+          removeIds.push(division._id);
+        }
       } else {
         mergeToSwitzerland.push(division._id);
         removeIds.push(division._id);
@@ -524,7 +535,7 @@ const cleanupCountryPages = async (req, res, next) => {
     tourService.clearListCache();
     const [countryPages, tourCounts] = await Promise.all([
       Division.find({
-        _id: { $in: [switzerland._id, srilanka._id] },
+        _id: { $in: [switzerland._id, srilanka._id, france._id] },
       }).sort({ name: 1 }).lean(),
       getTourCountsByDivision(),
     ]);

@@ -120,15 +120,25 @@ export const getTourCheckoutPath = (tour) => {
   const slug = getTourSlug(tour);
   if (!slug) return getTourSeoPath(tour);
 
+  const divisionName = typeof tour?.divisionName === "object"
+    ? tour.divisionName?.name || tour.divisionName?.slug
+    : tour?.divisionName;
+  const division = typeof tour?.division === "object"
+    ? tour.division?.name || tour.division?.slug
+    : tour?.division;
   const destination = String(
-    tour?.division ||
-    tour?.divisionName ||
+    divisionName ||
+    division ||
     tour?.destination ||
     tour?.country ||
     tour?.metadata?.division ||
     "switzerland"
   ).toLowerCase();
-  const destinationKey = destination.includes("sri") ? "sri-lanka" : "switzerland";
+  const destinationKey = destination.includes("sri")
+    ? "sri-lanka"
+    : destination.includes("france")
+      ? "france"
+      : "switzerland";
 
   return `/${destinationKey}/${slug}/checkout`;
 };

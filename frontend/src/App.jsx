@@ -20,6 +20,7 @@ const Invoice = lazy(() => import("./pages/Invoice"));
 const About = lazy(() => import("./pages/About"));
 const SwitzerlandLocations = lazy(() => import("./pages/SwitzerlandLocations"));
 const SrilankaLocations = lazy(() => import("./pages/SrilankaLocations"));
+const FranceLocations = lazy(() => import("./pages/FranceLocations"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminUsers = lazy(() => import("./pages/AdminUsers"));
@@ -183,8 +184,10 @@ const App = () => {
               <Route path="/switzerland" element={<SwitzerlandLocations />} />
               <Route path="/sri-lanka" element={<SrilankaLocations />} />
               <Route path="/srilanka" element={<Navigate to="/sri-lanka" replace />} />
+              <Route path="/france" element={<FranceLocations />} />
               <Route path="/switzerland/:id/checkout" element={<CheckoutWrapper />} />
               <Route path="/sri-lanka/:id/checkout" element={<CheckoutWrapper />} />
+              <Route path="/france/:id/checkout" element={<CheckoutWrapper />} />
               <Route path="/srilanka/:id/checkout" element={<LegacySriLankaCheckoutRedirect />} />
               <Route 
                 path="/switzerland/:id/checkout-sw" 

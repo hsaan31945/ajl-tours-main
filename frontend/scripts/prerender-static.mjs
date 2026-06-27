@@ -37,6 +37,13 @@ const routes = [
     image: `${SITE_URL}/assets/images/optimized/hero6-1600.webp`,
   },
   {
+    path: "/france",
+    title: "France Private Tours | AJL Tours",
+    description: "Plan a custom France private tour with iconic cities, countryside, culture, family travel, and personal itinerary support.",
+    heading: "Private France tours",
+    image: `${SITE_URL}/assets/images/optimized/hero7-1600.webp`,
+  },
+  {
     path: "/about",
     title: "About AJL Tours | Our Story & Local Team",
     description: "Meet AJL Tours, a Switzerland-based travel team creating private tours with local knowledge, premium vehicles, and personal service.",

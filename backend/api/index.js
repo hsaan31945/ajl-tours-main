@@ -258,16 +258,18 @@ module.exports = async (req, res) => {
           const divisions = await Division.find({
             isActive: true,
             $or: [
-              { slug: { $in: ['switzerland', 'srilanka', 'sri-lanka'] } },
+              { slug: { $in: ['switzerland', 'srilanka', 'sri-lanka', 'france'] } },
               { name: /^Switzerland$/i },
               { name: /^Srilanka$/i },
               { name: /^Sri Lanka$/i },
+              { name: /^France$/i },
             ],
           }).sort({ name: 1 }).lean();
           res.json(divisions.map(div => ({
             id: div._id.toString(),
             _id: div._id.toString(),
             name: div.name,
+            slug: div.slug,
             description: div.description,
             bannerImage: div.bannerImage,
             banner_image: div.bannerImage,

@@ -612,6 +612,39 @@ class TourService {
 
     const pipeline = [
       { $match: match },
+      // Tour documents can contain large base64 image payloads. Drop those fields
+      // before sorting so MongoDB does not have to keep the full documents in the
+      // aggregation sort buffer (which is capped at 32 MB on the hosted database).
+      {
+        $project: {
+          name: 1,
+          bookingSummary: 1,
+          description: 1,
+          price: 1,
+          currency: 1,
+          discountEnabled: 1,
+          discountPrice: 1,
+          groupDiscountEnabled: 1,
+          groupDiscount4: 1,
+          groupDiscount5: 1,
+          groupDiscount6Plus: 1,
+          startLocation: 1,
+          endLocation: 1,
+          duration: 1,
+          tourType: 1,
+          division: 1,
+          reviews: 1,
+          maxTotalTickets: 1,
+          isActive: 1,
+          'metadata.staticId': 1,
+          'metadata.slug': 1,
+          'metadata.reviews': 1,
+          'metadata.rating': 1,
+          imageCount: { $size: { $ifNull: ['$images', []] } },
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      },
       {
         $addFields: {
           reviewCountValue: {
@@ -643,7 +676,6 @@ class TourService {
       {
         $addFields: {
           divisionName: { $ifNull: [{ $arrayElemAt: ['$divisionDoc.name', 0] }, ''] },
-          imageCount: { $size: { $ifNull: ['$images', []] } },
           rating: '$reviewRatingValue',
           reviews: '$reviewCountValue',
           shortSummary: {

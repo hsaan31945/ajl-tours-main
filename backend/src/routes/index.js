@@ -12,6 +12,7 @@ const emailRoutes = require('./email');
 const customerRoutes = require('./customer');
 const exchangeRateRoutes = require('./exchangeRates');
 const adminDataRoutes = require('./adminData');
+const divisionRoutes = require('./divisions');
 
 // Register all routes
 router.use('/tours', tourRoutes);
@@ -21,6 +22,6 @@ router.use('/auth', emailRoutes);
 router.use('/customer', customerRoutes);
 router.use('/exchange-rates', exchangeRateRoutes);
 router.use('/admin', adminDataRoutes);
+router.use('/divisions', divisionRoutes);
 
 module.exports = router;
-

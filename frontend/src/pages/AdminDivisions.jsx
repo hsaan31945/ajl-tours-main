@@ -15,7 +15,7 @@ const slugify = (value) => String(value || "")
 
 const isRequiredDestination = (division) => {
   const slug = slugify(division?.slug || division?.name);
-  return slug === "switzerland" || slug === "srilanka" || slug === "sri-lanka";
+  return slug === "switzerland" || slug === "srilanka" || slug === "sri-lanka" || slug === "france";
 };
 
 const AdminDivisions = () => {
@@ -128,7 +128,7 @@ const AdminDivisions = () => {
   return (
     <AdminPage
       title="Destinations"
-      description="Manage the public destination pages used for tours. AJL Tours currently uses Switzerland and Srilanka."
+      description="Manage the public destination pages used for tours. AJL Tours currently uses Switzerland, Sri Lanka, and France."
       actions={(
         <button onClick={handleCleanup} className="inline-flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2 font-bold text-white hover:bg-orange-700">
           <RefreshCw className="h-4 w-4" /> Clean Destinations
@@ -140,7 +140,7 @@ const AdminDivisions = () => {
 
       <AdminCard>
         {!divisions.length ? (
-          <EmptyState title="No destinations found" message="Use Clean Destinations to recreate Switzerland and Srilanka." />
+          <EmptyState title="No destinations found" message="Use Clean Destinations to recreate Switzerland, Sri Lanka, and France." />
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {divisions.map((division) => (
@@ -243,7 +243,7 @@ const AdminDivisions = () => {
       {deleteDivision && (
         <ConfirmModal
           title="Delete Destination"
-          message={`Delete ${deleteDivision.name}? Switzerland and Srilanka cannot be deleted because they are required destinations.`}
+          message={`Delete ${deleteDivision.name}? Switzerland, Sri Lanka, and France cannot be deleted because they are required destinations.`}
           confirmLabel="Delete"
           onConfirm={confirmDelete}
           onCancel={() => setDeleteDivision(null)}

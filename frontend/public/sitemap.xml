@@ -31,6 +31,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://ajltour.com/france</loc>
+    <lastmod>2026-06-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://ajltour.com/about</loc>
     <lastmod>2026-06-13</lastmod>
     <changefreq>monthly</changefreq>

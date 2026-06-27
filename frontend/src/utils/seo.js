@@ -34,6 +34,6 @@ export const organizationJsonLd = {
     postalCode: "8152",
     addressCountry: "CH",
   },
-  areaServed: ["Switzerland", "Sri Lanka"],
+  areaServed: ["Switzerland", "Sri Lanka", "France"],
   sameAs: ["https://www.instagram.com/ajltransfer"],
 };
