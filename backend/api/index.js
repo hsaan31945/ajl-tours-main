@@ -3,6 +3,10 @@
  * Handles all API routes in a single function
  */
 
+// Initialize Vercel Web Analytics
+const { inject } = require('@vercel/analytics');
+inject();
+
 // Wrap all imports in try-catch to identify which module is failing
 let connectDB, setCORSHeaders, errorHandler, tourController, tourService, bookingController, authController, emailController, customerController, exchangeRateController, adminDataController, Division, Tour, Booking, User, getPasswordPolicyMessage, attachPerfLogger;
 
